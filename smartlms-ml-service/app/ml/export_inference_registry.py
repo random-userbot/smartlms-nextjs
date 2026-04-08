@@ -22,12 +22,9 @@ import os
 import numpy as np
 import onnxruntime as ort
 
-try:
-    import tensorflow as tf
-    from tensorflow import keras
-except ImportError:
-    tf = None
-    keras = None
+# TF/Keras removed for Ultra-Lean Production
+tf = None
+keras = None
 
 from app.config import settings
 from app.ml.engagement_model import FEATURE_NAMES, EngagementFeatureExtractor, get_engagement_model
@@ -54,87 +51,8 @@ class RuntimeModelInfo:
 # In case `export/model_loader.py` fails to load
 _FALLBACK_LAYERS = {}
 
-try:
-    from tensorflow.keras import layers
-    class PositionalEncoding(layers.Layer):
-        def __init__(self, max_seq_len=120, d_model=256, **kwargs):
-            super().__init__(**kwargs)
-            self.max_seq_len = max_seq_len
-            self.d_model = d_model
-            position = np.arange(max_seq_len)[:, np.newaxis]
-            div_term = np.exp(np.arange(0, d_model, 2) * -(np.log(10000.0) / d_model))
-
-            pe = np.zeros((max_seq_len, d_model))
-            pe[:, 0::2] = np.sin(position * div_term)
-            pe[:, 1::2] = np.cos(position * div_term[:pe.shape[1] // 2])
-
-            self.pos_encoding = tf.constant(pe, dtype=tf.float32)
-
-        def call(self, x):
-            # x shape (batch, seq_len, d_model)
-            seq_len = tf.shape(x)[1]
-            pos_enc = tf.cast(self.pos_encoding[:seq_len, :self.d_model], x.dtype)
-            return x + pos_enc
-
-        def get_config(self):
-            config = super().get_config()
-            config.update({"max_seq_len": self.max_seq_len, "d_model": self.d_model})
-            return config
-
-    class TransformerBlock(layers.Layer):
-        def __init__(self, d_model, num_heads, ff_dim, dropout=0.1, **kwargs):
-            super().__init__(**kwargs)
-            self.d_model = d_model
-            self.num_heads = num_heads
-            self.ff_dim = ff_dim
-            self.dropout_rate = dropout
-
-            self.layernorm1 = layers.LayerNormalization(epsilon=1e-6)
-            self.layernorm2 = layers.LayerNormalization(epsilon=1e-6)
-            self.att = layers.MultiHeadAttention(
-                num_heads=num_heads,
-                key_dim=d_model // num_heads,
-                dropout=dropout,
-            )
-            self.dropout1 = layers.Dropout(dropout)
-            self.ffn = keras.Sequential([
-                layers.Dense(ff_dim, activation='gelu'),
-                layers.Dropout(dropout),
-                layers.Dense(d_model),
-            ])
-            self.dropout2 = layers.Dropout(dropout)
-
-        def call(self, x, training=False):
-            y = self.layernorm1(x)
-            attn_output = self.att(y, y, training=training)
-            attn_output = self.dropout1(attn_output, training=training)
-            out1 = x + attn_output
-
-            y = self.layernorm2(out1)
-            ffn_output = self.ffn(y, training=training)
-            ffn_output = self.dropout2(ffn_output, training=training)
-            return out1 + ffn_output
-
-        def get_config(self):
-            config = super().get_config()
-            config.update({
-                "d_model": self.d_model,
-                "num_heads": self.num_heads,
-                "ff_dim": self.ff_dim,
-                "dropout": self.dropout_rate,
-            })
-            return config
-
-    class TransformerBlockPreLN(TransformerBlock):
-        pass
-            
-    _FALLBACK_LAYERS = {
-        "PositionalEncoding": PositionalEncoding,
-        "TransformerBlock": TransformerBlock,
-        "TransformerBlockPreLN": TransformerBlockPreLN,
-    }
-except ImportError:
-    pass
+# Fallback Keras layers removed (All models migrated to ONNX)
+_FALLBACK_LAYERS = {}
 
 
 def _make_serializable(obj):
@@ -553,11 +471,7 @@ class ExportModelRegistry:
                 self._loaded_models[model_id] = session
                 return session
             else:
-                # Fallback purely for dev environment with TF installed
-                import tensorflow as tf
-                model = loader.load_model_with_custom_layers(str(model_file), compile=False)
-                self._loaded_models[model_id] = model
-                return model
+                raise RuntimeError("Keras (.h5) fallback is disabled in production. Use ONNX models.")
         except Exception as e:
             print(f"[MEMORY] FAILED to load model {folder_name}: {e}", flush=True)
             import gc

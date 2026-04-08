@@ -34,7 +34,6 @@ from app.routers import activity as activity_router
 from app.routers import tutor as tutor_router
 from app.routers import messaging as messaging_router
 
-from app.ml.export_inference_registry import get_export_model_registry
 
 
 @asynccontextmanager
