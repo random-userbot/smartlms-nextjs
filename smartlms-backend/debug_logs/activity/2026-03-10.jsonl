@@ -1,0 +1,21 @@
+{"timestamp": "2026-03-10T13:47:54.838167", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-10T13:50:16.526590", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-10T13:51:13.832393", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-10T13:58:17.838816", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-10T13:58:35.402277", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-10T14:04:06.272853", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-10T14:04:27.814716", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-10T14:26:40.185347", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-10T14:34:14.483052", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-10T16:20:53.859266", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-10T16:21:15.265408", "category": "activity", "action": "User logged in: Nihon Sensei", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-10T16:22:20.911647", "category": "activity", "action": "Batch: 6 events from Nihon Sensei (session: sess_1773158...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-10T16:23:20.288483", "category": "activity", "action": "Batch: 3 events from Nihon Sensei (session: sess_1773158...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-10T16:25:19.894781", "category": "activity", "action": "Batch: 7 events from Nihon Sensei (session: sess_1773158...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-10T16:26:22.117130", "category": "activity", "action": "Batch: 3 events from Nihon Sensei (session: sess_1773158...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-10T16:27:19.537109", "category": "activity", "action": "Batch: 6 events from Nihon Sensei (session: sess_1773158...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-10T16:27:22.455107", "category": "activity", "action": "Teaching score calculated: 27.2 for course Japanese N5 Beginner", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-10T16:27:38.622073", "category": "activity", "action": "Session end: sess_1773158... duration=1212s pages=10", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-10T16:27:58.321777", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-10T16:31:53.454210", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-10T16:49:06.040796", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}

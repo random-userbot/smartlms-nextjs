@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Main FastAPI Backend
+  smartlms-backend:
+    build:
+      context: ./smartlms-backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./test.db
+      - ML_SERVICE_URL=http://smartlms-ml-service:8001
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    depends_on:
+      - smartlms-ml-service
+    volumes:
+      - ./smartlms-backend:/app
+    networks:
+      - smartlms-network
+
+  # Dedicated ML Microservice
+  smartlms-ml-service:
+    build:
+      context: ./smartlms-ml-service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+    volumes:
+      - ./smartlms-ml-service/app:/app/app
+    networks:
+      - smartlms-network
+
+  # ML Worker - SQS Consumer (Pro Architecture)
+  smartlms-ml-worker:
+    build:
+      context: ./smartlms-ml-service
+      dockerfile: Dockerfile
+    command: python app/worker.py
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./test.db
+      - SQS_QUEUE_URL=${SQS_QUEUE_URL}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+    depends_on:
+      - smartlms-backend
+    volumes:
+      - ./smartlms-ml-service/app:/app/app
+      - ./smartlms-backend/test.db:/app/test.db
+    networks:
+      - smartlms-network
+
+networks:
+  smartlms-network:
+    driver: bridge

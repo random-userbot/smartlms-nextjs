@@ -1,0 +1,66 @@
+{"timestamp": "2026-03-19T16:29:01.774327", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T16:29:36.958259", "category": "activity", "action": "User logged in: friedrice", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:33:08.459780", "category": "activity", "action": "User registered: testuser (student)", "user_id": "d7d87532-1ddc-4a05-ac20-a4a6e8c78cc6", "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:36:28.352931", "category": "activity", "action": "Batch: 1 events from testuser (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:39:18.438585", "category": "activity", "action": "Session end: sess_1773938... duration=232s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:40:00.055222", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:40:20.728478", "category": "activity", "action": "Batch: 1 events from testuser (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:41:17.961724", "category": "activity", "action": "Session end: sess_1773938... duration=141s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:41:18.302347", "category": "activity", "action": "Session end: sess_1773938... duration=119s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:43:43.628642", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:44:14.619864", "category": "activity", "action": "Batch: 1 events from testuser (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:45:13.943228", "category": "activity", "action": "Batch: 1 events from testuser (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:45:32.154829", "category": "activity", "action": "Session end: sess_1773938... duration=139s pages=3", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:45:43.975275", "category": "activity", "action": "User logged in: friedrice", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:45:49.509905", "category": "activity", "action": "Session end: sess_1773938... duration=155s pages=5", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:46:47.782377", "category": "activity", "action": "Batch: 13 events from friedrice (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:47:47.770681", "category": "activity", "action": "Batch: 4 events from friedrice (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:52:50.829825", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:53:47.780933", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:54:29.143469", "category": "activity", "action": "AI Tutor chat (general) initiated", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:54:47.603248", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:55:47.794918", "category": "activity", "action": "Batch: 2 events from friedrice (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:58:12.532838", "category": "activity", "action": "AI Tutor chat (general) initiated", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-19T16:58:48.393138", "category": "activity", "action": "Batch: 2 events from friedrice (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T17:01:48.048673", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T17:02:44.234254", "category": "activity", "action": "Batch: 3 events from friedrice (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T17:03:47.794506", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T17:06:58.548001", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773938...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T17:07:03.674544", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:21:12.018375", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:21:12.127664", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:21:27.392169", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:21:27.982890", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:21:30.155081", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:22:44.902388", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:22:46.857052", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:23:12.499991", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:23:12.607959", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:23:40.530748", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:23:40.579832", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:23:56.410066", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:23:56.498342", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:24:04.567642", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:24:04.659474", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:24:20.465949", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:24:20.465949", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:24:34.932369", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:24:52.116391", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:25:00.082681", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:25:09.344961", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:35:04.790310", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:35:04.955461", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:35:05.003274", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:35:21.072137", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:35:21.912623", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:35:24.107546", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:36:51.199735", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:37:07.524131", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:38:35.361356", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:38:35.439495", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:38:35.556033", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:38:50.926387", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:38:51.002165", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:38:53.140766", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-19T18:39:28.354835", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-19T18:39:45.863960", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}

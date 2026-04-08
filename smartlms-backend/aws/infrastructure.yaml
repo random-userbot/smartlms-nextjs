@@ -1,0 +1,188 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SmartLMS PRO: Cost-Optimized Microservices (Fargate Spot + RDS t4g.micro + SQS)'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: 'SmartLMS'
+  BudgetLimit:
+    Type: Number
+    Default: 80 # 80% of $100 credits
+    Description: 'The amount in USD to trigger the hard-cap alert.'
+  VPCId:
+    Type: String
+    Description: 'VPC ID for resources'
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: 'Subnets for Fargate and RDS'
+
+Resources:
+  # 1. Budget Alert
+  BudgetAlert:
+    Type: 'AWS::Budgets::Budget'
+    Properties:
+      Budget:
+        BudgetLimit:
+          Amount: !Ref BudgetLimit
+          Unit: USD
+        BudgetName: 'SmartLMS-Credit-Cap'
+        BudgetType: COST
+        TimeUnit: MONTHLY
+      NotificationsWithSubscribers:
+        - Notification:
+            ComparisonOperator: GREATER_THAN
+            NotificationType: ACTUAL
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - Address: !GetAtt BudgetCapLambda.Arn
+              SubscriptionType: SNS
+
+  # 2. Hard-Cap Lambda (Pro Version - Kills All Services)
+  BudgetCapLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: 'SmartLMS-Hard-Cap'
+      Handler: 'budget_lambda.lambda_handler'
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: 'python3.9'
+      Code:
+        S3Bucket: !Sub 'smartlms-deploy-${AWS::Region}'
+        S3Key: 'budget_lambda.zip'
+      Environment:
+        Variables:
+          ECS_CLUSTER_NAME: !Ref ECSCluster
+          ECS_SERVICES: !Sub '${ECSService},${MLWorkerService}'
+          RDS_INSTANCE_ID: !Ref RDSInstance
+
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 'lambda.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'BudgetControlPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ecs:UpdateService'
+                  - 'rds:StopDBInstance' # For fixed RDS (not cluster)
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+
+  # 3. Messaging (SQS) - Decoupling for Cost Stability
+  EngagementInferenceQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      QueueName: !Sub '${ProjectName}-Inference-Queue'
+      VisibilityTimeout: 120 # 2 mins for heavy ML
+      MessageRetentionPeriod: 1209600 # 14 days
+
+  # 4. Compute (ECS Fargate Spot)
+  ECSCluster:
+    Type: 'AWS::ECS::Cluster'
+    Properties:
+      ClusterName: !Sub '${ProjectName}-Cluster'
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE_SPOT
+          Weight: 1
+
+  # Backend API (Always running, 1 inst)
+  ECSService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      ServiceName: !Sub '${ProjectName}-Backend'
+      Cluster: !Ref ECSCluster
+      CapacityProviderStrategy:
+        - CapacityProvider: FARGATE_SPOT
+          Weight: 1
+      DesiredCount: 1
+      TaskDefinition: !Ref BackendTaskDef
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: !Ref SubnetIds
+          AssignPublicIp: ENABLED
+
+  # ML Worker (Queue-aware)
+  MLWorkerService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      ServiceName: !Sub '${ProjectName}-ML-Worker'
+      Cluster: !Ref ECSCluster
+      CapacityProviderStrategy:
+        - CapacityProvider: FARGATE_SPOT
+          Weight: 1
+      DesiredCount: 1 # Default 1, Scaled to 0 by Nightly Lambda
+      TaskDefinition: !Ref MLWorkerTaskDef
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: !Ref SubnetIds
+          AssignPublicIp: ENABLED
+
+  BackendTaskDef:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: 'smartlms-backend'
+      Cpu: '512'
+      Memory: '1024'
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      ContainerDefinitions:
+        - Name: 'backend'
+          Image: 'YOUR_BACKEND_URI'
+          PortMappings: [{ContainerPort: 8000}]
+          Environment:
+            - Name: SQS_QUEUE_URL
+              Value: !Ref EngagementInferenceQueue
+
+  MLWorkerTaskDef:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: 'smartlms-ml-worker'
+      Cpu: '1024' # 1.0 vCPU
+      Memory: '2048' # 2GB RAM
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      ContainerDefinitions:
+        - Name: 'ml-worker'
+          Image: 'YOUR_ML_URI'
+          Command: ["python", "app/worker.py"]
+          Environment:
+            - Name: SQS_QUEUE_URL
+              Value: !Ref EngagementInferenceQueue
+            - Name: DATABASE_URL
+              Value: !Sub 'postgresql+asyncpg://user:pass@${RDSInstance.Endpoint.Address}/smartlms'
+
+  # 5. Database (RDS db.t4g.micro - Absolute Floor Cost)
+  RDSInstance:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBInstanceIdentifier: !Sub '${ProjectName}-DB'
+      Engine: 'postgres'
+      DBInstanceClass: 'db.t4g.micro' # Graviton is cheaper
+      AllocatedStorage: '20'
+      StorageType: 'gp3'
+      BackupRetentionPeriod: 3 # Pro recommendation #4
+      DBName: 'smartlms'
+      MasterUsername: 'postgres'
+      MasterUserPassword: 'YOUR_PASSWORD'
+      PubliclyAccessible: false
+      VPCSecurityGroups: [] # Add SG here
+
+Outputs:
+  QueueUrl:
+    Value: !Ref EngagementInferenceQueue
+  RDSAddress:
+    Value: !GetAtt RDSInstance.Endpoint.Address

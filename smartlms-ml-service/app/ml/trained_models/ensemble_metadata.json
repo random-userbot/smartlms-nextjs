@@ -1,0 +1,26 @@
+{
+  "model_type": "ensemble",
+  "components": [
+    "lstm",
+    "xgboost",
+    "rules"
+  ],
+  "weights": {
+    "lstm": 0.5,
+    "xgboost": 0.3,
+    "rules": 0.2
+  },
+  "performance": {
+    "overall_mse": 0.307971710694204,
+    "overall_rmse": 0.5549519895398195,
+    "overall_mae": 0.4746708335547173
+  },
+  "dimensions": [
+    "boredom",
+    "engagement",
+    "confusion",
+    "frustration"
+  ],
+  "feature_count": 24,
+  "trained_at": "2026-03-23T13:13:27.310792"
+}

@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-02-26T03:41:35.160002",
+  "mode": "lstm",
+  "source": "openface",
+  "label_mode": "binary",
+  "balance_strategy": "class_weight",
+  "results": {
+    "lstm_boredom_bin": {
+      "test_accuracy": 0.2339885859226379,
+      "test_f1_macro": 0.18961973278520042,
+      "test_f1_weighted": 0.08873770627487503,
+      "best_threshold": 0.5400000000000003,
+      "epochs_trained": 17
+    },
+    "lstm_engagement_bin": {
+      "test_accuracy": 0.05199746353836398,
+      "test_f1_macro": 0.04942736588306208,
+      "test_f1_weighted": 0.005140195310603793,
+      "best_threshold": 0.34,
+      "epochs_trained": 16
+    },
+    "lstm_confusion_bin": {
+      "test_accuracy": 0.08306911857958148,
+      "test_f1_macro": 0.07669789227166277,
+      "test_f1_weighted": 0.012742452615837441,
+      "best_threshold": 0.6800000000000004,
+      "epochs_trained": 13
+    },
+    "lstm_frustration_bin": {
+      "test_accuracy": 0.04882688649334179,
+      "test_f1_macro": 0.046553808948004836,
+      "test_f1_weighted": 0.004546155090673903,
+      "best_threshold": 0.5,
+      "epochs_trained": 14
+    }
+  }
+}

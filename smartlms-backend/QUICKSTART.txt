@@ -1,0 +1,128 @@
+# SmartLMS Live Model Tester - Quick Start Guide
+
+## 30-Second Setup
+
+```bash
+cd smartlms-backend
+python quickstart_setup.py
+python test_models_live.py
+```
+
+## What You'll See
+
+- **Video window** with your face
+- **Green bounding box** around detected face
+- **Feature values** (EAR, Head Pose, Mouth)
+- **Model predictions** for each dimension:
+  - Boredom
+  - Engagement
+  - Confusion
+  - Frustration
+
+## Keyboard Shortcuts
+
+```
+q / ESC   →  Quit
+p         →  Pause
+s         →  Save debug data
+r         →  Reset history
+1         →  Toggle XGBoost
+2         →  Toggle LSTM
+3         →  Toggle CNN
+h         →  Show full help
+```
+
+## What Can Go Wrong (and How to Fix It)
+
+| Problem | Solution |
+|---------|----------|
+| "Camera not found" | Close Zoom/Teams, check Device Manager |
+| "No models loaded" | Run `python app/ml/train_model_v3.py` first |
+| "Face not detected" | Improve lighting, move to center of frame |
+| "ModuleNotFoundError" | Run `pip install -r requirements_test.txt` |
+| Low FPS (<10) | Close other apps, reduce resolution |
+
+## Expected Output
+
+```
+[INFO] Camera opened. Press 'h' for help, 'q' to quit.
+[INFO] ✓ Loaded XGBoost v3 boredom
+[INFO] ✓ Loaded XGBoost v3 engagement
+[INFO] ✓ Loaded LSTM v3 boredom
+[INFO] ✓ Loaded LSTM v3 engagement
+...
+[INFO] Model Summary: XGBoost=4, LSTM=4, CNN=0
+✓ Face Detected
+EAR: 0.245
+Mouth: 0.120
+XGB-Boredom: 0.342 ✓
+ENS-Engagement: 0.756 ✗
+FPS: 28.5
+```
+
+## What It's Testing
+
+**Real-time Feature Extraction:**
+- Eye Aspect Ratio (blink/alertness)
+- Head Pose (interest/engagement)
+- Mouth Openness (emotions)
+- Facial Action Units (AUs)
+
+**Model Predictions:**
+- Binary classification per emotion
+- Ensemble voting across multiple models
+- Confidence scores with optimal thresholds
+
+**Error Handling:**
+- Missing faces → "✗ No Face"
+- Model loading failures → logged to console
+- Failed inference → fallback to 0.5 (neutral)
+
+## Debug Output
+
+Press **s** to save JSON debug file with:
+- Timestamp
+- Frame counts
+- Models loaded
+- Current feature values
+- Prediction values
+
+Files saved to: `debug_logs/live_test/debug_*.json`
+
+## Common Scenarios to Test
+
+1. **Boredom** - Look away, slow blinks, minimal movements
+2. **Engagement** - Look at camera, frequent blinks, head nods
+3. **Confusion** - Furrowed brow, head tilt, mouth open
+4. **Frustration** - Tight lips, eye tension, rapid head movements
+
+## Full Documentation
+
+See **TEST_MODELS_README.md** for:
+- Detailed architecture info
+- Feature extraction details
+- Troubleshooting guide
+- Advanced usage
+- Performance notes
+
+## Support
+
+If something breaks:
+1. Check console output for error messages
+2. Press **s** to save debug info
+3. Include both console log and debug JSON in issue
+
+## Next Steps
+
+- [ ] Run quickstart setup
+- [ ] Verify all dependencies install
+- [ ] Check trained models exist
+- [ ] Start test_models_live.py
+- [ ] Test face detection
+- [ ] Watch predictions update
+- [ ] Try different facial expressions
+- [ ] Check debug output
+
+---
+
+**Happy testing!** 🎉

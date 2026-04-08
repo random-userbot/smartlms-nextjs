@@ -1,0 +1,19 @@
+{"timestamp": "2026-02-19T14:42:25.023192", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-02-19T14:49:43.458532", "category": "activity", "action": "User registered: admin (teacher)", "user_id": "9ac3fa79-adfa-400f-88dd-f9cf6e2b3795", "session_id": null, "data": null}
+{"timestamp": "2026-02-19T14:50:55.937850", "category": "activity", "action": "User logged in: admin", "user_id": "9ac3fa79-adfa-400f-88dd-f9cf6e2b3795", "session_id": null, "data": null}
+{"timestamp": "2026-02-19T15:12:40.335585", "category": "activity", "action": "User registered: friedrice (student)", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-02-19T15:14:39.642084", "category": "activity", "action": "User registered: Nihon Sensei (teacher)", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-02-19T15:15:41.118964", "category": "activity", "action": "Course created: Japanese N5 Beginner", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-02-19T15:16:02.699164", "category": "activity", "action": "Teaching score calculated: 42.0 for course Japanese N5 Beginner", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-02-19T15:27:40.123707", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-02-19T15:50:53.293532", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-02-19T15:50:54.830172", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-02-19T15:51:20.523774", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-02-19T15:55:22.054856", "category": "activity", "action": "User logged in: admin", "user_id": "9ac3fa79-adfa-400f-88dd-f9cf6e2b3795", "session_id": null, "data": null}
+{"timestamp": "2026-02-19T15:56:31.759804", "category": "activity", "action": "Batch: 10 events from admin (session: sess_1771516...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-02-19T16:01:08.350834", "category": "activity", "action": "Session end: sess_1771516... duration=437s pages=6", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-02-19T16:01:15.747370", "category": "activity", "action": "User logged in: friedrice", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-02-19T16:01:19.511545", "category": "activity", "action": "Session end: sess_1771516... duration=449s pages=8", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-02-19T16:02:19.529797", "category": "activity", "action": "Batch: 11 events from friedrice (session: sess_1771516...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-02-19T16:07:20.849002", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1771516...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-02-19T16:58:32.216543", "category": "activity", "action": "Session end: sess_1771516... duration=3875s pages=13", "user_id": null, "session_id": null, "data": null}

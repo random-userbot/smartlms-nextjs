@@ -1,0 +1,236 @@
+{"timestamp": "2026-03-17T10:42:52.520951", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T10:45:57.149039", "category": "activity", "action": "User logged in: friedrice", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T10:47:01.858898", "category": "activity", "action": "Batch: 18 events from friedrice (session: sess_1773744...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T10:47:06.972627", "category": "activity", "action": "Session end: sess_1773744... duration=82s pages=5", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T10:47:24.862658", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T10:57:21.470970", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T11:01:13.332847", "category": "activity", "action": "Batch: 11 events from friedrice (session: sess_1773745...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:02:42.702178", "category": "activity", "action": "Batch: 4 events from friedrice (session: sess_1773745...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:03:13.328518", "category": "activity", "action": "Batch: 4 events from friedrice (session: sess_1773745...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:04:13.705471", "category": "activity", "action": "Batch: 6 events from friedrice (session: sess_1773745...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:06:12.184583", "category": "activity", "action": "Batch: 2 events from friedrice (session: sess_1773745...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:06:56.314893", "category": "activity", "action": "Session end: sess_1773745... duration=414s pages=8", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:08:07.239742", "category": "activity", "action": "Batch: 5 events from friedrice (session: sess_1773745...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:09:06.964521", "category": "activity", "action": "Batch: 2 events from friedrice (session: sess_1773745...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:10:07.495301", "category": "activity", "action": "Batch: 4 events from friedrice (session: sess_1773745...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:12:08.532390", "category": "activity", "action": "Batch: 2 events from friedrice (session: sess_1773745...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:13:08.501444", "category": "activity", "action": "Batch: 2 events from friedrice (session: sess_1773745...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:14:02.703032", "category": "activity", "action": "Session end: sess_1773745... duration=418s pages=1", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:15:06.238569", "category": "activity", "action": "Batch: 3 events from friedrice (session: sess_1773746...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:16:04.898382", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773746...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:17:04.930334", "category": "activity", "action": "Batch: 10 events from friedrice (session: sess_1773746...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:18:05.940040", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773746...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:19:05.857051", "category": "activity", "action": "Batch: 7 events from friedrice (session: sess_1773746...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:20:06.821149", "category": "activity", "action": "Batch: 2 events from friedrice (session: sess_1773746...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:25:07.831220", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773746...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:30:08.380338", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:30:24.951976", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T11:56:16.048416", "category": "activity", "action": "Batch: 5 events from friedrice (session: sess_1773748...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:57:15.952162", "category": "activity", "action": "Batch: 8 events from friedrice (session: sess_1773748...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T11:58:16.368260", "category": "activity", "action": "Batch: 4 events from friedrice (session: sess_1773748...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T12:03:17.930664", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773748...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T12:05:17.841635", "category": "activity", "action": "Batch: 2 events from friedrice (session: sess_1773748...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T12:06:17.643005", "category": "activity", "action": "Batch: 7 events from friedrice (session: sess_1773748...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T12:07:47.731146", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:25:14.079426", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T16:25:35.678195", "category": "activity", "action": "User logged in: friedrice", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:26:40.163874", "category": "activity", "action": "Batch: 9 events from friedrice (session: sess_1773764...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:27:39.891415", "category": "activity", "action": "Batch: 4 events from friedrice (session: sess_1773764...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:27:56.838811", "category": "activity", "action": "Session end: sess_1773764... duration=172s pages=6", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:29:17.997910", "category": "activity", "action": "Batch: 9 events from friedrice (session: sess_1773764...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:30:38.488933", "category": "activity", "action": "Session end: sess_1773764... duration=142s pages=3", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:31:17.259080", "category": "activity", "action": "User logged in: Nihon Sensei", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:31:35.270538", "category": "activity", "action": "Teaching score calculated: 33.7 for course Japanese N5 Beginner", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:31:58.779590", "category": "activity", "action": "Teaching score calculated: 33.7 for course Japanese N5 Beginner", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:32:21.457571", "category": "activity", "action": "Batch: 20 events from Nihon Sensei (session: sess_1773765...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:32:23.572659", "category": "activity", "action": "Teaching score calculated: 33.7 for course Japanese N5 Beginner", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:33:21.169152", "category": "activity", "action": "Batch: 2 events from Nihon Sensei (session: sess_1773765...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:33:35.137072", "category": "activity", "action": "Teaching score calculated: 33.7 for course Japanese N5 Beginner", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:34:23.016774", "category": "activity", "action": "Batch: 7 events from Nihon Sensei (session: sess_1773765...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:35:21.458448", "category": "activity", "action": "Batch: 2 events from Nihon Sensei (session: sess_1773765...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:36:22.963021", "category": "activity", "action": "Batch: 3 events from Nihon Sensei (session: sess_1773765...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:37:21.643835", "category": "activity", "action": "Batch: 9 events from Nihon Sensei (session: sess_1773765...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:38:21.285130", "category": "activity", "action": "Batch: 6 events from Nihon Sensei (session: sess_1773765...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:39:22.314225", "category": "activity", "action": "Batch: 4 events from Nihon Sensei (session: sess_1773765...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T16:40:19.417009", "category": "activity", "action": "Session end: sess_1773765... duration=558s pages=19", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T17:04:53.745666", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T17:05:08.210227", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T17:13:06.289323", "category": "activity", "action": "User registered: teststudent (student)", "user_id": "9ab5ec25-eb12-4ec8-a68d-508c5846367f", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T17:15:50.859096", "category": "activity", "action": "Batch: 1 events from teststudent (session: sess_1773767...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T17:19:18.524585", "category": "activity", "action": "Session end: sess_1773767... duration=268s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T17:20:15.187025", "category": "activity", "action": "Enrolled in: Japanese N5 Beginner", "user_id": "9ab5ec25-eb12-4ec8-a68d-508c5846367f", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T17:20:20.231356", "category": "activity", "action": "Batch: 5 events from teststudent (session: sess_1773767...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T17:21:20.208647", "category": "activity", "action": "Batch: 4 events from teststudent (session: sess_1773767...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T17:23:52.382922", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T17:24:07.269221", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T17:24:44.109430", "category": "activity", "action": "Session end: sess_1773767... duration=327s pages=4", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T17:27:21.608983", "category": "activity", "action": "User registered: teacher1test (teacher)", "user_id": "d73cf69d-0d53-43eb-a4a6-c487e00f0c1e", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T17:29:08.177450", "category": "activity", "action": "Batch: 3 events from teacher1test (session: sess_1773768...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T17:29:16.785520", "category": "activity", "action": "Session end: sess_1773768... duration=70s pages=2", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T17:34:02.049825", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773768...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T18:51:07.921690", "category": "activity", "action": "Batch: 3 events from teacher1test (session: sess_1773773...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T18:55:44.623393", "category": "activity", "action": "Session end: sess_1773773... duration=340s pages=2", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T18:56:46.551201", "category": "activity", "action": "Batch: 3 events from teacher1test (session: sess_1773773...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T18:59:18.343550", "category": "activity", "action": "Session end: sess_1773773... duration=215s pages=2", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:00:09.041989", "category": "activity", "action": "Course created: AI Development", "user_id": "d73cf69d-0d53-43eb-a4a6-c487e00f0c1e", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:01:18.145757", "category": "activity", "action": "Batch: 2 events from teacher1test (session: sess_1773774...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:01:19.331766", "category": "activity", "action": "Lecture created: Introduction to AI in course AI Development", "user_id": "d73cf69d-0d53-43eb-a4a6-c487e00f0c1e", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:03:59.411117", "category": "activity", "action": "Lecture created: The era of blind faith in big data must end in course AI Development", "user_id": "d73cf69d-0d53-43eb-a4a6-c487e00f0c1e", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:05:02.551294", "category": "activity", "action": "Session end: sess_1773774... duration=286s pages=1", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:07:49.918199", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773774...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:08:29.393655", "category": "activity", "action": "Session end: sess_1773774... duration=103s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:09:32.013917", "category": "activity", "action": "Batch: 2 events from teacher1test (session: sess_1773774...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:09:34.202035", "category": "activity", "action": "Session end: sess_1773774... duration=65s pages=1", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:10:02.030847", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773768...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:11:12.082651", "category": "activity", "action": "Session end: sess_1773768... duration=5892s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:13:18.610189", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773774...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:16:30.902992", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773774...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:17:30.313808", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773774...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:21:33.266836", "category": "activity", "action": "Session end: sess_1773774... duration=364s pages=1", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:22:17.739687", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773774...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:26:17.726733", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773774...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:26:56.281734", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773775...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:29:45.274473", "category": "activity", "action": "Session end: sess_1773775... duration=231s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:31:04.048475", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773775...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:31:17.633667", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773774...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:32:36.980391", "category": "activity", "action": "Session end: sess_1773775... duration=156s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:34:35.241822", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773776...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:36:22.955607", "category": "activity", "action": "Session end: sess_1773776... duration=169s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:39:38.614101", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773776...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:41:07.582738", "category": "activity", "action": "Session end: sess_1773776... duration=152s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:43:25.350954", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773776...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:44:25.932474", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773776...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:45:17.679236", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773774...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:46:37.708543", "category": "activity", "action": "Session end: sess_1773776... duration=254s pages=1", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:48:07.639142", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773776...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:49:16.800926", "category": "activity", "action": "Session end: sess_1773776... duration=132s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:51:17.690698", "category": "activity", "action": "Batch: 1 events from teacher1test (session: sess_1773774...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:56:43.817270", "category": "activity", "action": "Session end: sess_1773774... duration=2668s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T19:59:02.282694", "category": "activity", "action": "User logged in: friedrice", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:00:06.895509", "category": "activity", "action": "Batch: 12 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:01:06.746280", "category": "activity", "action": "Batch: 5 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:02:06.930608", "category": "activity", "action": "Batch: 3 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:03:07.564049", "category": "activity", "action": "Batch: 4 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:05:07.580940", "category": "activity", "action": "Batch: 2 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:06:31.901216", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:06:41.698811", "category": "activity", "action": "AI Tutor chat (general) initiated", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:07:07.250885", "category": "activity", "action": "Batch: 5 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:08:07.870840", "category": "activity", "action": "Batch: 3 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:14:02.633203", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:14:38.712348", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:15:08.844758", "category": "activity", "action": "Batch: 2 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:16:07.228563", "category": "activity", "action": "Batch: 2 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:20:40.437472", "category": "activity", "action": "Batch: 2 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:21:07.262240", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:22:06.749060", "category": "activity", "action": "Batch: 8 events from friedrice (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:22:09.849117", "category": "activity", "action": "Session end: sess_1773766... duration=11963s pages=8", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:22:13.758719", "category": "activity", "action": "User logged in: Nihon Sensei", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:22:20.853207", "category": "activity", "action": "Session end: sess_1773766... duration=11971s pages=10", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:23:18.023055", "category": "activity", "action": "Batch: 10 events from Nihon Sensei (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:23:20.055882", "category": "activity", "action": "Teaching score calculated: 33.6 for course Japanese N5 Beginner", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:24:17.790802", "category": "activity", "action": "Batch: 4 events from Nihon Sensei (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:25:17.950559", "category": "activity", "action": "Batch: 6 events from Nihon Sensei (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:26:18.060198", "category": "activity", "action": "Batch: 11 events from Nihon Sensei (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:27:18.570899", "category": "activity", "action": "Batch: 5 events from Nihon Sensei (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:28:11.662850", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:28:30.922937", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T20:28:36.550266", "category": "activity", "action": "Batch: 3 events from Nihon Sensei (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:29:18.707559", "category": "activity", "action": "Batch: 9 events from Nihon Sensei (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:34:03.878306", "category": "activity", "action": "Batch: 1 events from Nihon Sensei (session: sess_1773766...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:35:00.328283", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:35:15.019120", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T20:39:53.638848", "category": "activity", "action": "User logged in: Nihon Sensei", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:41:52.168827", "category": "activity", "action": "Batch: 1 events from Nihon Sensei (session: sess_1773780...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:43:53.056159", "category": "activity", "action": "Batch: 1 events from Nihon Sensei (session: sess_1773780...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:44:52.107720", "category": "activity", "action": "Batch: 4 events from Nihon Sensei (session: sess_1773780...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:49:52.691992", "category": "activity", "action": "Batch: 1 events from Nihon Sensei (session: sess_1773780...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:50:53.242869", "category": "activity", "action": "Batch: 1 events from Nihon Sensei (session: sess_1773780...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:53:51.765455", "category": "activity", "action": "Batch: 1 events from Nihon Sensei (session: sess_1773780...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:55:41.060852", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:55:55.939101", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T20:55:59.147575", "category": "activity", "action": "Session end: sess_1773780... duration=899s pages=6", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:55:59.683109", "category": "activity", "action": "Session end: sess_1773766... duration=13983s pages=20", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:57:04.067588", "category": "activity", "action": "Batch: 4 events from Nihon Sensei (session: sess_1773780...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:57:07.508772", "category": "activity", "action": "Batch: 1 events from Nihon Sensei (session: sess_1773780...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:57:13.161393", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:57:27.525013", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T20:59:05.114021", "category": "activity", "action": "Session end: sess_1773780... duration=195s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T20:59:17.267295", "category": "activity", "action": "User logged in: friedrice", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:00:56.113880", "category": "activity", "action": "Session end: sess_1773780... duration=306s pages=1", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:01:06.428456", "category": "activity", "action": "Batch: 6 events from friedrice (session: sess_1773781...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:02:06.041629", "category": "activity", "action": "Batch: 5 events from friedrice (session: sess_1773781...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:02:54.344600", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:03:09.798387", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T21:03:14.934867", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773781...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:03:15.044364", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:03:30.146155", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T21:03:38.431290", "category": "activity", "action": "Session end: sess_1773781... duration=213s pages=6", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:04:42.658564", "category": "activity", "action": "Batch: 7 events from friedrice (session: sess_1773781...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:05:24.639783", "category": "activity", "action": "Session end: sess_1773781... duration=107s pages=4", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:06:26.150913", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773781...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:11:11.474081", "category": "activity", "action": "Session end: sess_1773781... duration=345s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:13:18.178638", "category": "activity", "action": "Batch: 4 events from friedrice (session: sess_1773781...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:13:52.567516", "category": "activity", "action": "Session end: sess_1773781... duration=96s pages=2", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:14:54.580255", "category": "activity", "action": "Batch: 6 events from friedrice (session: sess_1773782...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:15:32.014297", "category": "activity", "action": "Session end: sess_1773782... duration=99s pages=3", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:15:57.299428", "category": "activity", "action": "User logged in: friedrice", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:16:02.644411", "category": "activity", "action": "Session end: sess_1773782... duration=128s pages=5", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:17:02.238828", "category": "activity", "action": "Batch: 6 events from friedrice (session: sess_1773782...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:18:04.023608", "category": "activity", "action": "Session end: sess_1773782... duration=250s pages=6", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:19:43.330056", "category": "activity", "action": "User logged in: Nihon Sensei", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:20:42.796568", "category": "activity", "action": "Lecture created: Hiragana Mastery - Part 1 in course Japanese N5 Beginner", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:20:47.375222", "category": "activity", "action": "Batch: 12 events from Nihon Sensei (session: sess_1773782...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:21:32.482806", "category": "activity", "action": "Session end: sess_1773782... duration=181s pages=8", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:21:49.887963", "category": "activity", "action": "User logged in: friedrice", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:21:55.361068", "category": "activity", "action": "Session end: sess_1773782... duration=202s pages=10", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:22:55.003135", "category": "activity", "action": "Batch: 12 events from friedrice (session: sess_1773782...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:23:44.734925", "category": "activity", "action": "Session end: sess_1773782... duration=312s pages=13", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:25:16.655048", "category": "activity", "action": "User logged in: friedrice", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:26:20.778244", "category": "activity", "action": "Batch: 10 events from friedrice (session: sess_1773782...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:30:22.232343", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773782...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:37:48.549167", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:38:03.806701", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T21:38:11.636175", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:38:26.134664", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T21:39:16.229876", "category": "activity", "action": "Session end: sess_1773782... duration=904s pages=5", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:39:20.297595", "category": "activity", "action": "User logged in: Nihon Sensei", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:40:09.893883", "category": "activity", "action": "User logged in: Nihon Sensei", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:41:13.787203", "category": "activity", "action": "Batch: 18 events from Nihon Sensei (session: sess_1773783...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:42:28.321660", "category": "activity", "action": "Session end: sess_1773783... duration=231s pages=10", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:45:22.677241", "category": "activity", "action": "User logged in: friedrice", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:46:26.872440", "category": "activity", "action": "Batch: 12 events from friedrice (session: sess_1773783...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:47:26.607746", "category": "activity", "action": "Batch: 4 events from friedrice (session: sess_1773783...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:47:56.833085", "category": "activity", "action": "Session end: sess_1773783... duration=219s pages=8", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:48:30.017525", "category": "activity", "action": "User logged in: Nihon Sensei", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:48:33.866190", "category": "activity", "action": "Session end: sess_1773783... duration=256s pages=10", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:49:34.922883", "category": "activity", "action": "Batch: 8 events from Nihon Sensei (session: sess_1773783...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:50:33.917928", "category": "activity", "action": "Batch: 1 events from Nihon Sensei (session: sess_1773783...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:51:40.415986", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:51:56.063085", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T21:52:37.035227", "category": "activity", "action": "Session end: sess_1773783... duration=498s pages=14", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:53:17.415602", "category": "activity", "action": "Batch: 4 events from Nihon Sensei (session: sess_1773784...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:56:16.966693", "category": "activity", "action": "Session end: sess_1773784... duration=244s pages=3", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:57:20.162010", "category": "activity", "action": "Batch: 1 events from Nihon Sensei (session: sess_1773784...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:57:33.157219", "category": "activity", "action": "Lecture created: Hiragana Mastery - Part 1 in course Japanese N5 Beginner", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:58:20.533296", "category": "activity", "action": "Lecture updated: Hiragana Mastery - Part 1", "user_id": "b4a0ba3d-48b0-4d54-8b11-5eedb0981da8", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T21:59:01.615225", "category": "activity", "action": "Session end: sess_1773784... duration=164s pages=0", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:00:03.602906", "category": "activity", "action": "Batch: 2 events from Nihon Sensei (session: sess_1773784...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:00:36.044709", "category": "activity", "action": "Session end: sess_1773784... duration=95s pages=2", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:00:54.938790", "category": "activity", "action": "User logged in: friedrice", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:01:00.516773", "category": "activity", "action": "Session end: sess_1773784... duration=118s pages=4", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:01:35.399554", "category": "activity", "action": "Session end: sess_1773784... duration=152s pages=5", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:02:09.874409", "category": "activity", "action": "User logged in: friedrice", "user_id": "2e068d11-1bc9-4ba3-9429-f908b1af2124", "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:03:14.047725", "category": "activity", "action": "Batch: 8 events from friedrice (session: sess_1773784...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:04:14.743602", "category": "activity", "action": "Batch: 2 events from friedrice (session: sess_1773784...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:06:13.868718", "category": "activity", "action": "Batch: 3 events from friedrice (session: sess_1773784...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:06:27.000748", "category": "activity", "action": "Session end: sess_1773784... duration=292s pages=8", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:07:29.247646", "category": "activity", "action": "Batch: 5 events from friedrice (session: sess_1773785...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:08:29.628708", "category": "activity", "action": "Batch: 4 events from friedrice (session: sess_1773785...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:14:41.222094", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:19:54.746306", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T22:20:01.363060", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773785...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:20:01.470312", "category": "activity", "action": "Server shutting down", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:20:16.360791", "category": "activity", "action": "Server started", "user_id": null, "session_id": null, "data": {"env": "development", "debug": true}}
+{"timestamp": "2026-03-17T22:22:06.874508", "category": "activity", "action": "Session end: sess_1773785... duration=939s pages=4", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:27:59.113229", "category": "activity", "action": "Batch: 1 events from friedrice (session: sess_1773786...)", "user_id": null, "session_id": null, "data": null}
+{"timestamp": "2026-03-17T22:30:19.168322", "category": "activity", "action": "Session end: sess_1773786... duration=204s pages=0", "user_id": null, "session_id": null, "data": null}

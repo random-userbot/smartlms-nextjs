@@ -1,0 +1,81 @@
+{
+  "timestamp": "2026-02-26T03:23:02.077104",
+  "mode": "xgboost",
+  "source": "openface",
+  "label_mode": "binary",
+  "balance_strategy": "smote",
+  "results": {
+    "xgb_boredom_bin": {
+      "cv_accuracy": 0.8488330631068267,
+      "cv_f1_macro": 0.8486382054234758,
+      "test_accuracy": 0.7260621433100825,
+      "test_f1_macro": 0.5576782236073237,
+      "test_f1_weighted": 0.7028725798566706,
+      "best_threshold": 0.38000000000000006,
+      "confusion_matrix": [
+        [
+          1059,
+          149
+        ],
+        [
+          283,
+          86
+        ]
+      ]
+    },
+    "xgb_engagement_bin": {
+      "cv_accuracy": 0.9732095475365817,
+      "cv_f1_macro": 0.9732036199075778,
+      "test_accuracy": 0.9461001902346227,
+      "test_f1_macro": 0.5567954504124717,
+      "test_f1_weighted": 0.9289792104724848,
+      "best_threshold": 0.6600000000000004,
+      "confusion_matrix": [
+        [
+          7,
+          75
+        ],
+        [
+          10,
+          1485
+        ]
+      ]
+    },
+    "xgb_confusion_bin": {
+      "cv_accuracy": 0.9530419511096355,
+      "cv_f1_macro": 0.9529934465187022,
+      "test_accuracy": 0.9143944197844007,
+      "test_f1_macro": 0.4776416031798609,
+      "test_f1_weighted": 0.8759286724135432,
+      "best_threshold": 0.3,
+      "confusion_matrix": [
+        [
+          1442,
+          4
+        ],
+        [
+          131,
+          0
+        ]
+      ]
+    },
+    "xgb_frustration_bin": {
+      "cv_accuracy": 0.9801818976214935,
+      "cv_f1_macro": 0.9801767693928529,
+      "test_accuracy": 0.9492707672796449,
+      "test_f1_macro": 0.4869876382563435,
+      "test_f1_weighted": 0.9264190962390808,
+      "best_threshold": 0.3,
+      "confusion_matrix": [
+        [
+          1497,
+          3
+        ],
+        [
+          77,
+          0
+        ]
+      ]
+    }
+  }
+}

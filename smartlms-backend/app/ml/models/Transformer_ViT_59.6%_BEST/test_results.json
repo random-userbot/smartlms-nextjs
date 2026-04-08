@@ -1,0 +1,21 @@
+{
+  "model": "temporal_transformer",
+  "timestamp": "20251118_071716",
+  "overall_accuracy": 0.596001221001221,
+  "per_dimension_accuracy": {
+    "Boredom": 0.3778998778998779,
+    "Engagement": 0.5500610500610501,
+    "Confusion": 0.6813186813186813,
+    "Frustration": 0.7747252747252747
+  },
+  "improvement_from_baseline": 1.0201221001221006,
+  "training_epochs": 23,
+  "architecture": {
+    "type": "ViT + Temporal Transformer",
+    "vit_model": "google/vit-base-patch16-224",
+    "feature_dim": 768,
+    "num_transformer_blocks": 6,
+    "num_heads": 8,
+    "ff_dim": 2048
+  }
+}

@@ -1,0 +1,73 @@
+services:
+  - type: web
+    name: smartlms-backend
+    runtime: python
+    rootDir: smartlms-backend
+    plan: free
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DEBUG_MODE
+        value: "false"
+      - key: ALLOW_ALL_CORS_IN_DEV
+        value: "false"
+      - key: AUTO_CREATE_TABLES
+        value: "true"
+      - key: AUTO_CREATE_INDEXES
+        value: "true"
+      - key: REQUIRE_SECURE_JWT_IN_PROD
+        value: "true"
+      - key: RATE_LIMIT_ENABLED
+        value: "true"
+      - key: RATE_LIMIT_REQUESTS
+        value: "120"
+      - key: RATE_LIMIT_WINDOW_SECONDS
+        value: "60"
+      - key: ANALYTICS_MAX_LOG_ROWS
+        value: "1200"
+      - key: FRONTEND_URL
+        sync: false
+      - key: APP_TRUSTED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_SYNC
+        sync: false
+      - key: DB_POOL_SIZE
+        value: "3"
+      - key: DB_MAX_OVERFLOW
+        value: "2"
+      - key: DB_POOL_RECYCLE_SECONDS
+        value: "1800"
+      - key: DB_CONNECT_TIMEOUT_SECONDS
+        value: "10"
+      - key: DB_COMMAND_TIMEOUT_SECONDS
+        value: "30"
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_CHAT_FALLBACK_MODELS
+        value: llama-3.1-8b-instant,mixtral-8x7b-32768,gemma2-9b-it
+      - key: GROQ_AUDIO_FALLBACK_MODELS
+        value: whisper-large-v3-turbo
+      - key: GROQ_CHAT_MODEL_POOL
+        value: llama-3.3-70b-versatile,llama-3.1-8b-instant,mixtral-8x7b-32768,gemma2-9b-it,llama-4-scout-17b-16e-instruct
+      - key: GROQ_AUDIO_MODEL_POOL
+        value: whisper-large-v3,whisper-large-v3-turbo
+      - key: GROQ_MODEL_RETRIES_PER_MODEL
+        value: "1"
+      - key: GROQ_MODEL_RETRY_BASE_SECONDS
+        value: "1.2"
+      - key: GROQ_MODEL_RETRY_MAX_SECONDS
+        value: "12.0"
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

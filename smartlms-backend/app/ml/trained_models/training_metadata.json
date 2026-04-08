@@ -1,0 +1,239 @@
+{
+  "trained_at": "2026-02-26T02:44:25.515764",
+  "n_samples": 6786,
+  "n_features": 24,
+  "feature_names": [
+    "au01_inner_brow_raise",
+    "au02_outer_brow_raise",
+    "au04_brow_lowerer",
+    "au06_cheek_raiser",
+    "au12_lip_corner_puller",
+    "au15_lip_corner_depressor",
+    "au25_lips_part",
+    "au26_jaw_drop",
+    "gaze_score",
+    "head_pose_yaw",
+    "head_pose_pitch",
+    "head_pose_roll",
+    "head_pose_stability",
+    "eye_aspect_ratio",
+    "blink_rate",
+    "mouth_openness",
+    "keyboard_activity_pct",
+    "mouse_activity_pct",
+    "tab_visible_pct",
+    "playback_speed_avg",
+    "note_taking_pct",
+    "gaze_variance",
+    "head_stability_variance",
+    "blink_rate_variance"
+  ],
+  "dimension_names": [
+    "boredom",
+    "engagement",
+    "confusion",
+    "frustration"
+  ],
+  "results": {
+    "boredom": {
+      "cv_accuracy": 0.4435566196333201,
+      "cv_std": 0.01429824962594984,
+      "train_accuracy": 0.9681697612732095,
+      "train_f1": 0.9681388553498199,
+      "test_accuracy": 0.38172645739910316,
+      "test_f1": 0.3878717203275803,
+      "top_features": [
+        [
+          "au12_lip_corner_puller",
+          0.06501312553882599
+        ],
+        [
+          "au02_outer_brow_raise",
+          0.055833134800195694
+        ],
+        [
+          "eye_aspect_ratio",
+          0.05117102339863777
+        ],
+        [
+          "au01_inner_brow_raise",
+          0.0506647452712059
+        ],
+        [
+          "gaze_score",
+          0.048945408314466476
+        ],
+        [
+          "head_pose_roll",
+          0.04762963578104973
+        ],
+        [
+          "head_pose_yaw",
+          0.04749192297458649
+        ],
+        [
+          "mouth_openness",
+          0.04747355729341507
+        ],
+        [
+          "head_pose_pitch",
+          0.04617617279291153
+        ],
+        [
+          "gaze_variance",
+          0.04527031257748604
+        ]
+      ]
+    },
+    "engagement": {
+      "cv_accuracy": 0.5474487276468603,
+      "cv_std": 0.009517838624193139,
+      "train_accuracy": 0.9615384615384616,
+      "train_f1": 0.961566394527707,
+      "test_accuracy": 0.5022421524663677,
+      "test_f1": 0.4965141687976665,
+      "top_features": [
+        [
+          "eye_aspect_ratio",
+          0.09889347851276398
+        ],
+        [
+          "au12_lip_corner_puller",
+          0.07873626053333282
+        ],
+        [
+          "gaze_variance",
+          0.0668339654803276
+        ],
+        [
+          "blink_rate_variance",
+          0.056114766746759415
+        ],
+        [
+          "au02_outer_brow_raise",
+          0.05215242877602577
+        ],
+        [
+          "tab_visible_pct",
+          0.04553166404366493
+        ],
+        [
+          "au01_inner_brow_raise",
+          0.04374583438038826
+        ],
+        [
+          "head_pose_roll",
+          0.04094814509153366
+        ],
+        [
+          "head_pose_yaw",
+          0.03969050943851471
+        ],
+        [
+          "blink_rate",
+          0.03897234797477722
+        ]
+      ]
+    },
+    "confusion": {
+      "cv_accuracy": 0.5887110200422616,
+      "cv_std": 0.005654333666402888,
+      "train_accuracy": 0.9787798408488063,
+      "train_f1": 0.9789378539847089,
+      "test_accuracy": 0.5695067264573991,
+      "test_f1": 0.5513122995451658,
+      "top_features": [
+        [
+          "au02_outer_brow_raise",
+          0.060139480978250504
+        ],
+        [
+          "au01_inner_brow_raise",
+          0.05508905276656151
+        ],
+        [
+          "blink_rate_variance",
+          0.050310492515563965
+        ],
+        [
+          "head_pose_stability",
+          0.046522822231054306
+        ],
+        [
+          "mouth_openness",
+          0.04591663181781769
+        ],
+        [
+          "head_pose_yaw",
+          0.04581486061215401
+        ],
+        [
+          "gaze_variance",
+          0.045727185904979706
+        ],
+        [
+          "au12_lip_corner_puller",
+          0.04380325227975845
+        ],
+        [
+          "gaze_score",
+          0.043678168207407
+        ],
+        [
+          "tab_visible_pct",
+          0.04344373196363449
+        ]
+      ]
+    },
+    "frustration": {
+      "cv_accuracy": 0.7166231279906838,
+      "cv_std": 0.006571248736381302,
+      "train_accuracy": 0.9868847627468317,
+      "train_f1": 0.987029451579672,
+      "test_accuracy": 0.7001121076233184,
+      "test_f1": 0.6765895982043206,
+      "top_features": [
+        [
+          "au02_outer_brow_raise",
+          0.053646840155124664
+        ],
+        [
+          "au12_lip_corner_puller",
+          0.052456796169281006
+        ],
+        [
+          "blink_rate",
+          0.051646966487169266
+        ],
+        [
+          "head_pose_stability",
+          0.05043572187423706
+        ],
+        [
+          "head_pose_pitch",
+          0.048521678894758224
+        ],
+        [
+          "head_stability_variance",
+          0.04743339493870735
+        ],
+        [
+          "au01_inner_brow_raise",
+          0.04602465406060219
+        ],
+        [
+          "blink_rate_variance",
+          0.04552982747554779
+        ],
+        [
+          "head_pose_roll",
+          0.04457131028175354
+        ],
+        [
+          "gaze_score",
+          0.04365486279129982
+        ]
+      ]
+    }
+  }
+}

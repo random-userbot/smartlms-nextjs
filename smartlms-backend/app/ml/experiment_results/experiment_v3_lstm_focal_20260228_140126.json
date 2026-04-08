@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-02-28T14:01:26.100572",
+  "version": "v3",
+  "mode": "lstm_focal",
+  "improvements": [
+    "optuna_hyperparameter_tuning",
+    "proper_train_val_test_split",
+    "focal_loss",
+    "feature_selection",
+    "probability_calibration",
+    "soft_voting_ensemble"
+  ],
+  "results": {
+    "lstm_focal_boredom": {
+      "test_accuracy": 0.725428027901078,
+      "test_f1_macro": 0.5605271812549195,
+      "test_f1_weighted": 0.7037485170066037,
+      "best_threshold": 0.5599999999999998,
+      "focal_alpha": 0.615811606391926,
+      "focal_gamma": 2.6224890585588896,
+      "epochs_trained": 23
+    },
+    "lstm_focal_engagement": {
+      "test_accuracy": 0.9245402663284717,
+      "test_f1_macro": 0.6011659217604016,
+      "test_f1_weighted": 0.9229461674467982,
+      "best_threshold": 0.35999999999999993,
+      "focal_alpha": 3.0,
+      "focal_gamma": 3.0,
+      "epochs_trained": 24
+    },
+    "lstm_focal_confusion": {
+      "test_accuracy": 0.844007609384908,
+      "test_f1_macro": 0.5357901840843169,
+      "test_f1_weighted": 0.8512033469405638,
+      "best_threshold": 0.5199999999999998,
+      "focal_alpha": 1.9132897603485837,
+      "focal_gamma": 3.0,
+      "epochs_trained": 21
+    },
+    "lstm_focal_frustration": {
+      "test_accuracy": 0.9169308814204186,
+      "test_f1_macro": 0.5386056795720778,
+      "test_f1_weighted": 0.9156062133467199,
+      "best_threshold": 0.6199999999999999,
+      "focal_alpha": 3.0,
+      "focal_gamma": 3.0,
+      "epochs_trained": 26
+    }
+  }
+}

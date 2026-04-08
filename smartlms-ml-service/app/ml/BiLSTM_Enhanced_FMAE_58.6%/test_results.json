@@ -1,0 +1,13 @@
+{
+  "model": "model1_bilstm_fmae_enhanced",
+  "test_loss": 3.661055088043213,
+  "overall_accuracy": 0.5857753357753358,
+  "per_dimension_accuracy": {
+    "Boredom": 0.3516483516483517,
+    "Engagement": 0.518925518925519,
+    "Confusion": 0.6916971916971917,
+    "Frustration": 0.7808302808302808
+  },
+  "training_epochs": 16,
+  "feature_source": "enhanced_fmae_fer2013_finetuned"
+}

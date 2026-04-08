@@ -1,0 +1,20 @@
+# Ignore all models in the app folder (they live in export/)
+app/ml/Baseline_LSTM_*
+app/ml/BiLSTM_Enhanced_*
+app/ml/Fusion_Enhanced_*
+app/ml/Transformer_ViT_*
+app/ml/trained_models/
+app/ml/models/
+
+# Ignore training scripts
+app/ml/train_*.py
+app/ml/generate_charts.py
+app/ml/extract_*.py
+app/ml/engagement_model_v1_backup.py
+
+# Standard ignores
+__pycache__/
+*.pyc
+.env
+.git
+.gitignore

@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+html {
+  scroll-behavior: smooth;
+}
+
+@theme {
+  /* SmartLMS Cognitive Resonance v5 - Neural Architect Edition */
+  --color-background: #0f131c;
+  --color-foreground: #dfe2ef;
+  --color-primary: #CC3344;
+  --color-primary-glow: rgba(204, 51, 68, 0.2);
+  --color-secondary: #00e3fd;
+  --color-surface: #0f131c;
+  --color-surface-alt: #1c1f29;
+  --color-surface-container: #262a34;
+  --color-border: rgba(186, 201, 204, 0.1);
+  --color-text-muted: #bac9cc;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "Geist Mono", monospace;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-4xl: 2.5rem;
+}
+
+[data-theme="light"] {
+  --color-background: #f8fafc;
+  --color-foreground: #020617;
+  --color-primary: #1e40af;
+  --color-primary-glow: rgba(30, 64, 175, 0.15);
+  --color-secondary: #00e3fd;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f1f5f9;
+  --color-surface-container: #e2e8f0;
+  --color-border: rgba(15, 23, 42, 0.08);
+  --color-text-muted: #475569;
+}
+
+/* Global Styles */
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    @apply antialiased transition-colors duration-300;
+  }
+
+  /* Traditional selection styling for reliability */
+  ::selection {
+    background-color: var(--color-primary);
+    color: white;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tighter font-extrabold;
+  }
+}
+
+/* Custom Utilities v5 Style */
+@utility glass-card {
+  @apply backdrop-blur-2xl bg-white/5 border border-white/10 rounded-4xl shadow-2xl transition-all duration-300;
+}
+
+[data-theme="light"] .glass-card {
+  @apply bg-white/80 border border-slate-200/60 shadow-xl shadow-slate-200/50;
+}
+
+@utility azure-glow {
+  box-shadow: 0 0 30px -10px rgba(37, 99, 235, 0.4);
+}
+
+@utility crimson-glow {
+  box-shadow: 0 0 30px -10px rgba(204, 51, 68, 0.4);
+}
+
+@utility btn-primary {
+  @apply bg-primary text-white px-8 py-3 rounded-full font-black uppercase tracking-widest 
+         hover:scale-[1.02] active:scale-[0.98] transition-all border border-white/20;
+}
+
+/* Theme-specific shadows for buttons */
+[data-theme="light"] .btn-primary {
+  @apply azure-glow shadow-blue-500/20 text-white;
+}
+
+[data-theme="dark"] .btn-primary {
+  @apply crimson-glow shadow-red-500/20;
+}
+
+@utility btn-secondary {
+  @apply bg-white/5 backdrop-blur-lg text-white px-8 py-3 rounded-full font-black uppercase tracking-widest 
+         hover:bg-white/10 transition-all border border-white/10;
+}
+
+[data-theme="light"] .btn-secondary {
+  @apply bg-slate-200 text-slate-900 border-slate-300 hover:bg-slate-300;
+}
+
+/* Performance Scrollbar */
+::selection {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    var(--color-primary-glow) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="light"] .shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-foreground) 0%,
+    var(--color-primary) 50%,
+    var(--color-foreground) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-alt);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}

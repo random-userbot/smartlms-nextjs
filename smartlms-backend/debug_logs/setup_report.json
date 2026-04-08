@@ -1,0 +1,9 @@
+{
+  "timestamp": "1775216047.3068419",
+  "script": "test_models_live.py",
+  "requirements": "requirements_test.txt",
+  "documentation": "TEST_MODELS_README.md",
+  "models_dir": "C:\\Users\\revan\\Downloads\\smartlms\\smartlms-backend\\app\\ml\\trained_models",
+  "debug_dir": "C:\\Users\\revan\\Downloads\\smartlms\\smartlms-backend\\debug_logs\\live_test",
+  "python_version": "3.11"
+}
