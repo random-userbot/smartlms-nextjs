@@ -18,15 +18,16 @@ import {
   EyeOff
 } from 'lucide-react';
 import Link from 'next/link';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, googleLogin } = useAuth();
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'student' | 'teacher'>('student');
+  const [role, setRole] = useState<'student' | 'teacher' | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +35,10 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!role) {
+      setError('Neural Class mandatory. Select your role to bridge.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -52,6 +57,23 @@ export default function RegisterPage() {
     }
   };
 
+  const handleGoogleSuccess = async (response: any) => {
+    if (!role) {
+      setError('Neural Class mandatory. Select your role before Identity sync.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      await googleLogin(response.credential, role);
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Identity synchronization failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background/20 flex items-center justify-center p-6 relative overflow-hidden">
       {/* Back Button */}
@@ -65,7 +87,7 @@ export default function RegisterPage() {
         Back to Grid
       </Link>
 
-      <div className="max-w-md w-full glass-card p-12 space-y-8 crimson-glow-lg animate-fade-in relative z-10">
+      <div className="max-w-md w-full glass-card p-12 space-y-6 crimson-glow-lg animate-fade-in relative z-10">
         
         {/* Brand */}
         <div className="flex flex-col items-center text-center gap-4">
@@ -171,7 +193,27 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        <div className="text-center pt-8 border-t border-white/5">
+        <div className="relative py-2">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border/50"></div>
+          </div>
+          <div className="relative flex justify-center text-[8px] uppercase font-black tracking-[0.4em] text-text-muted">
+            <span className="bg-[#0a0a0b] px-4">Neural Identity Bridge</span>
+          </div>
+        </div>
+
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError('Google Identity verification failed.')}
+            useOneTap
+            theme="filled_black"
+            shape="pill"
+            width="100%"
+          />
+        </div>
+
+        <div className="text-center pt-6 border-t border-white/5">
           <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">
             Already Linked? <Link href="/login" className="text-primary hover:text-white transition-colors ml-2">Authenticate &rarr;</Link>
           </p>
