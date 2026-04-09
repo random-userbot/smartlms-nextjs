@@ -1,50 +1,25 @@
-# Dependencies
+# AI Models (Too large for GitHub)
+*.onnx
+*.h5
+*.bin
+*.model
+*.weights
+smartlms-ml-service/export/
+smartlms-backend/app/ml/models/
+
+# Environment Files
+.env
+.env.local
+.env.production
+.env.development
+
+# Standard Ignores
 node_modules/
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Environment / Secrets
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.docker-temp/
-*.pem
-*.key
-
-# Build / IDE
-.next/
-out/
-build/
-dist/
-.idea/
-.vscode/
-*.swp
-*.swo
 .DS_Store
-
-# Large Files / Models (Optional: Keep if you want them on GitHub)
-# export/
-# models/
-# *.onnx
-# *.h5
-# *.pt
-# *.zip
-# *.tar.gz
-
-# System Files
-NTUSER.DAT*
-ntuser.dat*
-NTUSER.DAT_BAK*
-ntuser.ini
-Thumbs.db
-desktop.ini
+.aws/
+.vscode/
+dist/
+build/
+.next/

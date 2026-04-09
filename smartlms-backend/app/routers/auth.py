@@ -8,12 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.models import User, UserRole, Gamification
 from app.schemas.auth import (
-    RegisterRequest, LoginRequest, TokenResponse,
+    RegisterRequest, LoginRequest, GoogleLoginRequest, TokenResponse,
     UserResponse, UserUpdate, PasswordChange
 )
 from app.services.auth_service import (
     hash_password, verify_password, create_access_token,
-    authenticate_user, get_user_by_username, get_user_by_email
+    authenticate_user, get_user_by_username, get_user_by_email,
+    verify_google_token
 )
 from app.middleware.auth import get_current_user
 from app.services.debug_logger import debug_logger
@@ -78,6 +79,85 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
     token = create_access_token({"sub": user.id, "role": user.role.value})
 
     debug_logger.log("activity", f"User logged in: {user.username}",
+                     user_id=user.id)
+
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse.model_validate(user)
+    )
+
+
+@router.post("/google", response_model=TokenResponse)
+async def google_login(request: GoogleLoginRequest, db: AsyncSession = Depends(get_db)):
+    """Login or register with Google ID token"""
+    idinfo = verify_google_token(request.id_token)
+    if not idinfo:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google token"
+        )
+    
+    email = idinfo['email']
+    google_id = idinfo['sub']
+    full_name = idinfo.get('name', email.split('@')[0])
+    avatar_url = idinfo.get('picture')
+
+    # 1. Try finding by google_id
+    from sqlalchemy import select
+    result = await db.execute(select(User).where(User.google_id == google_id))
+    user = result.scalar_one_or_none()
+
+    # 2. Try finding by email
+    if not user:
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        if user:
+            # Link google_id to existing account
+            user.google_id = google_id
+            if avatar_url and not user.avatar_url:
+                user.avatar_url = avatar_url
+            await db.commit()
+
+    # 3. Create new user if not found
+    if not user:
+        username = email.split('@')[0]
+        # Ensure username uniqueness
+        from app.services.auth_service import get_user_by_username
+        existing_user = await get_user_by_username(db, username)
+        if existing_user:
+            import uuid
+            username = f"{username}_{str(uuid.uuid4())[:5]}"
+            
+        user = User(
+            username=username,
+            email=email,
+            password_hash=None, # No password for Google users
+            google_id=google_id,
+            full_name=full_name,
+            avatar_url=avatar_url,
+            role=UserRole(request.role)
+        )
+        db.add(user)
+        await db.flush()
+        
+        # Create gamification profile for students
+        if user.role == UserRole.STUDENT:
+            gamification = Gamification(user_id=user.id)
+            db.add(gamification)
+            
+        await db.commit()
+        await db.refresh(user)
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account is deactivated")
+
+    from datetime import datetime
+    user.last_login = datetime.utcnow()
+    await db.commit()
+
+    token = create_access_token({"sub": user.id, "role": user.role.value})
+    
+    debug_logger.log("activity", f"User logged in via Google: {user.username}", 
                      user_id=user.id)
 
     return TokenResponse(

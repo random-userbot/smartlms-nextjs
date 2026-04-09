@@ -21,6 +21,11 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class GoogleLoginRequest(BaseModel):
+    id_token: str
+    role: Optional[str] = "student"
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

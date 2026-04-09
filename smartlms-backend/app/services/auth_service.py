@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.config import settings
 from app.models.models import User, UserRole
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 
 def hash_password(password: str) -> str:
@@ -78,3 +80,18 @@ async def get_user_by_username(db: AsyncSession, username: str) -> Optional[User
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
     result = await db.execute(select(User).where(User.email == email))
     return result.scalar_one_or_none()
+
+
+def verify_google_token(token: str) -> Optional[dict]:
+    """Verify Google ID token and return member info"""
+    try:
+        idinfo = id_token.verify_oauth2_token(
+            token, requests.Request(), settings.GOOGLE_CLIENT_ID
+        )
+        # Check issuer
+        if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+            return None
+        return idinfo
+    except Exception as e:
+        print(f"Google Token Verification Error: {e}")
+        return None

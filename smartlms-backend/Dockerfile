@@ -8,11 +8,13 @@ ENV PYTHONPATH /app
 
 WORKDIR /app
 
-# Install system dependencies (lean)
+# Install system dependencies (Hardened for Fargate ML/OpenCV/RDS)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libgl1 \
     libglib2.0-0 \
+    libpq-dev \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -21,8 +23,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY app/ app/
-# (Optional) Copy initial data or assets if needed
-# COPY data/ data/
 
 # Expose port and run
 EXPOSE 8000

@@ -1,4 +1,4 @@
-# SmartLMS Backend Requirements (Standardized Production)
+# SQL / RDS / Auth
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 sqlalchemy==2.0.36
@@ -7,6 +7,9 @@ psycopg2-binary==2.9.10
 alembic==1.14.0
 python-jose[cryptography]==3.3.0
 bcrypt==4.2.1
+google-auth==2.30.0
+
+# System / Pydantic
 python-multipart==0.0.17
 python-dotenv==1.0.1
 pydantic==2.10.3

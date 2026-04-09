@@ -18,10 +18,11 @@ import {
   EyeOff
 } from 'lucide-react';
 import Link from 'next/link';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,6 +39,19 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Handshake failed. Verify credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (response: any) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await googleLogin(response.credential);
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Identity synchronization failed.');
     } finally {
       setLoading(false);
     }
@@ -129,6 +143,26 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+
+        <div className="relative py-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border/50"></div>
+          </div>
+          <div className="relative flex justify-center text-[8px] uppercase font-black tracking-[0.4em] text-text-muted">
+            <span className="bg-[#0a0a0b] px-4">Neural Identity Bridge</span>
+          </div>
+        </div>
+
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError('Google Identity verification failed.')}
+            useOneTap
+            theme="filled_black"
+            shape="pill"
+            width="100%"
+          />
+        </div>
 
         <div className="text-center pt-10 border-t border-white/5">
           <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">

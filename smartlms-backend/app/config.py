@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
 
+    # Google Auth
+    GOOGLE_CLIENT_ID: str = ""
+
     # Groq (AI)
     GROQ_API_KEY: str = ""
     GROQ_CHAT_FALLBACK_MODELS: str = "llama-3.1-8b-instant,mixtral-8x7b-32768,gemma2-9b-it"

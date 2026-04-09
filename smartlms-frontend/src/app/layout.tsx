@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ActivityProvider } from "@/context/ActivityTracker";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,14 +38,16 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-300 relative">
         <ThemeProvider>
           <ActivityProvider>
-            <AuthProvider>
-              <GlobalBackground />
-              <div className="noise-overlay" />
-              <div className="relative z-10 flex-1 flex flex-col">
-                {children}
-                <NavigationHub />
-              </div>
-            </AuthProvider>
+            <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}>
+              <AuthProvider>
+                <GlobalBackground />
+                <div className="noise-overlay" />
+                <div className="relative z-10 flex-1 flex flex-col">
+                  {children}
+                  <NavigationHub />
+                </div>
+              </AuthProvider>
+            </GoogleOAuthProvider>
           </ActivityProvider>
         </ThemeProvider>
       </body>

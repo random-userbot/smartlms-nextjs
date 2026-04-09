@@ -50,6 +50,7 @@ if (typeof window !== 'undefined') {
 export const authAPI = {
   register: (data: any) => api.post('/api/auth/register', data),
   login: (data: any) => api.post('/api/auth/login', data),
+  googleLogin: (data: { id_token: string; role?: string }) => api.post('/api/auth/google', data),
   getProfile: () => api.get('/api/auth/me'),
 };
 
