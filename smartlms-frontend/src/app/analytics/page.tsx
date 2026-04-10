@@ -199,12 +199,12 @@ export default function AnalyticsPage() {
             </div>
 
             <div className="w-full space-y-4">
-              {([
+              {[
                 { name: 'Interactive', weight: icapDist?.distribution?.interactive || 0 },
                 { name: 'Constructive', weight: icapDist?.distribution?.constructive || 0 },
                 { name: 'Active', weight: icapDist?.distribution?.active || 0 },
                 { name: 'Passive', weight: icapDist?.distribution?.passive || 0 }
-              ] || []).map((level, i) => (
+              ].map((level, i) => (
                 <div key={level.name} className="flex items-center justify-between">
                   <span className="text-xs font-bold text-text-muted uppercase tracking-widest">{level.name}</span>
                   <div className="flex-1 mx-4 h-1 bg-surface-alt rounded-full overflow-hidden border border-border">
