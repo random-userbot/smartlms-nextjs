@@ -197,7 +197,7 @@ export default function MessagesPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {conversations.filter(c => c.other_user_name.toLowerCase().includes(searchQuery.toLowerCase())).map(conv => (
+            {(Array.isArray(conversations) ? conversations : []).filter(c => c.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase())).map(conv => (
               <button
                 key={conv.other_user_id}
                 onClick={() => selectConversation(conv.other_user_id)}
@@ -257,7 +257,7 @@ export default function MessagesPage() {
 
               {/* Messages Flow */}
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                {messages.map((msg, i) => {
+                {(Array.isArray(messages) ? messages : []).map((msg, i) => {
                   const isMine = msg.sender_id === user?.id;
                   return (
                     <div key={msg.id} className={`flex flex-col group/msg ${isMine ? 'items-end' : 'items-start'}`}>

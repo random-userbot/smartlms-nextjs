@@ -150,7 +150,7 @@ export default function DashboardPage() {
               <Target size={20} className="text-primary" /> Active Nodes
             </h3>
             <div className="space-y-6">
-              {data?.active_nodes?.length > 0 ? (
+              {Array.isArray(data?.active_nodes) && data.active_nodes.length > 0 ? (
                 data.active_nodes.map((node: any, i: number) => (
                   <div key={i} className="space-y-2">
                     <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">

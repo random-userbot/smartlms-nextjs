@@ -41,9 +41,9 @@ if (typeof window !== 'undefined') {
 
         for (const key in obj) {
           if (arrayKeys.has(key)) {
-            if (obj[key] === null || obj[key] === undefined || typeof obj[key] === 'string') {
-              // Forced initialization if null or invalid type
-              obj[key] = Array.isArray(obj[key]) ? obj[key] : [];
+            // Strict enforcement: If it's not an array, force it to be one.
+            if (!Array.isArray(obj[key])) {
+              obj[key] = [];
             }
           }
           deepFix(obj[key]);

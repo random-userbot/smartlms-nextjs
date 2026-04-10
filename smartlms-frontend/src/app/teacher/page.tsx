@@ -160,7 +160,7 @@ export default function TeacherDashboard() {
               onChange={(e) => setSelectedCourse(e.target.value)}
               className="bg-surface border border-border text-foreground text-sm font-bold rounded-2xl px-6 py-3 crimson-glow"
             >
-              {(courses || []).map((c: any) => (
+              {(Array.isArray(courses) ? courses : []).map((c: any) => (
                 <option key={c.id} value={c.id}>{c.title}</option>
               ))}
             </select>
@@ -235,7 +235,7 @@ export default function TeacherDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {(liveSessions || []).map((ls: any) => (
+              {(Array.isArray(liveSessions) ? liveSessions : []).map((ls: any) => (
                 <div key={ls.session_id} className="glass-card p-6 border-white/5 bg-surface/40 hover:bg-surface transition-all group relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none" />
                   
@@ -294,7 +294,7 @@ export default function TeacherDashboard() {
                   onChange={(e) => setSelectedLecture(e.target.value)}
                   className="bg-surface border border-border text-xs font-bold text-foreground rounded-xl px-4 py-2"
                 >
-                  {(lectures || []).map(l => (
+                  {(Array.isArray(lectures) ? lectures : []).map(l => (
                     <option key={l.id} value={l.id}>{l.title}</option>
                   ))}
                 </select>
@@ -319,7 +319,7 @@ export default function TeacherDashboard() {
                 <Users size={12} /> Student List
               </div>
               <div className="space-y-2">
-                {(students || []).map(s => (
+                {(Array.isArray(students) ? students : []).map(s => (
                   <div 
                     key={s.student_id}
                     onClick={() => {
@@ -402,7 +402,7 @@ export default function TeacherDashboard() {
              </div>
 
               <div className="space-y-4">
-                {(atRiskStudents || []).length > 0 ? (atRiskStudents || []).map((r, i) => (
+                {Array.isArray(atRiskStudents) && atRiskStudents.length > 0 ? atRiskStudents.map((r, i) => (
                   <Link 
                     key={i} 
                     href={`/teacher/students/${r.student_id}`}

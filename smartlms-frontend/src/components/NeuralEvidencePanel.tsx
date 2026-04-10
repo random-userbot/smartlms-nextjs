@@ -32,7 +32,8 @@ export default function NeuralEvidencePanel() {
     const fetchLogs = async () => {
       try {
         const res = await api.get('/api/activity/recent');
-        setLogs((res.data || []).slice(0, 15));
+        const logEntries = Array.isArray(res.data) ? res.data : [];
+        setLogs(logEntries.slice(0, 15));
       } catch (err) {
         console.error("Activity Update Failure:", err);
       } finally {

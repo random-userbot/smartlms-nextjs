@@ -124,7 +124,8 @@ export default function LecturePage() {
 
       // Fetch initial history if available
       engagementAPI.getHistory(lectureId).then(res => {
-        const history = res.data.map((h: any) => ({ engagement: h.overall_score }));
+        const historyData = Array.isArray(res.data) ? res.data : [];
+        const history = historyData.map((h: any) => ({ engagement: h.overall_score }));
         setEngagementHistory(history.slice(-20)); // Keep last 20 for UI
       }).catch(() => {});
 

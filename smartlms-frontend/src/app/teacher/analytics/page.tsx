@@ -129,7 +129,7 @@ export default function TeacherAnalyticsPage() {
                }}
                className="bg-surface border border-border rounded-2xl py-4 px-6 text-sm font-bold outline-none focus:border-primary/40 transition-all cursor-pointer shadow-lg"
              >
-               {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+               {(Array.isArray(courses) ? courses : []).map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
              </select>
           </div>
         </header>
@@ -236,7 +236,7 @@ export default function TeacherAnalyticsPage() {
                     <tbody className="divide-y divide-border/50">
                       {studentEngagement.length === 0 ? (
                         <tr><td colSpan={5} className="p-20 text-center font-bold text-text-muted italic">No student telemetry observed.</td></tr>
-                      ) : studentEngagement.map((s) => (
+                      ) : (Array.isArray(studentEngagement) ? studentEngagement : []).map((s) => (
                         <tr key={s.student_id} className="hover:bg-white/5 transition-colors group cursor-pointer">
                           <td className="px-8 py-6">
                             <Link href={`/teacher/students/${s.student_id}`} className="flex items-center gap-4">
@@ -293,7 +293,7 @@ export default function TeacherAnalyticsPage() {
                 </div>
                 
                 <div className="space-y-6 flex-1 overflow-y-auto">
-                   {(teachingScore?.recommendations || []).map((rec: string, i: number) => (
+                   {(Array.isArray(teachingScore?.recommendations) ? teachingScore.recommendations : []).map((rec: string, i: number) => (
                      <div key={i} className="flex gap-4 p-5 bg-white/5 border border-white/5 rounded-[2rem] group hover:border-primary/20 transition-all">
                         <div className="mt-1"><ArrowUpRight size={16} className="text-primary group-hover:rotate-45 transition-transform" /></div>
                         <p className="text-xs font-medium text-foreground/80 leading-relaxed italic">"{rec}"</p>
@@ -366,7 +366,7 @@ export default function TeacherAnalyticsPage() {
                   <Activity size={12} className="text-primary" /> Forensic Activity Stream
                 </div>
                 <div className="space-y-3">
-                  {teachingScore?.forensic_logs?.length > 0 ? teachingScore.forensic_logs.map((log: any, idx: number) => (
+                  {Array.isArray(teachingScore?.forensic_logs) && teachingScore.forensic_logs.length > 0 ? teachingScore.forensic_logs.map((log: any, idx: number) => (
                     <div key={idx} className="flex items-start gap-4 p-4 bg-background rounded-2xl border border-border group hover:border-primary/20 transition-all">
                       <div className="w-1.5 h-1.5 rounded-full bg-primary/40 mt-1.5 group-hover:bg-primary transition-colors"></div>
                       <div className="flex-1">
