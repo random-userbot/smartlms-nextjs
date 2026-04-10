@@ -110,80 +110,97 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
 @router.post("/google", response_model=TokenResponse)
 async def google_login(request: GoogleLoginRequest, db: AsyncSession = Depends(get_db)):
     """Login or register with Google ID token"""
-    idinfo = verify_google_token(request.id_token)
-    if not idinfo:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid Google token"
-        )
-    
-    email = idinfo['email']
-    google_id = idinfo['sub']
-    full_name = idinfo.get('name', email.split('@')[0])
-    avatar_url = idinfo.get('picture')
-
-    # 1. Try finding by google_id
-    from sqlalchemy import select
-    result = await db.execute(select(User).where(User.google_id == google_id))
-    user = result.scalar_one_or_none()
-
-    # 2. Try finding by email
-    if not user:
-        result = await db.execute(select(User).where(User.email == email))
-        user = result.scalar_one_or_none()
-        if user:
-            # Link google_id to existing account
-            user.google_id = google_id
-            if avatar_url and not user.avatar_url:
-                user.avatar_url = avatar_url
-            await db.commit()
-
-    # 3. Create new user if not found
-    if not user:
-        username = email.split('@')[0]
-        # Ensure username uniqueness
-        from app.services.auth_service import get_user_by_username
-        existing_user = await get_user_by_username(db, username)
-        if existing_user:
-            import uuid
-            username = f"{username}_{str(uuid.uuid4())[:5]}"
-            
-        user = User(
-            username=username,
-            email=email,
-            password_hash=None, # No password for Google users
-            google_id=google_id,
-            full_name=full_name,
-            avatar_url=avatar_url,
-            role=UserRole(request.role)
-        )
-        db.add(user)
-        await db.flush()
+    try:
+        debug_logger.log("activity", "Google Login Initiated", 
+                         data={"has_token": bool(request.id_token), "role": request.role})
         
-        # Create gamification profile for students
-        if user.role == UserRole.STUDENT:
-            gamification = Gamification(user_id=user.id)
-            db.add(gamification)
+        idinfo = verify_google_token(request.id_token)
+        if not idinfo:
+            debug_logger.log("activity", "Invalid Google Token provided")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid Google token"
+            )
+        
+        email = idinfo['email']
+        google_id = idinfo['sub']
+        full_name = idinfo.get('name', email.split('@')[0])
+        avatar_url = idinfo.get('picture')
+
+        # 1. Try finding by google_id
+        from sqlalchemy import select
+        result = await db.execute(select(User).where(User.google_id == google_id))
+        user = result.scalar_one_or_none()
+
+        # 2. Try finding by email
+        if not user:
+            result = await db.execute(select(User).where(User.email == email))
+            user = result.scalar_one_or_none()
+            if user:
+                # Link google_id to existing account
+                user.google_id = google_id
+                if avatar_url and not user.avatar_url:
+                    user.avatar_url = avatar_url
+                await db.commit()
+
+        # 3. Create new user if not found
+        if not user:
+            username = email.split('@')[0]
+            # Ensure username uniqueness
+            from app.services.auth_service import get_user_by_username
+            existing_user = await get_user_by_username(db, username)
+            if existing_user:
+                import uuid
+                username = f"{username}_{str(uuid.uuid4())[:5]}"
+                
+            user = User(
+                username=username,
+                email=email,
+                password_hash=None, # No password for Google users
+                google_id=google_id,
+                full_name=full_name,
+                avatar_url=avatar_url,
+                role=UserRole(request.role)
+            )
+            db.add(user)
+            await db.flush()
             
+            # Create gamification profile for students
+            if user.role == UserRole.STUDENT:
+                from app.models.models import Gamification
+                gamification = Gamification(user_id=user.id)
+                db.add(gamification)
+                
+            await db.commit()
+            await db.refresh(user)
+
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="Account is deactivated")
+
+        from datetime import datetime
+        user.last_login = datetime.utcnow()
         await db.commit()
-        await db.refresh(user)
 
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account is deactivated")
+        token = create_access_token({"sub": user.id, "role": user.role.value})
+        
+        debug_logger.log("activity", f"Google Login Successful: {user.username}", 
+                         user_id=user.id)
 
-    from datetime import datetime
-    user.last_login = datetime.utcnow()
-    await db.commit()
-
-    token = create_access_token({"sub": user.id, "role": user.role.value})
-    
-    debug_logger.log("activity", f"User logged in via Google: {user.username}", 
-                     user_id=user.id)
-
-    return TokenResponse(
-        access_token=token,
-        user=UserResponse.model_validate(user)
-    )
+        return TokenResponse(
+            access_token=token,
+            user=UserResponse.model_validate(user)
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("\n" + "!" * 60)
+        print(f"  [FORENSIC ERROR] Google Auth Crash: {str(e)}")
+        traceback.print_exc()
+        print("!" * 60 + "\n")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Google Authentication system failure: {str(e)}"
+        )
 
 
 @router.get("/me", response_model=UserResponse)

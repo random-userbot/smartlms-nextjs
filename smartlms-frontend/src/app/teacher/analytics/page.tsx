@@ -46,10 +46,11 @@ export default function TeacherAnalyticsPage() {
   const loadCourses = async () => {
     try {
       const res = await coursesAPI.list();
-      setCourses(res.data);
-      if (res.data.length > 0) {
-        setSelectedCourse(res.data[0].id);
-        loadAnalytics(res.data[0].id);
+      const data = Array.isArray(res.data) ? res.data : [];
+      setCourses(data);
+      if (data.length > 0) {
+        setSelectedCourse(data[0].id);
+        loadAnalytics(data[0].id);
       } else {
         setLoading(false);
       }
@@ -67,7 +68,7 @@ export default function TeacherAnalyticsPage() {
         teacherAPI.getStudentEngagement(courseId)
       ]);
       setTeachingScore(scoreRes.data);
-      setStudentEngagement(engRes.data);
+      setStudentEngagement(Array.isArray(engRes.data) ? engRes.data : []);
     } catch (err) {
       console.error('Failed to load analytics', err);
     } finally {
@@ -292,7 +293,7 @@ export default function TeacherAnalyticsPage() {
                 </div>
                 
                 <div className="space-y-6 flex-1 overflow-y-auto">
-                   {teachingScore.recommendations.map((rec: string, i: number) => (
+                   {(teachingScore.recommendations || []).map((rec: string, i: number) => (
                      <div key={i} className="flex gap-4 p-5 bg-white/5 border border-white/5 rounded-[2rem] group hover:border-primary/20 transition-all">
                         <div className="mt-1"><ArrowUpRight size={16} className="text-primary group-hover:rotate-45 transition-transform" /></div>
                         <p className="text-xs font-medium text-foreground/80 leading-relaxed italic">"{rec}"</p>

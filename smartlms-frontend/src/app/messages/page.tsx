@@ -56,7 +56,7 @@ export default function MessagesPage() {
   const loadConversations = async () => {
     try {
       const res = await messagesAPI.getConversations();
-      setConversations(res.data);
+      setConversations(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Failed to load conversations', err);
     } finally {

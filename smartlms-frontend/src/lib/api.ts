@@ -18,7 +18,13 @@ if (typeof window !== 'undefined') {
   });
 
   api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      // Safety: ensure list endpoints always return arrays, not null/undefined
+      if (response.data === null || response.data === undefined) {
+        response.data = [];
+      }
+      return response;
+    },
     (error) => {
       if (error.response?.status === 401) {
         localStorage.removeItem('token');

@@ -74,8 +74,8 @@ function TeacherQuizzesContent() {
         quizzesAPI.listMine(),
         coursesAPI.list()
       ]);
-      setQuizzes(quizRes.data);
-      setCourses(courseRes.data);
+      setQuizzes(Array.isArray(quizRes.data) ? quizRes.data : []);
+      setCourses(Array.isArray(courseRes.data) ? courseRes.data : []);
     } catch (err) {
       console.error('Failed to load quizzes', err);
     } finally {
@@ -86,7 +86,7 @@ function TeacherQuizzesContent() {
   const loadLectures = async (courseId: string) => {
     try {
       const res = await lecturesAPI.getByCourse(courseId);
-      setLectures(res.data);
+      setLectures(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Failed to load lectures', err);
     }

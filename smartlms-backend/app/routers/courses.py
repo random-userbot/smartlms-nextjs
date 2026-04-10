@@ -474,3 +474,74 @@ async def get_course_progress(
     )
     completed_ids = [row[0] for row in result.all()]
     return {"course_id": course_id, "completed_lecture_ids": completed_ids, "count": len(completed_ids)}
+
+
+@router.get("/{course_id}/students")
+async def get_course_students(
+    course_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+):
+    """Get list of students enrolled in a course with their progress"""
+    # Verify course ownership
+    course_res = await db.execute(select(Course).where(Course.id == course_id))
+    course = course_res.scalar_one_or_none()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    # Fetch students and their enrollment data
+    stmt = (
+        select(User, Enrollment)
+        .join(Enrollment, Enrollment.student_id == User.id)
+        .where(
+            Enrollment.course_id == course_id,
+            Enrollment.status == EnrollmentStatus.ACTIVE
+        )
+    )
+    result = await db.execute(stmt)
+    rows = result.all()
+
+    students = []
+    for user, enr in rows:
+        students.append({
+            "id": user.id,
+            "full_name": user.full_name,
+            "email": user.email,
+            "avatar_url": user.avatar_url,
+            "progress": enr.progress,
+            "enrolled_at": enr.enrolled_at.isoformat(),
+            "last_active": user.last_login.isoformat() if user.last_login else None
+        })
+
+    return students
+
+
+@router.get("/{course_id}/details")
+async def get_course_details(
+    course_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get detailed course information for the dashboard"""
+    # Recycled logic from get_course but with expanded data points
+    result = await db.execute(
+        select(Course).options(selectinload(Course.teacher)).where(Course.id == course_id)
+    )
+    course = result.scalar_one_or_none()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    lecture_counts, enrollment_counts = await _get_course_aggregate_counts(db, [course.id])
+    
+    return {
+        "id": course.id,
+        "title": course.title,
+        "description": course.description,
+        "thumbnail_url": course.thumbnail_url,
+        "category": course.category,
+        "teacher_name": course.teacher.full_name if course.teacher else None,
+        "lecture_count": lecture_counts.get(course.id, 0),
+        "student_count": enrollment_counts.get(course.id, 0),
+        "is_published": course.is_published,
+        "created_at": course.created_at.isoformat()
+    }

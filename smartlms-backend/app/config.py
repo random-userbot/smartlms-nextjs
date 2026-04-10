@@ -16,8 +16,9 @@ class Settings(BaseSettings):
     API_BASE_URL: str = "http://localhost:8000"
     APP_TRUSTED_ORIGINS: str = ""
     ALLOW_ALL_CORS_IN_DEV: bool = True
-    AUTO_CREATE_TABLES: bool = True
+    AUTO_CREATE_TABLES: bool = False     # DISABLED: Manual management only
     AUTO_CREATE_INDEXES: bool = True
+    SYNC_SCHEMA_ON_STARTUP: bool = False # DISABLED: Manual management only
     REQUIRE_SECURE_JWT_IN_PROD: bool = True
     ANALYTICS_MAX_LOG_ROWS: int = 1200
     STORAGE_PROVIDER: str = "s3"  # prioritized 's3', fallback to 'cloudinary' or 'local'
@@ -185,6 +186,23 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# --- PRODUCTION PERSISTENCE SHIELD ---
+# Verify that we are NOT using an ephemeral database in production.
+if settings.APP_ENV == "production":
+    if "sqlite" in settings.DATABASE_URL:
+        print("\n" + "!" * 60)
+        print("  [CRITICAL WARNING] PRODUCTION IS RUNNING ON EPHEMERAL SQLITE!")
+        print("  Changes will be LOST on every container restart.")
+        print("  Ensure DATABASE_URL is set to your RDS instance.")
+        print("!" * 60 + "\n")
+    elif "localhost" in settings.DATABASE_URL:
+        print("\n" + "!" * 60)
+        print("  [WARNING] PRODUCTION IS TARGETING LOCALHOST DATABASE.")
+        print("  This will likely fail unless a tunnel is present.")
+        print("!" * 60 + "\n")
+    else:
+        print(f"[OK] Production Persistence: Remote Database Detected")
 
 # Ensure debug log directory exists
 if settings.DEBUG_MODE:

@@ -48,22 +48,16 @@ async def lifespan(app: FastAPI):
     print("  Smart LMS Backend Starting...")
     print("=" * 60)
 
-    # 1. Database Schema Guard (Self-Healing)
-    await run_db_sync()
-
-    # In Render free tier, we might want to skip strict checks for now or just warn
-    if (
-        settings.APP_ENV == "production"
-        and settings.REQUIRE_SECURE_JWT_IN_PROD
-        and settings.JWT_SECRET_KEY == "change-this-to-a-secure-secret-key"
-    ):
-        print("\n[WARNING] JWT_SECRET_KEY is default! Please update in production.")
-
+    # Database Initialization (Container-Sourced Construction)
     if settings.AUTO_CREATE_TABLES:
+        print("[DB] Fresh RDS initialization triggered...")
         await create_tables()
-        print("[OK] Database tables created/verified")
+        print("[DB] [OK] Schema generated successfully.")
     else:
-        print("[INFO] AUTO_CREATE_TABLES disabled")
+        print("\n" + "!" * 60)
+        print("  [SECURITY] Manual Schema Management is ACTIVE.")
+        print("  Bypassing all automated sync and table creation.")
+        print("!" * 60 + "\n")
 
     # CORS Diagnostic
     print(f"[CORS] Allowed Origins: {settings.allowed_origins()}")

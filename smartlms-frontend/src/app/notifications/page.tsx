@@ -33,7 +33,7 @@ export default function NotificationsPage() {
   const loadNotifications = async () => {
     try {
       const res = await notificationsAPI.list();
-      setNotifications(res.data);
+      setNotifications(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Failed to load notifications', err);
     } finally {

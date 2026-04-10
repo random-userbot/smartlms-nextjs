@@ -31,7 +31,7 @@ export default function TeacherCoursesPage() {
   const loadCourses = async () => {
     try {
       const res = await coursesAPI.list();
-      setCourses(res.data);
+      setCourses(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Failed to load courses', err);
     } finally {

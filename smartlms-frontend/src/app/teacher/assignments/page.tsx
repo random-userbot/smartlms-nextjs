@@ -51,10 +51,11 @@ export default function AssignmentsPage() {
   const loadCourses = async () => {
     try {
       const res = await coursesAPI.list();
-      setCourses(res.data);
-      if (res.data.length > 0) {
-        setSelectedCourse(res.data[0].id);
-        loadAssignments(res.data[0].id);
+      const data = Array.isArray(res.data) ? res.data : [];
+      setCourses(data);
+      if (data.length > 0) {
+        setSelectedCourse(data[0].id);
+        loadAssignments(data[0].id);
       } else {
         setLoading(false);
       }

@@ -67,7 +67,10 @@ async def get_db():
 
 async def create_tables():
     """Create all tables (for development — use Alembic in production)"""
-    print(f"[DB] Initiating startup connection audit...")
+    # CRITICAL: Import all models here so they are registered with Base.metadata
+    from app.models import models
+    
+    print(f"[DB] Initiating global schema generation audit...")
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)

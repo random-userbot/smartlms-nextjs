@@ -235,44 +235,68 @@ class YouTubeService:
         """
         Get transcript with a multi-layered fallback strategy.
         Supports YouTube URLs and direct media URLs (e.g., Cloudinary).
+        
+        Pipeline:
+          Tier 0: Official YouTube Data API (metadata only)
+          Tier 1: youtube-transcript-api scraper (BLOCKED on cloud IPs)
+          Tier 2: Download audio via yt-dlp + Groq Whisper transcription
+          Tier 3: Local faster-whisper (if available)
         """
         self._setup_resilience() # Ensure cookies/UA are loaded
         video_id = self.extract_video_id(video_url)
         
         # Scenario A: YouTube Video
         if video_id:
-            # Tier 0: Official YouTube Data API
+            # Tier 0: Official YouTube Data API (metadata verification)
             if settings.YOUTUBE_API_KEY and GOOGLE_API_CLIENT_AVAILABLE:
                 try:
-                    print(f"[YOUTUBE] [Tier 0] Trying Official API for {video_id}...", flush=True)
-                    transcript_text = await self._fetch_official_api_info(video_id)
-                    # Note: captions().download() usually needs OAuth, so we mostly use this for metadata
-                    # and then fallback to the scraper which now has the API key info if needed.
+                    print(f"[YOUTUBE] [Tier 0] Official API metadata check for {video_id}...", flush=True)
+                    await self._fetch_official_api_info(video_id)
                 except Exception as e:
-                    print(f"Official API metadata check failed: {e}")
+                    print(f"[YOUTUBE] [Tier 0] Metadata check skipped: {e}", flush=True)
 
-            # Tier 1: YouTube Transcript API (The Scraper)
+            # Tier 1: YouTube Transcript API (scraper - often blocked on cloud IPs)
             try:
-                print(f"[YOUTUBE] [Tier 1] Fetching scraper transcript for {video_id}...", flush=True)
+                print(f"[YOUTUBE] [Tier 1] Trying caption scraper for {video_id}...", flush=True)
                 transcript_text = await self._fetch_api_transcript(video_id)
                 if transcript_text:
-                    print(f"[YOUTUBE] Success via scraper transcript.", flush=True)
+                    print(f"[YOUTUBE] [Tier 1] Success! Got {len(transcript_text)} chars via scraper.", flush=True)
                     return transcript_text
+                print(f"[YOUTUBE] [Tier 1] Scraper returned empty. Falling through to audio transcription.", flush=True)
             except Exception as e:
-                print(f"Scraper transcript fetch failed: {e}")
+                # This is expected on AWS/cloud — YouTube blocks cloud IPs
+                print(f"[YOUTUBE] [Tier 1] Scraper blocked (expected on cloud): {str(e)[:120]}", flush=True)
 
-            # Fallback to Media Transcription (Local or Groq)
+            # Tier 2: Download audio + Groq Whisper (primary cloud path)
+            print(f"[YOUTUBE] [Tier 2] Downloading audio for Whisper transcription...", flush=True)
             try:
-                return await self._fetch_media_transcription(video_url, is_youtube=True, use_groq=not prefer_local)
+                result = await self._fetch_media_transcription(video_url, is_youtube=True, use_groq=True)
+                if result:
+                    print(f"[YOUTUBE] [Tier 2] Success! Got {len(result)} chars via Groq Whisper.", flush=True)
+                    return result
+                print(f"[YOUTUBE] [Tier 2] Groq Whisper returned empty.", flush=True)
             except Exception as e:
-                print(f"YouTube media transcription failed: {e}")
+                print(f"[YOUTUBE] [Tier 2] Groq Whisper failed: {e}", flush=True)
+
+            # Tier 3: Local faster-whisper fallback
+            if self.local_whisper_available:
+                print(f"[YOUTUBE] [Tier 3] Trying local Whisper fallback...", flush=True)
+                try:
+                    result = await self._fetch_media_transcription(video_url, is_youtube=True, use_groq=False)
+                    if result:
+                        print(f"[YOUTUBE] [Tier 3] Success! Got {len(result)} chars via local Whisper.", flush=True)
+                        return result
+                except Exception as e:
+                    print(f"[YOUTUBE] [Tier 3] Local Whisper failed: {e}", flush=True)
+
+            print(f"[YOUTUBE] All transcript tiers exhausted for {video_id}. Returning empty.", flush=True)
 
         # Scenario B: Direct Media URL (Cloudinary, etc.)
         else:
             try:
                 return await self._fetch_media_transcription(video_url, is_youtube=False, use_groq=not prefer_local)
             except Exception as e:
-                print(f"Direct media transcription failed: {e}")
+                print(f"[YOUTUBE] Direct media transcription failed: {e}", flush=True)
         
         return ""
 

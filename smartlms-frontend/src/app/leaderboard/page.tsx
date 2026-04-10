@@ -26,7 +26,7 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     gamificationAPI.getLeaderboard().then(res => {
-      setLeaderboard(res.data);
+      setLeaderboard(Array.isArray(res.data) ? res.data : []);
     }).finally(() => setLoading(false));
   }, []);
 
