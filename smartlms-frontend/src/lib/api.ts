@@ -28,7 +28,8 @@ if (typeof window !== 'undefined') {
         'suggestions', 'waveform', 'forensic_logs', 'components', 'active_nodes', 
         'focus_pulse', 'top_keywords', 'recommendations', 'teachingScore', 
         'history', 'students', 'courses', 'lectures', 'attempts', 'notifications',
-        'feedbacks', 'analysis', 'timeline', 'entries', 'points', 'lapses', 'switches'
+        'feedbacks', 'analysis', 'timeline', 'entries', 'points', 'lapses', 'switches',
+        'risk_matrix', 'waveform_data', 'lapse_wave', 'tab_wave'
       ]);
 
       const deepFix = (obj: any) => {
@@ -45,6 +46,11 @@ if (typeof window !== 'undefined') {
             if (!Array.isArray(obj[key])) {
               obj[key] = [];
             }
+          }
+          // Special case: 'data' is a standard container for lists in this API
+          if (key === 'data' && obj[key] && !Array.isArray(obj[key]) && typeof obj[key] === 'object') {
+             // If data is an object but not an array, it might be a malformed response
+             // We deepFix it as an object, but if components expect [data], we handle it there
           }
           deepFix(obj[key]);
         }

@@ -119,38 +119,41 @@ export default function AutoEngagementCapture({
   }, [playing, status, onViolation, mode, lectureId, sessionId, lastActivity, trackEvent]);
 
   const submitBatch = async () => {
-    const batch = [...featureBuffer.current];
-    featureBuffer.current = [];
+    if (Array.isArray(featureBuffer.current) && featureBuffer.current.length >= 5) {
+      const batch = [...featureBuffer.current];
+      featureBuffer.current = [];
 
-    try {
-      const res = await engagementAPI.submit({
-        session_id: sessionId,
-        lecture_id: lectureId,
-        features: batch,
-        watch_duration: 15, 
-        tab_switches: tabSwitches,
-        idle_time: Math.floor((Date.now() - lastActivity) / 1000),
-      });
-      
-      // Reset local tab switch counter
-      setTabSwitches(0);
+      try {
+        const res = await engagementAPI.submit({
+          session_id: sessionId,
+          lecture_id: lectureId,
+          features: batch,
+          watch_duration: 15, 
+          tab_switches: tabSwitches,
+          idle_time: Math.floor((Date.now() - lastActivity) / 1000),
+        });
+        
+        // Reset local tab switch counter
+        setTabSwitches(0);
 
-      // Check if job is async
-      // Check if job is async or completed
-      const jobInfo = res.data.model_breakdown;
-      if (jobInfo && jobInfo.status === 'queued' && jobInfo.job_id) {
-        startPolling(jobInfo.job_id);
-      } else if (res.data.overall_score !== undefined) {
-        // Immediate sync success!
-        handleScoreUpdate(res.data);
-      } else {
-        // Fallback to score update with whatever was returned
-        handleScoreUpdate(res.data);
-      }
-    } catch (error: any) {
-      console.error('Failed to submit engagement batch:', error);
-      if (error.code === 'ERR_NETWORK' || !error.response) {
-        featureBuffer.current = [...batch, ...featureBuffer.current].slice(-50);
+        // Check if job is async
+        // Check if job is async or completed
+        const jobInfo = res.data.model_breakdown;
+        if (jobInfo && jobInfo.status === 'queued' && jobInfo.job_id) {
+          startPolling(jobInfo.job_id);
+        } else if (res.data.overall_score !== undefined) {
+          // Immediate sync success!
+          handleScoreUpdate(res.data);
+        } else {
+          // Fallback to score update with whatever was returned
+          handleScoreUpdate(res.data);
+        }
+      } catch (error: any) {
+        console.error('Failed to submit engagement batch:', error);
+        if (error.code === 'ERR_NETWORK' || !error.response) {
+          const currentBuffer = Array.isArray(featureBuffer.current) ? featureBuffer.current : [];
+          featureBuffer.current = [...batch, ...currentBuffer].slice(-50);
+        }
       }
     }
   };

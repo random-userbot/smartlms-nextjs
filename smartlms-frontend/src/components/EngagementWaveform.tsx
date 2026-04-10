@@ -38,9 +38,10 @@ export default function EngagementWaveform({
   const { pathData, lineData, ghostLine, latestY } = useMemo(() => {
     if (!data || !Array.isArray(data) || data.length === 0) return { pathData: '', lineData: '', ghostLine: '', latestY: 100 };
 
-    const engagementValues = data.map(d => d.engagement || 0);
-    const minVal = Math.min(...engagementValues);
-    const maxVal = Math.max(...engagementValues);
+    const engagementValues = Array.isArray(data) ? data.map(d => d.engagement || 0) : [0];
+    const safeEngagementValues = engagementValues.length > 0 ? engagementValues : [0];
+    const minVal = Math.min(...safeEngagementValues);
+    const maxVal = Math.max(...safeEngagementValues);
     
     // Smooth the ripple
     const padding = 15;

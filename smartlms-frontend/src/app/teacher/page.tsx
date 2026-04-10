@@ -54,18 +54,39 @@ export default function TeacherDashboard() {
   useEffect(() => {
     if (!selectedCourse) return;
     Promise.all([
-      analyticsAPI.getTeachingScore(selectedCourse),
+      analyticsAPI.getTeachingScore(selectedCourse).catch(() => ({ data: {} })),
       teacherAPI.getStudentEngagement(selectedCourse).catch(() => ({ data: [] })),
-      lecturesAPI.getByCourse(selectedCourse).catch(() => ({ data: [] }))
-    ]).then(([scoreRes, riskRes, lectRes]) => {
+      lecturesAPI.getByCourse(selectedCourse).catch(() => ({ data: [] })),
+      coursesAPI.getStudents(selectedCourse).catch(() => ({ data: [] }))
+    ]).then(([scoreRes, riskRes, lectRes, rosterRes]) => {
       setScore(scoreRes.data);
-      const allStudents = riskRes.data || [];
-      setStudents(allStudents);
       
-      const sortedRisk = [...allStudents].sort((a, b) => (a.engagement_score || 0) - (b.engagement_score || 0));
+      // Merge Roster with Engagement Analytics
+      const engagementData = Array.isArray(riskRes.data) ? riskRes.data : [];
+      const rosterData = Array.isArray(rosterRes.data) ? rosterRes.data : [];
+      
+      const engagementMap = new Map(engagementData.map((s: any) => [s.student_id, s]));
+      
+      // Ensure all enrolled students are presence in the list
+      const mergedStudents = rosterData.map((s: any) => {
+        const stats = engagementMap.get(s.id) || {};
+        return {
+          student_id: s.id,
+          full_name: s.full_name || s.username || 'Unknown Student',
+          engagement_score: stats.engagement_score || 0,
+          visibility_score: stats.visibility_score || 100,
+          tab_switches: stats.tab_switches || 0,
+          sessions: stats.sessions || 0,
+          avatar_url: s.avatar_url || stats.student_avatar
+        };
+      });
+
+      setStudents(mergedStudents);
+      
+      const sortedRisk = [...mergedStudents].sort((a, b) => (a.engagement_score || 0) - (b.engagement_score || 0));
       setAtRiskStudents(sortedRisk.slice(0, 3));
 
-      const courseLectures = lectRes.data || [];
+      const courseLectures = Array.isArray(lectRes.data) ? lectRes.data : [];
       setLectures(courseLectures);
       if (courseLectures.length > 0) {
         setSelectedLecture(courseLectures[0].id);
@@ -257,7 +278,7 @@ export default function TeacherDashboard() {
 
                   {/* Mini-Wave for each student */}
                   <div className="h-16 w-full mb-4 opacity-50 group-hover:opacity-100 transition-opacity">
-                    <EngagementWaveform data={(ls.waveform || []).map((e: any) => ({ engagement: e.engagement }))} isLive={false} />
+                    <EngagementWaveform data={(Array.isArray(ls.waveform) ? ls.waveform : []).map((e: any) => ({ engagement: e?.engagement || 0 }))} isLive={false} />
                   </div>
 
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
