@@ -72,7 +72,9 @@ class Settings(BaseSettings):
     # YouTube resilience
     YOUTUBE_PROXY: Optional[str] = None
     YOUTUBE_COOKIES: Optional[str] = None  # Raw string or base64 encoded cookies.txt
-    YOUTUBE_USER_AGENT: Optional[str] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    YOUTUBE_USER_AGENT: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    YOUTUBE_PO_TOKEN: Optional[str] = None
+    YOUTUBE_VISITOR_DATA: Optional[str] = None
     YOUTUBE_API_KEY: Optional[str] = None
 
     # Debug

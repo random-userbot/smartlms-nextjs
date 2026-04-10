@@ -89,40 +89,49 @@ class YouTubeService:
                 print(f"[YOUTUBE] [ERROR] Failed to setup cookies: {e}", flush=True)
 
     def _get_cookie_file(self, cookie_str: str) -> Optional[str]:
-        """Decode and write cookies to a temporary file for yt-dlp."""
-        try:
-            if not cookie_str:
-                return None
+        """Verify or create temporary Netscape cookie file for yt-dlp."""
+        if not cookie_str:
+            return None
 
+        # Detect if it's already a full file path
+        if os.path.isfile(cookie_str):
+            return cookie_str
+
+        try:
             content = ""
-            # Detection and normalization logic preserved...
-            is_probably_base64 = re.match(r'^[A-Za-z0-9+/=]+$', cookie_str.strip().replace('\n', '').replace('\r', ''))
-            
-            if is_probably_base64:
+            # Support base64 prefix
+            if cookie_str.startswith('base64:'):
                 try:
-                    decoded = base64.b64decode(cookie_str).decode('utf-8')
-                    if "# Netscape" in decoded or "youtube.com" in decoded or "domain" in decoded:
-                        content = decoded
-                    else:
-                        content = cookie_str
-                except Exception:
+                    content = base64.b64decode(cookie_str[7:]).decode('utf-8')
+                except:
                     content = cookie_str
             else:
-                content = cookie_str
+                # Direct check for Netscape header or standard cookie string
+                try:
+                    # Try to decode from base64 if it looks like it
+                    is_probably_base64 = re.match(r'^[A-Za-z0-9+/=]+$', cookie_str.strip().replace('\n', '').replace('\r', ''))
+                    if is_probably_base64:
+                        content = base64.b64decode(cookie_str).decode('utf-8')
+                    else:
+                        content = cookie_str
+                except:
+                    content = cookie_str
 
-            if ";" in content and "=" in content and "# Netscape" not in content and "# HTTP Cookie File" not in content:
-                netscape_lines = ["# Netscape HTTP Cookie File", "# http://curl.haxx.se/rfc/cookie_spec.html", "# This is a generated file! Do not edit.", ""]
-                for part in content.split(";"):
-                    if "=" in part:
-                        k, v = part.strip().split("=", 1)
-                        netscape_lines.append(f".youtube.com\tTRUE\t/\tTRUE\t0\t{k}\t{v}")
-                content = "\n".join(netscape_lines)
+            # Validation: If it doesn't look like a cookie file, try to wrap it
+            if "# Netscape" not in content and "# HTTP Cookie File" not in content:
+                if ";" in content and "=" in content:
+                    netscape_lines = ["# Netscape HTTP Cookie File", ""]
+                    for part in content.split(";"):
+                        if "=" in part:
+                            k, v = part.strip().split("=", 1)
+                            netscape_lines.append(f".youtube.com\tTRUE\t/\tTRUE\t0\t{k}\t{v}")
+                    content = "\n".join(netscape_lines)
 
-            if not content or ("# Netscape" not in content and "# HTTP Cookie File" not in content):
+            if not content or ("# Netscape" not in content and "youtube.com" not in content):
                 return None
 
-            temp_dir = tempfile.gettempdir()
-            path = os.path.join(temp_dir, f"yt_cookies_{int(time.time())}.txt")
+            # Persistent temp file in the scratch or temp directory
+            path = os.path.join(tempfile.gettempdir(), f"yt_active_session.txt")
             with open(path, "w", encoding='utf-8') as f:
                 f.write(content)
             
@@ -151,8 +160,29 @@ class YouTubeService:
         return session
 
     def _get_ydl_opts(self, extra_opts: Optional[Dict] = None) -> Dict:
-        """Get consolidated yt-dlp options."""
+        """Get consolidated yt-dlp options with PO_TOKEN support."""
         opts = self.ydl_opts.copy()
+        
+        # Inject PO_TOKEN if available
+        if settings.YOUTUBE_PO_TOKEN:
+            if 'extractor_args' not in opts:
+                opts['extractor_args'] = {}
+            if 'youtube' not in opts['extractor_args']:
+                opts['extractor_args']['youtube'] = {}
+            
+            opts['extractor_args']['youtube']['po_token'] = [settings.YOUTUBE_PO_TOKEN]
+            
+            if settings.YOUTUBE_VISITOR_DATA:
+                opts['extractor_args']['youtube']['visitor_data'] = [settings.YOUTUBE_VISITOR_DATA]
+
+            # Ensure high-trust context
+            opts['extractor_args']['youtube']['innertube_context'] = {
+                'client': {
+                    'hl': 'en',
+                    'gl': 'US',
+                }
+            }
+
         if extra_opts:
             opts.update(extra_opts)
         return opts

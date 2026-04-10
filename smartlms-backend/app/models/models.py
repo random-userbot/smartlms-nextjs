@@ -275,7 +275,7 @@ class EngagementLog(Base):
     session_id = Column(String, nullable=False)
 
     # Status
-    status = Column(SQLEnum(EngagementStatus, native_enum=False), default=EngagementStatus.PROCESSING)
+    status = Column(SQLEnum(EngagementStatus, native_enum=False, length=50), default=EngagementStatus.PROCESSING)
     is_finalized = Column(Boolean, default=False, index=True)
     error_message = Column(Text, nullable=True)
 
@@ -303,7 +303,7 @@ class EngagementLog(Base):
     actual_vs_forecast_error = Column(Float, nullable=True) # Difference from previous prediction
 
     # ICAP classification
-    icap_classification = Column(SQLEnum(ICAPLevel, native_enum=False), nullable=True)
+    icap_classification = Column(SQLEnum(ICAPLevel, native_enum=False, length=50), nullable=True)
     icap_evidence = Column(JSON, nullable=True)
 
     # Behavioral data
