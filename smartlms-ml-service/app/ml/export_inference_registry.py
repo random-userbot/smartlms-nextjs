@@ -132,6 +132,30 @@ class ExportModelRegistry:
             print(f"[S3] Error downloading model {folder_name}: {e}", flush=True)
             return False
 
+    def _sync_catalog_from_s3(self) -> List[str]:
+        """List folders in S3 to discover models not yet downloaded."""
+        bucket = settings.AWS_S3_MODEL_BUCKET
+        if not bucket:
+            return []
+
+        prefix = settings.MODEL_S3_PREFIX
+        try:
+            print(f"[S3] Discovering models in bucket: {bucket}/{prefix}", flush=True)
+            response = self.s3.list_objects_v2(Bucket=bucket, Prefix=prefix, Delimiter='/')
+            
+            model_folders = []
+            if 'CommonPrefixes' in response:
+                for cp in response['CommonPrefixes']:
+                    folder = cp['Prefix'].replace(prefix, "").strip("/")
+                    if folder:
+                        model_folders.append(folder)
+            
+            print(f"[S3] Found {len(model_folders)} models in S3.", flush=True)
+            return model_folders
+        except Exception as e:
+            print(f"[S3] Error listing catalog: {e}", flush=True)
+            return []
+
     def _load_model_loader(self):
         if self._model_loader is not None:
             return self._model_loader
@@ -177,47 +201,50 @@ class ExportModelRegistry:
         return {}
 
     def _discover_export_models(self) -> List[RuntimeModelInfo]:
-        if not self.export_dir.exists():
-            return []
+        model_folders = []
+        if self.export_dir.exists():
+            model_folders = [f.name for f in self.export_dir.iterdir() if f.is_dir()]
+
+        # S3 Discovery fallback
+        s3_models = self._sync_catalog_from_s3()
+        all_unique_folders = sorted(list(set(model_folders + s3_models)))
 
         loader = self._load_model_loader()
         can_load_keras = True # Assumption for ONNX
 
         models: List[RuntimeModelInfo] = []
-        for folder in sorted(self.export_dir.iterdir()):
-            if not folder.is_dir():
-                continue
+        for name in all_unique_folders:
+            folder = self.export_dir / name
             model_file = folder / "model.onnx"
-            if not model_file.exists():
-                model_file = folder / "best_model.h5"
-            if not model_file.exists():
-                continue
+            status = "available" if (model_file.exists() and can_load_keras) else "available_in_s3"
+            
+            # If locally missing, we use a placeholder source until downloaded
+            source = str(model_file) if model_file.exists() else f"s3://{settings.AWS_S3_MODEL_BUCKET}/{settings.MODEL_S3_PREFIX}{name}"
 
-            model_id = f"export::{folder.name}"
-            status = "available" if can_load_keras else "requires_tensorflow"
+            model_id = f"export::{name}"
             notes = "Exported Keras model"
-            recommended = "BEST" in folder.name.upper() or "ENHANCED" in folder.name.upper()
+            recommended = "BEST" in name.upper() or "ENHANCED" in name.upper()
 
-            if "FAILED" in folder.name.upper():
+            if "FAILED" in name.upper():
                 notes = "Marked failed during export"
                 status = "error"
-            if "BIASED" in folder.name.upper():
+            if "BIASED" in name.upper():
                 notes = "Marked biased in export notes"
 
-            metadata = self._load_export_metadata(folder)
+            metadata = self._load_export_metadata(folder) if folder.exists() else {}
             if metadata.get("status") == "error":
                 status = "error"
 
             models.append(
                 RuntimeModelInfo(
                     model_id=model_id,
-                    name=folder.name,
+                    name=name,
                     family="export_onnx",
                     status=status,
-                    source=str(model_file),
-                    recommended=recommended and "FAILED" not in folder.name.upper(),
+                    source=source,
+                    recommended=recommended and "FAILED" not in name.upper(),
                     notes=notes,
-                    accuracy_hint=self._parse_accuracy_hint(folder.name),
+                    accuracy_hint=self._parse_accuracy_hint(name),
                 )
             )
 

@@ -161,22 +161,22 @@ export default function MultiStudentWaves({
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+            <CartesianGrid strokeDasharray="10 10" stroke="#ffffff05" vertical={true} />
             <XAxis 
               dataKey="minute" 
-              stroke="#ffffff40" 
+              stroke="#ffffff20" 
               fontSize={10} 
               tickLine={false} 
               axisLine={false}
-              label={{ value: 'Minutes', position: 'insideBottomRight', offset: -5, fill: '#ffffff40', fontSize: 10, fontWeight: 'bold' }}
+              label={{ value: 'TELEMETRY_TIMELINE', position: 'insideBottomRight', offset: -5, fill: '#ffffff20', fontSize: 8, fontWeight: 'black', letterSpacing: '0.2em' }}
             />
             <YAxis 
-              stroke="#ffffff40" 
+              stroke="#ffffff20" 
               fontSize={10} 
               tickLine={false} 
               axisLine={false}
               domain={[0, 100]}
-              label={{ value: 'Sync Index', angle: -90, position: 'insideLeft', fill: '#ffffff40', fontSize: 10, fontWeight: 'bold' }}
+              label={{ value: 'SYNC_INDEX', angle: -90, position: 'insideLeft', fill: '#ffffff20', fontSize: 8, fontWeight: 'black', letterSpacing: '0.2em' }}
             />
             <Tooltip 
               content={<CustomTooltip />}

@@ -420,9 +420,14 @@ export default function LecturePage() {
                              Live Activity Sync
                           </div>
                        </div>
-                        {/* Global Heatmap (Timeline Snapshot) */}
-                        <div className="mt-6 pt-6 border-t border-white/5 h-48">
-                           <EngagementHeatmap data={fullHistory} />
+                        <div className="flex-1 flex flex-col gap-4">
+                           <div className="h-24">
+                              <EngagementWaveform data={engagementHistory} />
+                           </div>
+                           {/* Global Heatmap (Timeline Snapshot) */}
+                           <div className="mt-2 pt-6 border-t border-white/5 h-32">
+                              <EngagementHeatmap data={fullHistory} />
+                           </div>
                         </div>
                     </div>
                   </div>

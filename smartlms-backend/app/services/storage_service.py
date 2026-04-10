@@ -35,16 +35,22 @@ class StorageService:
 
         # Configure AWS S3 if credentials exist
         self.s3_client = None
-        self.has_s3 = False
-        if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY and settings.AWS_S3_BUCKET:
+        self.bucket_name = settings.AWS_S3_BUCKET or settings.AWS_S3_MODEL_BUCKET
+
+        if self.bucket_name:
             try:
-                self.s3_client = boto3.client(
-                    's3',
-                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                    region_name=settings.AWS_REGION
-                )
+                # Initialize with keys if present, otherwise rely on IAM Role
+                s3_args = {'region_name': settings.AWS_REGION}
+                if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+                    s3_args.update({
+                        'aws_access_key_id': settings.AWS_ACCESS_KEY_ID,
+                        'aws_secret_access_key': settings.AWS_SECRET_ACCESS_KEY
+                    })
+                
+                self.s3_client = boto3.client('s3', **s3_args)
                 self.has_s3 = True
+                print(f"[STORAGE] AWS S3 initialized using bucket: {self.bucket_name} (Mode: {'IAM Role' if not settings.AWS_ACCESS_KEY_ID else 'Access Keys'})", flush=True)
+                print(f"[STORAGE] AWS S3 initialized using bucket: {self.bucket_name}", flush=True)
             except Exception as e:
                 debug_logger.log("storage", f"S3 Initialization Failed: {e}")
 
@@ -77,11 +83,11 @@ class StorageService:
                 s3_key = f"{folder}/{filename}"
                 self.s3_client.upload_fileobj(
                     file.file,
-                    settings.AWS_S3_BUCKET,
+                    self.bucket_name,
                     s3_key,
                     ExtraArgs={'ACL': 'public-read'} # As per user request (public read)
                 )
-                return f"https://{settings.AWS_S3_BUCKET}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+                return f"https://{self.bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
             except Exception as e:
                 debug_logger.log("storage", f"S3 failed, falling back: {e}")
                 await file.seek(0)

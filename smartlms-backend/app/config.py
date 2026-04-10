@@ -66,6 +66,10 @@ class Settings(BaseSettings):
     SQS_QUEUE_URL: str = ""
     SQS_WAIT_TIME_SECONDS: int = 20
 
+    # YouTube resilience
+    YOUTUBE_PROXY: Optional[str] = None
+    YOUTUBE_COOKIES: Optional[str] = None  # Raw string or base64 encoded cookies.txt
+
     # Debug
     DEBUG_MODE: bool = False
     DEBUG_LOG_DIR: str = "./debug_logs"

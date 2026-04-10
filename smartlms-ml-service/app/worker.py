@@ -21,18 +21,21 @@ from app.ml.export_inference_registry import get_export_model_registry
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("smartlms-ml-worker")
 
-# Initialize SQS client
-sqs = boto3.client('sqs', region_name=settings.AWS_REGION)
+def _get_sqs_client():
+    """Build SQS client with fallback to IAM role if keys are missing."""
+    sqs_args = {'region_name': settings.AWS_REGION}
+    if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+        sqs_args.update({
+            'aws_access_key_id': settings.AWS_ACCESS_KEY_ID,
+            'aws_secret_access_key': settings.AWS_SECRET_ACCESS_KEY
+        })
+    return boto3.client('sqs', **sqs_args)
+
+sqs = _get_sqs_client()
 
 async def process_message(feature_payload):
     """
     Process a single engagement payload.
-    Payload expected format: {
-        "log_id": str,
-        "features": [...],
-        "model_id": str,
-        "timestamp": str
-    }
     """
     async with async_session() as db:
         log_id = feature_payload.get("log_id")
@@ -40,20 +43,20 @@ async def process_message(feature_payload):
             logger.error("Message missing log_id")
             return
 
-        # 1. Idempotency Check: Fetch current log state
-        stmt = select(EngagementLog).where(EngagementLog.id == log_id)
-        result = await db.execute(stmt)
-        engagement_log = result.scalar_one_or_none()
-
-        if not engagement_log:
-            logger.error(f"Engagement log {log_id} not found in DB")
-            return
-
-        if engagement_log.status == EngagementStatus.COMPLETED:
-            logger.info(f"Log {log_id} already processed. Skipping.")
-            return
-
         try:
+            # 1. Idempotency Check: Fetch current log state
+            stmt = select(EngagementLog).where(EngagementLog.id == log_id)
+            result = await db.execute(stmt)
+            engagement_log = result.scalar_one_or_none()
+
+            if not engagement_log:
+                logger.error(f"Engagement log {log_id} not found in DB")
+                return
+
+            if engagement_log.status == EngagementStatus.COMPLETED:
+                logger.info(f"Log {log_id} already processed. Skipping.")
+                return
+
             # 2. Run Inference
             registry = get_export_model_registry()
             model_id = feature_payload.get("model_id", settings.MODEL_ID_DEFAULT)
@@ -65,47 +68,49 @@ async def process_message(feature_payload):
             
             # 3. Apply Results (Idempotent Update)
             engagement_log.status = EngagementStatus.COMPLETED
-            engagement_log.overall_score = output.get("overall_score")
+            # Handle different key names between registry output and DB model
+            engagement_log.overall_score = output.get("overall") 
             engagement_log.engagement_score = output.get("engagement")
             engagement_log.boredom_score = output.get("boredom")
             engagement_log.confusion_score = output.get("confusion")
             engagement_log.frustration_score = output.get("frustration")
-            engagement_log.scores_timeline = output.get("timeline")
-            engagement_log.shap_explanations = output.get("shap")
             
-            # ICAP
-            icap = result.get("icap", {})
-            engagement_log.icap_classification = icap.get("classification")
-            engagement_log.icap_evidence = icap.get("evidence")
+            # Store raw dimensions as JSON
+            engagement_log.scores_timeline = json.dumps(output.get("dimensions", {}))
+            
+            # ICAP (Simplified for now)
+            engagement_log.icap_classification = "active" if (output.get("overall", 0) > 60) else "passive"
 
             await db.commit()
-            logger.info(f"Successfully processed log {log_id}")
+            logger.info(f"[WORKER] Successfully processed log {log_id}. Score: {output.get('overall')}%")
 
         except Exception as e:
-            logger.error(f"Error processing log {log_id}: {e}")
+            logger.error(f"[WORKER] Error processing log {log_id}: {e}")
             logger.error(traceback.format_exc())
-            engagement_log.status = EngagementStatus.FAILED
-            engagement_log.error_message = str(e)
-            await db.commit()
+            try:
+                engagement_log.status = EngagementStatus.FAILED
+                engagement_log.error_message = str(e)
+                await db.commit()
+            except:
+                pass
 
 async def worker_loop():
     """Main worker loop with long polling and batching"""
-    logger.info("ML Worker starting up...")
-    
     # Pre-warm models (Expert request 8)
     registry = get_export_model_registry()
-    logger.info("Pre-loading ML models into RAM...")
+    logger.info("[BOOT] Pre-loading ML models into RAM...")
     registry.preload_all_models()
-    logger.info("Models loaded. Ready for jobs.")
+    logger.info("[BOOT] SQS Worker Starting...")
 
     queue_url = settings.SQS_QUEUE_URL
     if not queue_url:
-        logger.error("SQS_QUEUE_URL not set. Worker exiting.")
-        return
+        logger.error("[BOOT] SQS_QUEUE_URL not set. Worker entering idle state.")
+        while True:
+            await asyncio.sleep(3600) # Sleep forever but keep task alive
 
     while True:
         try:
-            # 1. Long Polling + Batching (Expert requests 1 & 3)
+            # 1. Long Polling
             response = sqs.receive_message(
                 QueueUrl=queue_url,
                 AttributeNames=['All'],
@@ -115,47 +120,41 @@ async def worker_loop():
 
             messages = response.get('Messages', [])
             if not messages:
-                # No messages, loop again (wait time ensures we don't spam)
                 continue
 
-            logger.info(f"Received batch of {len(messages)} messages")
+            logger.info(f"[WORKER] Received batch of {len(messages)} jobs")
 
             # 2. Process Batch
-            tasks = []
             entries_to_delete = []
             for msg in messages:
                 receipt_handle = msg['ReceiptHandle']
                 msg_id = msg['MessageId']
                 try:
                     body = json.loads(msg['Body'])
-                    tasks.append(process_message(body))
+                    # Process sequentially within batch to avoid DB session concurrency issues 
+                    # unless using a pool, but simpler is safer for now.
+                    await process_message(body)
+                    
                     entries_to_delete.append({
                         'Id': msg_id,
                         'ReceiptHandle': receipt_handle
                     })
                 except Exception as e:
-                    logger.error(f"Error parsing message body: {e}")
-                    # Delete malformed messages one by one to avoid blocking the batch
+                    logger.error(f"[WORKER] Error parsing message body: {e}")
                     sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=receipt_handle)
 
-            # 3. Parallel Execution of ML Inference tasks
-            if tasks:
-                await asyncio.gather(*tasks)
-
-            # 4. Batch Delete from SQS (Expert Optimization: Reduce API calls)
+            # 3. Batch Delete from SQS
             if entries_to_delete:
                 try:
                     sqs.delete_message_batch(
                         QueueUrl=queue_url,
                         Entries=entries_to_delete
                     )
-                    logger.info(f"Successfully deleted batch of {len(entries_to_delete)} messages from SQS")
                 except Exception as e:
-                    logger.error(f"WORKER: SQS Batch Delete Failed: {e}")
+                    logger.error(f"[WORKER] SQS Batch Delete Failed: {e}")
         except Exception as e:
-            logger.error(f"Worker loop error: {e}")
-            logger.error(traceback.format_exc())
-            await asyncio.sleep(5)  # Wait before retry on fatal error
+            logger.error(f"[WORKER] Loop error: {e}")
+            await asyncio.sleep(10)  # Wait before retry on fatal error
 
 if __name__ == "__main__":
     asyncio.run(worker_loop())

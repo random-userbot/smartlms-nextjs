@@ -22,6 +22,8 @@ async def lifespan(app: FastAPI):
     # Eager preload if not in sleep window
     registry.preload_all_models()
 
+    from app.worker import worker_loop
+
     async def neural_sleep_monitor():
         """Monitor for 10m idle or 2-7 AM window to purge RAM"""
         try:
@@ -46,6 +48,7 @@ async def lifespan(app: FastAPI):
             logger.error(f"Neural Monitor Error: {e}")
 
     app.monitor_task = asyncio.create_task(neural_sleep_monitor())
+    app.worker_task = asyncio.create_task(worker_loop())
     yield
     # Shutdown
     if hasattr(app, "monitor_task"):

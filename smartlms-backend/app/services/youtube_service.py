@@ -13,6 +13,7 @@ import tempfile
 import shutil
 from typing import List, Dict, Optional
 import yt_dlp
+import base64
 from youtube_transcript_api import YouTubeTranscriptApi
 from groq import Groq
 from app.config import settings
@@ -41,6 +42,68 @@ class YouTubeService:
             "skip_download": True,
         }
         self._groq_cooldown_until = 0.0
+        self._cookie_path = None
+        self._setup_resilience()
+
+    def _setup_resilience(self):
+        """Configure cookies and proxies from settings."""
+        if settings.YOUTUBE_PROXY:
+            self.ydl_opts["proxy"] = settings.YOUTUBE_PROXY
+            print(f"[YOUTUBE] Using proxy: {settings.YOUTUBE_PROXY[:20]}...", flush=True)
+
+        if settings.YOUTUBE_COOKIES:
+            try:
+                # Try to write cookies to a temp file
+                self._cookie_path = self._get_cookie_file(settings.YOUTUBE_COOKIES)
+                if self._cookie_path:
+                    self.ydl_opts["cookiefile"] = self._cookie_path
+                    print(f"[YOUTUBE] Authentication cookies loaded from environment.", flush=True)
+            except Exception as e:
+                print(f"[YOUTUBE] Failed to setup cookies: {e}", flush=True)
+
+    def _get_cookie_file(self, cookie_str: str) -> Optional[str]:
+        """Decode and write cookies to a temporary file for yt-dlp."""
+        try:
+            # 1. Check if it's base64 encoded
+            try:
+                decoded = base64.b64decode(cookie_str).decode('utf-8')
+                content = decoded
+            except Exception:
+                # Fallback to raw string
+                content = cookie_str
+
+            # 2. Check and normalize format
+            # If it's a raw header string (key=val; key2=val2), convert to Netscape format
+            if ";" in content and "=" in content and "Netscape" not in content and "# HTTP Cookie File" not in content:
+                print("[YOUTUBE] Detected raw cookie header format. Converting...", flush=True)
+                netscape_lines = ["# Netscape HTTP Cookie File", "# http://curl.haxx.se/rfc/cookie_spec.html", "# This is a generated file! Do not edit.", ""]
+                for part in content.split(";"):
+                    if "=" in part:
+                        k, v = part.strip().split("=", 1)
+                        # Format: domain, flag, path, secure, expiration, name, value
+                        # Using .youtube.com for global applicability
+                        netscape_lines.append(f".youtube.com\tTRUE\t/\tTRUE\t0\t{k}\t{v}")
+                content = "\n".join(netscape_lines)
+
+            if not content or ("Netscape" not in content and "# HTTP Cookie File" not in content):
+                print("[YOUTUBE] Invalid cookie format. Expected Netscape or Header format.", flush=True)
+                return None
+
+            temp_dir = tempfile.gettempdir()
+            path = os.path.join(temp_dir, f"yt_cookies_{int(time.time())}.txt")
+            with open(path, "w", encoding='utf-8') as f:
+                f.write(content)
+            return path
+        except Exception as e:
+            print(f"[YOUTUBE] Error creating temp cookie file: {e}", flush=True)
+            return None
+
+    def _get_ydl_opts(self, extra_opts: Optional[Dict] = None) -> Dict:
+        """Get consolidated yt-dlp options."""
+        opts = self.ydl_opts.copy()
+        if extra_opts:
+            opts.update(extra_opts)
+        return opts
 
     @staticmethod
     def extract_video_id(url: str) -> Optional[str]:
@@ -69,7 +132,8 @@ class YouTubeService:
     async def get_video_info(self, video_url: str) -> Dict:
         """Fetch video metadata using yt-dlp."""
         def _extract():
-            with yt_dlp.YoutubeDL(self.ydl_opts) as ydl:
+            opts = self._get_ydl_opts()
+            with yt_dlp.YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(video_url, download=False)
                 return {
                     "id": info.get("id"),
@@ -86,7 +150,8 @@ class YouTubeService:
     async def get_playlist_videos(self, playlist_url: str) -> List[Dict]:
         """Extract all videos from a playlist or a single video URL."""
         def _extract():
-            with yt_dlp.YoutubeDL(self.ydl_opts) as ydl:
+            opts = self._get_ydl_opts()
+            with yt_dlp.YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(playlist_url, download=False)
                 videos = []
                 
@@ -150,7 +215,15 @@ class YouTubeService:
         """Internal helper for Tier 1 transcript fetching."""
         def _ytt():
             try:
-                t_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                # Prepare proxies for YouTubeTranscriptApi
+                proxies = None
+                if settings.YOUTUBE_PROXY:
+                    proxies = {
+                        "http": settings.YOUTUBE_PROXY,
+                        "https": settings.YOUTUBE_PROXY
+                    }
+
+                t_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=proxies)
                 langs = ['en', 'ja', 'hi', 'es', 'fr', 'de', 'pt', 'ru', 'ko', 'zh-Hans', 'zh-Hant', 'ar', 'id', 'tr']
                 try:
                     transcript = t_list.find_transcript(langs)
@@ -173,20 +246,20 @@ class YouTubeService:
         output_path = os.path.join(temp_dir, f'{identifier}.%(ext)s')
 
         if is_youtube:
-            ydl_opts = {
+            ydl_opts = self._get_ydl_opts({
                 'format': '139/249/bestaudio[abr<=64]/bestaudio/best',
                 'outtmpl': output_path,
                 'quiet': True,
                 'no_warnings': True,
-            }
+            })
         else:
             # For direct URLs, we just download the file
-            ydl_opts = {
+            ydl_opts = self._get_ydl_opts({
                 'format': 'bestaudio/best',
                 'outtmpl': output_path,
                 'quiet': True,
                 'no_warnings': True,
-            }
+            })
 
         def _download():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:

@@ -29,12 +29,13 @@ class MLClient:
 
     def _get_sqs(self):
         if self.sqs is None:
-            self.sqs = boto3.client(
-                'sqs', 
-                region_name=settings.AWS_REGION,
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
-            )
+            sqs_args = {'region_name': settings.AWS_REGION}
+            if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+                sqs_args.update({
+                    'aws_access_key_id': settings.AWS_ACCESS_KEY_ID,
+                    'aws_secret_access_key': settings.AWS_SECRET_ACCESS_KEY
+                })
+            self.sqs = boto3.client('sqs', **sqs_args)
         return self.sqs
 
     async def push_inference_job(self, log_id: str, features: List[Dict[str, Any]], model_id: str = "default") -> bool:
@@ -57,7 +58,7 @@ class MLClient:
                 MessageBody=json.dumps(payload)
             )
             
-            print(f"║ [NEURAL_PUSH] SUCCESS   | ID: {log_id[:8]}... | Sent to SQS    ║", flush=True)
+            print(f"║ [NEURAL_PUSH] SUCCESS   | ID: {log_id[:8]}... | Queue: ...{self.queue_url[-12:]} ║", flush=True)
             return True
         except Exception as e:
             print(f"║ [NEURAL_PUSH] FAILURE   | ID: {log_id[:8]}... | Error: {str(e)[:15]} ║", flush=True)
