@@ -58,6 +58,8 @@ export default function TeacherCourseDetailPage() {
   // Drill-down & Modal State
   const [selectedLectureId, setSelectedLectureId] = useState<string | null>(null);
   const [studentFilter, setStudentFilter] = useState<'all' | 'watchers'>('all');
+  const [sessionAttendees, setSessionAttendees] = useState<string[]>([]);
+  const [loadingSession, setLoadingSession] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -269,14 +271,15 @@ export default function TeacherCourseDetailPage() {
     const matchesSearch = (s.full_name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (s.email || '').toLowerCase().includes(searchQuery.toLowerCase());
     
+    if (!matchesSearch) return false;
+
+    // Real Session-specific filtering logic
     if (studentFilter === 'watchers' && selectedLectureId) {
-      const lectureIndex = lectures.findIndex(l => l.id === selectedLectureId);
-      const totalLectures = lectures.length;
-      if (totalLectures === 0) return matchesSearch;
-      const progressThreshold = (lectureIndex + 1) / totalLectures;
-      return matchesSearch && (s.progress || 0) >= progressThreshold;
+      // If we have fetched attendees for this session, filter by them
+      return sessionAttendees.includes(s.student_id);
     }
-    return matchesSearch;
+    
+    return true;
   });
 
   if (loading) {
@@ -385,10 +388,21 @@ export default function TeacherCourseDetailPage() {
                             {lectures.map((lecture, idx) => (
                                <tr 
                                   key={lecture.id}
-                                  onClick={() => {
+                                  onClick={async () => {
                                      setSelectedLectureId(lecture.id);
                                      setStudentFilter('watchers');
                                      setActiveTab('students');
+                                     setLoadingSession(true);
+                                     try {
+                                        const res = await engagementAPI.getHistory(lecture.id);
+                                        const attendees = Array.from(new Set(res.data.map((log: any) => log.student_id)));
+                                        setSessionAttendees(attendees as string[]);
+                                     } catch (err) {
+                                        console.error("Failed to load session attendees", err);
+                                        setSessionAttendees([]);
+                                     } finally {
+                                        setLoadingSession(false);
+                                     }
                                   }}
                                   className={`group cursor-pointer hover:bg-primary/5 transition-all ${selectedLectureId === lecture.id ? 'bg-primary/10' : ''}`}
                                >
@@ -526,8 +540,17 @@ export default function TeacherCourseDetailPage() {
                       </div>
                    </div>
 
-                   {/* Student Grid / List */}
-                   {viewMode === 'grid' ? (
+                    {/* Student Grid / List */}
+                    {loadingSession ? (
+                       <div className="flex flex-col items-center justify-center py-20 gap-4">
+                          <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                          <div className="text-[10px] font-black text-text-muted uppercase tracking-widest">Synchronizing Participant History...</div>
+                       </div>
+                    ) : filteredStudents.length === 0 ? (
+                       <div className="py-20 text-center glass-card border-dashed">
+                          <p className="text-xl font-black text-text-muted/40 uppercase tracking-tighter">No participants detected for this criteria.</p>
+                       </div>
+                    ) : viewMode === 'grid' ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                          {filteredStudents.map(student => (
                             <div 

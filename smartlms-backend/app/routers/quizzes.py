@@ -745,9 +745,16 @@ async def generate_ai_quiz(
         
         transcript = "\n".join(context_fallback)
         
-        if not transcript:
+        if transcript:
+            debug_logger.log("activity", f"Quiz generation using fallback context for lecture {lecture.id}")
+            print(f"DEBUG: Quiz generation fallback: Using {len(context_fallback)} metadata fields as context.")
+        else:
+            debug_logger.log("error", f"Quiz generation failed: No transcript or metadata context for lecture {lecture.id}")
+            print(f"ERROR: Quiz generation failed: No context available.")
             raise HTTPException(
                 status_code=400, 
+                detail="No context available for quiz generation. Please ensure the lecture has a description, summary, or transcript."
+            )
                 detail="No content found to generate quiz. Transcript is processing and no description was provided."
             )
 

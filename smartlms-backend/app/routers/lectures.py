@@ -209,14 +209,19 @@ async def _upload_video_to_cloudinary(file: UploadFile, max_bytes: int):
             os.remove(temp_path)
 
 
-async def _generate_lecture_transcript_background(lecture_id: str, prefer_local: bool = False):
+async def _generate_lecture_transcript_background(lecture_id: str, prefer_local: bool = False, force_refresh: bool = False):
     from app.database import async_session
 
     async with async_session() as session:
         try:
             res = await session.execute(select(Lecture).where(Lecture.id == lecture_id))
             lecture = res.scalar_one_or_none()
-            if not lecture or lecture.transcript:
+            if not lecture:
+                return
+            
+            # Skip if transcript exists and we are not forcing a refresh
+            if lecture.transcript and not force_refresh:
+                debug_logger.log("activity", f"Skipping transcript generation for {lecture_id} as it already exists.")
                 return
 
             target_url = lecture.youtube_url or lecture.video_url
@@ -391,8 +396,12 @@ async def manual_generate_transcript(
     if not lecture.youtube_url and not lecture.video_url:
         raise HTTPException(status_code=400, detail="No video source detected for this lecture.")
 
-    background_tasks.add_task(_generate_lecture_transcript_background, lecture.id, True)
-    return {"message": "Transcription task initiated in the background."}
+    # Immediate logging for terminal visibility
+    print(f"DEBUG: Manual transcript generation triggered for Lecture: {lecture.title} ({lecture.id})")
+    debug_logger.log("activity", f"Manual transcript generation TRIGGERED for lecture: {lecture.title}", user_id=current_user.id)
+
+    background_tasks.add_task(_generate_lecture_transcript_background, lecture.id, True, True)
+    return {"message": "Transcription task initiated in the background. Terminal logs will track progress."}
 
 
 @router.delete("/{lecture_id}")

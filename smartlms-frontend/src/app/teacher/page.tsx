@@ -299,7 +299,7 @@ export default function TeacherDashboard() {
                    <span className="text-primary text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">Analyze Deeply &rarr;</span>
                 </div>
                 <p className="text-sm font-medium text-foreground/90 leading-relaxed italic">
-                  {score?.aika_insight || "Looking at the current lesson flow. Everything looks good with student focus."}
+                  {score?.aika_insight || "Synchronizing with your classroom flow. Insights will appear once baseline data is established."}
                 </p>
               </div>
           </div>
@@ -380,7 +380,7 @@ export default function TeacherDashboard() {
               <div className="flex items-center justify-between mb-4">
                 <div className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">Data Accuracy</div>
                 <div className="flex items-center gap-2">
-                  <div className="text-xl font-black text-primary">{score?.confidence_score || '95.2'}%</div>
+                  <div className="text-xl font-black text-primary">{score?.confidence_score?.toFixed(1) || '0.0'}%</div>
                   <div className="text-[10px] font-black text-text-muted uppercase tracking-widest">Confidence</div>
                 </div>
               </div>

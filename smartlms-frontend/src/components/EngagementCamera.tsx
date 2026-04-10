@@ -139,8 +139,13 @@ export default function EngagementCamera({ onFeaturesDetected, enabled, playing 
         };
 
         processFrame();
-      } catch (err) {
+      } catch (err: any) {
         console.error('Neural Eye initialization failure:', err);
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          alert('Neural Eye Permission Error: Camera access was dismissed. Please enable camera permissions in your browser settings to allow the biometric engagement tracking to function.');
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          alert('Neural Eye Error: No camera device detected. Engagement tracking will remain offline.');
+        }
       }
     };
 
