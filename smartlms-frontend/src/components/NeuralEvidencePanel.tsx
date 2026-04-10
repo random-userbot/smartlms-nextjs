@@ -14,7 +14,7 @@ import {
   MousePointer2,
   Keyboard
 } from 'lucide-react';
-import axios from 'axios';
+import { api } from '@/lib/api';
 
 interface EvidenceLog {
   id: string;
@@ -31,11 +31,8 @@ export default function NeuralEvidencePanel() {
     // Fetch real activity logs from the backend
     const fetchLogs = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:8000/api/activity/recent', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setLogs(res.data.slice(0, 15) || []);
+        const res = await api.get('/api/activity/recent');
+        setLogs((res.data || []).slice(0, 15));
       } catch (err) {
         console.error("Activity Update Failure:", err);
       } finally {
@@ -79,7 +76,7 @@ export default function NeuralEvidencePanel() {
 
     const csvContent = [
       headers.join(","),
-      ...rows.map(r => `"${r[0]}","${r[1]}","${r[2]}"`)
+      ...(rows || []).map(r => `"${r[0]}","${r[1]}","${r[2]}"`)
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

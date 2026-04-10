@@ -257,7 +257,7 @@ export default function TeacherDashboard() {
 
                   {/* Mini-Wave for each student */}
                   <div className="h-16 w-full mb-4 opacity-50 group-hover:opacity-100 transition-opacity">
-                    <EngagementWaveform data={ls.waveform.map((e: any) => ({ engagement: e.engagement }))} isLive={false} />
+                    <EngagementWaveform data={(ls.waveform || []).map((e: any) => ({ engagement: e.engagement }))} isLive={false} />
                   </div>
 
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
@@ -572,7 +572,7 @@ export default function TeacherDashboard() {
                       "{feedbackAnalysis?.ai_insights}"
                     </p>
                     <div className="flex flex-wrap gap-2 mt-4 relative z-10">
-                       {feedbackAnalysis?.top_keywords?.map((k: string) => (
+                       {(feedbackAnalysis?.top_keywords || []).map((k: string) => (
                          <span key={k} className="px-3 py-1 bg-background border border-primary/20 rounded-full text-[10px] font-black text-primary uppercase tracking-widest">#{k}</span>
                        ))}
                     </div>
@@ -589,7 +589,7 @@ export default function TeacherDashboard() {
                        </div>
                        
                        <div className="space-y-4">
-                         {feedbackAnalysis?.concerns?.length > 0 ? feedbackAnalysis.concerns.map((c: any, i: number) => (
+                         {(feedbackAnalysis?.concerns || []).length > 0 ? (feedbackAnalysis.concerns || []).map((c: any, i: number) => (
                            <div key={i} className="p-5 bg-surface-alt rounded-3xl border border-border border-l-4 border-l-primary group hover:bg-background transition-all">
                               <p className="text-sm font-medium text-foreground/90 italic leading-relaxed mb-3">"{c.text}"</p>
                               <div className="flex items-center justify-between">
@@ -615,7 +615,7 @@ export default function TeacherDashboard() {
                        </div>
 
                        <div className="space-y-4">
-                         {feedbackAnalysis?.suggestions?.length > 0 ? feedbackAnalysis.suggestions.map((s: any, i: number) => (
+                         {(feedbackAnalysis?.suggestions || []).length > 0 ? (feedbackAnalysis.suggestions || []).map((s: any, i: number) => (
                            <div key={i} className="p-5 bg-surface-alt rounded-3xl border border-border border-l-4 border-l-success group hover:bg-background transition-all">
                               <p className="text-sm font-medium text-foreground/90 italic leading-relaxed mb-3">"{s.text}"</p>
                               <div className="text-[10px] font-black text-text-muted uppercase tracking-tight">{s.student_name}</div>

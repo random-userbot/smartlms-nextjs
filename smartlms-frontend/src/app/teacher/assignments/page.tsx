@@ -128,8 +128,8 @@ export default function AssignmentsPage() {
       setNewTitle(data.title);
       
       // Combine questions into instructions
-      let fullDesc = data.description + "\n\n### ASSIGNMENT TASKS\n";
-      data.questions.forEach((q: any, i: number) => {
+      let fullDesc = (data.description || "") + "\n\n### ASSIGNMENT TASKS\n";
+      (data.questions || []).forEach((q: any, i: number) => {
         fullDesc += `\n${i+1}. [${q.points}pts] ${q.question}\n`;
       });
       setNewDesc(fullDesc);

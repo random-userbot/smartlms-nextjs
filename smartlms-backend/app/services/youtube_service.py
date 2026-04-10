@@ -267,6 +267,17 @@ class YouTubeService:
                 # This is expected on AWS/cloud — YouTube blocks cloud IPs
                 print(f"[YOUTUBE] [Tier 1] Scraper blocked (expected on cloud): {str(e)[:120]}", flush=True)
 
+            # Tier 1.5: yt-dlp Subtitle Extraction (Resilient to cloud IP blocks)
+            try:
+                print(f"[YOUTUBE] [Tier 1.5] Trying yt-dlp subtitle extraction for {video_id}...", flush=True)
+                transcript_text = await self._fetch_ytdlp_subtitles(video_url)
+                if transcript_text:
+                    print(f"[YOUTUBE] [Tier 1.5] Success! Got {len(transcript_text)} chars via yt-dlp subs.", flush=True)
+                    return transcript_text
+                print(f"[YOUTUBE] [Tier 1.5] No subtitles found via yt-dlp.", flush=True)
+            except Exception as e:
+                print(f"[YOUTUBE] [Tier 1.5] yt-dlp sub extraction failed: {e}", flush=True)
+
             # Tier 2: Download audio + Groq Whisper (primary cloud path)
             print(f"[YOUTUBE] [Tier 2] Downloading audio for Whisper transcription...", flush=True)
             try:
@@ -448,6 +459,78 @@ class YouTubeService:
             return ""
         finally:
             shutil.rmtree(os.path.dirname(temp_audio), ignore_errors=True)
+
+    async def _fetch_ytdlp_subtitles(self, video_url: str) -> Optional[str]:
+        """Fetch subtitles directly using yt-dlp's authenticated session."""
+        identifier = self.extract_video_id(video_url) or "subs"
+        temp_dir = tempfile.mkdtemp(prefix=f"ytdlp_subs_{identifier}_")
+        
+        # Configure for subtitle extraction only
+        ydl_opts = self._get_ydl_opts({
+            'skip_download': True,
+            'writesubtitles': True,
+            'writeautomaticsub': True,
+            'subtitleslangs': ['en.*', 'en'], # Match any English variant
+            'outtmpl': os.path.join(temp_dir, 'subs.%(ext)s'),
+            'quiet': True,
+            'no_warnings': True,
+            'cookiefile': self._cookie_path
+        })
+
+        def _download():
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([video_url])
+                return True
+            except Exception as e:
+                print(f"[YOUTUBE] yt-dlp subtitle download error: {e}")
+                return False
+
+        try:
+            success = await asyncio.get_event_loop().run_in_executor(None, _download)
+            if not success:
+                return None
+
+            # Find the downloaded subtitle file (usually .vtt or .srt)
+            sub_files = glob.glob(os.path.join(temp_dir, "subs.*"))
+            if not sub_files:
+                return None
+
+            # Prefer English vtt
+            vtt_file = next((f for f in sub_files if f.endswith('.vtt')), sub_files[0])
+            
+            with open(vtt_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            return self._parse_vtt(content)
+        except Exception as e:
+            print(f"[YOUTUBE] Error processing yt-dlp subtitles: {e}")
+            return None
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+    def _parse_vtt(self, vtt_content: str) -> str:
+        """Parse VTT content to extract clean text."""
+        # 1. Remove WEBVTT header
+        content = re.sub(r'^WEBVTT.*?\n', '', vtt_content, flags=re.DOTALL)
+        
+        # 2. Remove timestamps (00:00:00.000 --> 00:00:00.000)
+        content = re.sub(r'\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}', '', content)
+        
+        # 3. Remove metadata/position tags like <c.colorE8E8E8> or alignments
+        content = re.sub(r'<[^>]+>', '', content)
+        content = re.sub(r' align:.*?\n', '\n', content)
+        
+        # 4. Remove empty lines and duplicates (VTT often overlaps lines)
+        lines = []
+        last_line = ""
+        for line in content.split('\n'):
+            line = line.strip()
+            if line and line != last_line:
+                lines.append(line)
+                last_line = line
+        
+        return " ".join(lines)
 
     async def _fetch_local_whisper_transcript(self, video_url: str) -> str:
         """

@@ -19,10 +19,22 @@ if (typeof window !== 'undefined') {
 
   api.interceptors.response.use(
     (response) => {
-      // Safety: ensure list endpoints always return arrays, not null/undefined
-      if (response.data === null || response.data === undefined) {
+      const { data } = response;
+      
+      // Safety: ensure common list endpoints or nested array fields always return arrays
+      const arrayKeys = ['questions', 'tables', 'rows', 'messages', 'concentrations', 'concerns', 'suggestions', 'waveform', 'forensic_logs', 'components'];
+      
+      if (data === null || data === undefined) {
         response.data = [];
+      } else if (typeof data === 'object' && !Array.isArray(data)) {
+        // Recursively fix known array keys in objects
+        for (const key of arrayKeys) {
+          if (data[key] === null || data[key] === undefined) {
+            data[key] = [];
+          }
+        }
       }
+      
       return response;
     },
     (error) => {

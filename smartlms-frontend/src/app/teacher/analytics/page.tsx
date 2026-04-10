@@ -141,7 +141,7 @@ export default function TeacherAnalyticsPage() {
                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Synchronizing Neural Data...</p>
                </div>
             </div>
-        ) : !teachingScore ? (
+        ) : (!teachingScore || !teachingScore.components) ? (
             <div className="flex-1 flex flex-col items-center justify-center h-[60vh] text-center opacity-30">
                <BarChart3 size={120} className="mb-6" />
                <h3 className="text-3xl font-black">No telemetry detected for this module.</h3>
@@ -174,7 +174,7 @@ export default function TeacherAnalyticsPage() {
                 <div className="pt-8 border-t border-border mt-8 relative z-10 flex items-center justify-between">
                    <div className="flex gap-1.5">
                      {[...Array(5)].map((_, i) => (
-                       <div key={i} className={`w-1.5 h-6 rounded-full ${i < (teachingScore.overall_score/20) ? 'bg-primary' : 'bg-surface-alt border border-border'}`} />
+                       <div key={i} className={`w-1.5 h-6 rounded-full ${i < ((teachingScore?.overall_score || 0)/20) ? 'bg-primary' : 'bg-surface-alt border border-border'}`} />
                      ))}
                    </div>
                    <span className="text-[10px] font-black uppercase text-success tracking-widest">Optimal Sync</span>
@@ -184,10 +184,10 @@ export default function TeacherAnalyticsPage() {
               {/* Components Visualization (Bento 8) */}
               <div className="col-span-12 lg:col-span-8 glass-card p-10 grid grid-cols-2 md:grid-cols-4 gap-8">
                 {[
-                  { label: 'Engagement', val: teachingScore.components.engagement, icon: Zap, color: 'text-warning' },
-                  { label: 'Attendance', val: teachingScore.components.attendance, icon: Calendar, color: 'text-info' },
-                  { label: 'ICAP Depth', val: teachingScore.components.icap_score, icon: Brain, color: 'text-primary' },
-                  { label: 'Completion', val: teachingScore.components.completion_rate, icon: CheckCircle2, color: 'text-success' }
+                  { label: 'Engagement', val: teachingScore?.components?.engagement || 0, icon: Zap, color: 'text-warning' },
+                  { label: 'Attendance', val: teachingScore?.components?.attendance || 0, icon: Calendar, color: 'text-info' },
+                  { label: 'ICAP Depth', val: teachingScore?.components?.icap_score || 0, icon: Brain, color: 'text-primary' },
+                  { label: 'Completion', val: teachingScore?.components?.completion_rate || 0, icon: CheckCircle2, color: 'text-success' }
                 ].map((comp, i) => (
                   <div 
                     key={i} 
@@ -293,7 +293,7 @@ export default function TeacherAnalyticsPage() {
                 </div>
                 
                 <div className="space-y-6 flex-1 overflow-y-auto">
-                   {(teachingScore.recommendations || []).map((rec: string, i: number) => (
+                   {(teachingScore?.recommendations || []).map((rec: string, i: number) => (
                      <div key={i} className="flex gap-4 p-5 bg-white/5 border border-white/5 rounded-[2rem] group hover:border-primary/20 transition-all">
                         <div className="mt-1"><ArrowUpRight size={16} className="text-primary group-hover:rotate-45 transition-transform" /></div>
                         <p className="text-xs font-medium text-foreground/80 leading-relaxed italic">"{rec}"</p>
@@ -344,10 +344,10 @@ export default function TeacherAnalyticsPage() {
 
               <div className="grid grid-cols-2 gap-6">
                 {[
-                  { label: 'Attention Resonance', value: '30%', data: `${teachingScore.components.engagement}%`, desc: 'Real-time eye-tracking & attentive focus' },
-                  { label: 'Pedagogical Depth', value: '25%', data: `${teachingScore.components.icap_score}%`, desc: 'ICAP cognitive engagement levels' },
-                  { label: 'Attendance Logic', value: '20%', data: `${teachingScore.components.attendance}%`, desc: 'Historical participation frequency' },
-                  { label: 'Completion Flux', value: '25%', data: `${teachingScore.components.completion_rate}%`, desc: 'Average syllabus node traversal speed' },
+                  { label: 'Attention Resonance', value: '30%', data: `${teachingScore?.components?.engagement || 0}%`, desc: 'Real-time eye-tracking & attentive focus' },
+                  { label: 'Pedagogical Depth', value: '25%', data: `${teachingScore?.components?.icap_score || 0}%`, desc: 'ICAP cognitive engagement levels' },
+                  { label: 'Attendance Logic', value: '20%', data: `${teachingScore?.components?.attendance || 0}%`, desc: 'Historical participation frequency' },
+                  { label: 'Completion Flux', value: '25%', data: `${teachingScore?.components?.completion_rate || 0}%`, desc: 'Average syllabus node traversal speed' },
                 ].map((item, i) => (
                   <div key={i} className="p-6 bg-surface-alt rounded-3xl border border-border space-y-2">
                     <div className="flex items-center justify-between">
@@ -394,7 +394,7 @@ export default function TeacherAnalyticsPage() {
                 </div>
                 <p className="text-sm font-medium text-foreground/90 leading-relaxed italic">
                    The <span className="text-primary font-black uppercase tracking-tighter">{activeMetric}</span> metric is verified by <span className="text-primary font-black">{teachingScore?.forensic_logs?.length || 0} telemetry nodes</span>. 
-                   Current telemetry shows <span className="text-primary font-black">{activeMetric === 'Teaching Efficiency' ? teachingScore.overall_score : teachingScore.components[activeMetric?.toLowerCase().replace(' ', '_') || 'engagement'] || '0'}%</span> resonance with <span className="text-primary font-black">{teachingScore?.confidence_score || '95'}%</span> confidence.
+                   Current telemetry shows <span className="text-primary font-black">{activeMetric === 'Teaching Efficiency' ? teachingScore?.overall_score || 0 : teachingScore?.components?.[activeMetric?.toLowerCase().replace(' ', '_') || 'engagement'] || '0'}%</span> resonance with <span className="text-primary font-black">{teachingScore?.confidence_score || '95'}%</span> confidence.
                 </p>
               </div>
 
