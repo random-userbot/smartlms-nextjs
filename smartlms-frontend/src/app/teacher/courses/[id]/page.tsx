@@ -72,6 +72,13 @@ export default function TeacherCourseDetailPage() {
   const [enrollEmail, setEnrollEmail] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Transcript HUD
+  const [showTranscriptModal, setShowTranscriptModal] = useState(false);
+  const [transcriptLecture, setTranscriptLecture] = useState<any>(null);
+  const [transcriptText, setTranscriptText] = useState('');
+  const [savingTranscript, setSavingTranscript] = useState(false);
+  const [generatingTranscript, setGeneratingTranscript] = useState(false);
+
   useEffect(() => {
     loadData();
   }, [courseId]);
@@ -218,6 +225,42 @@ export default function TeacherCourseDetailPage() {
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
+    }
+  };
+
+  const openTranscriptHUD = (lecture: any) => {
+    setTranscriptLecture(lecture);
+    setTranscriptText(lecture.transcript || '');
+    setShowTranscriptModal(true);
+  };
+
+  const handleSaveTranscript = async () => {
+    if (!transcriptLecture) return;
+    setSavingTranscript(true);
+    try {
+      await lecturesAPI.update(transcriptLecture.id, { transcript: transcriptText });
+      setShowTranscriptModal(false);
+      loadData();
+    } catch (err) {
+      console.error('Failed to save transcript', err);
+      alert('Neural write failure. Could not commit transcript to core.');
+    } finally {
+      setSavingTranscript(false);
+    }
+  };
+
+  const handleManualTranscriptGenerate = async () => {
+    if (!transcriptLecture) return;
+    setGeneratingTranscript(true);
+    try {
+      await lecturesAPI.generateTranscript(transcriptLecture.id);
+      alert('Forensic transcription task initiated. This node will synchronize in the background.');
+      setShowTranscriptModal(false);
+    } catch (err: any) {
+      console.error('Transcription trigger failed', err);
+      alert(err.response?.data?.detail || 'Transcription bridge offline.');
+    } finally {
+      setGeneratingTranscript(false);
     }
   };
 
@@ -390,18 +433,25 @@ export default function TeacherCourseDetailPage() {
                                          >
                                             <Sparkles size={18} />
                                          </button>
-                                        <button 
-                                           onClick={(e) => { e.stopPropagation(); router.push(`/lectures/${lecture.id}`); }}
-                                           className="p-3 bg-surface-alt hover:bg-primary/10 text-text-muted hover:text-primary rounded-xl border border-border transition-all"
-                                        >
-                                           <Eye size={18} />
-                                        </button>
-                                        <button 
-                                           onClick={(e) => { e.stopPropagation(); handleDeleteLecture(lecture.id); }}
-                                           className="p-3 bg-surface-alt hover:bg-danger/10 text-text-muted hover:text-danger rounded-xl border border-border transition-all"
-                                        >
-                                           <Trash2 size={18} />
-                                        </button>
+                                         <button 
+                                            onClick={(e) => { e.stopPropagation(); openTranscriptHUD(lecture); }}
+                                            className="p-3 bg-surface-alt hover:bg-info/20 text-info rounded-xl border border-border transition-all flex items-center justify-center"
+                                            title="Forensic Transcript"
+                                         >
+                                            <FileText size={18} />
+                                         </button>
+                                         <button 
+                                            onClick={(e) => { e.stopPropagation(); router.push(`/lectures/${lecture.id}`); }}
+                                            className="p-3 bg-surface-alt hover:bg-primary/10 text-text-muted hover:text-primary rounded-xl border border-border transition-all"
+                                         >
+                                            <Eye size={18} />
+                                         </button>
+                                         <button 
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteLecture(lecture.id); }}
+                                            className="p-3 bg-surface-alt hover:bg-danger/10 text-text-muted hover:text-danger rounded-xl border border-border transition-all"
+                                         >
+                                            <Trash2 size={18} />
+                                         </button>
                                      </div>
                                   </td>
                                </tr>
@@ -655,13 +705,94 @@ export default function TeacherCourseDetailPage() {
                    </div>
                 </div>
              )}
+            </div>
+         </div>
+      </main>
+
+        {/* Transcript HUD Modal */}
+        {showTranscriptModal && (
+          <div className="fixed inset-0 bg-background/90 backdrop-blur-3xl z-[1000] flex items-center justify-center p-6 md:p-12">
+            <div className="bg-surface border border-border w-full max-w-5xl h-full max-h-[90vh] rounded-[3rem] overflow-hidden shadow-2xl flex flex-col animate-slide-up">
+               <div className="p-10 border-b border-border bg-surface-alt/50 flex items-center justify-between">
+                  <div className="flex items-center gap-6">
+                     <div className="w-14 h-14 rounded-2xl bg-info/10 flex items-center justify-center text-info shadow-xl">
+                        <FileText size={28} />
+                     </div>
+                     <div>
+                        <h2 className="text-3xl font-black tracking-tighter">Forensic Transcript HUD</h2>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-text-muted mt-1">Node: {transcriptLecture?.title}</div>
+                     </div>
+                  </div>
+                  <button onClick={() => setShowTranscriptModal(false)} className="p-4 hover:bg-surface-alt border border-border rounded-2xl transition-all"><X size={24} /></button>
+               </div>
+               
+               <div className="flex-1 p-10 overflow-hidden flex flex-col gap-6">
+                  {transcriptText ? (
+                    <div className="flex-1 flex flex-col gap-4">
+                       <label className="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1 flex items-center gap-2">
+                          <Bot size={12} className="text-primary" /> Aika Semantic Interpretation
+                       </label>
+                       <textarea 
+                         value={transcriptText}
+                         onChange={(e) => setTranscriptText(e.target.value)}
+                         className="flex-1 w-full bg-background border border-border rounded-[2rem] p-8 text-sm font-bold outline-none focus:border-info/40 transition-all resize-none leading-relaxed font-mono custom-scrollbar"
+                         placeholder="Synthesizing neural text..."
+                       />
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center space-y-8 bg-background/50 rounded-[3rem] border-2 border-dashed border-border p-12">
+                       <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center text-primary animate-pulse">
+                          <Sparkles size={40} />
+                       </div>
+                       <div className="space-y-4 max-w-md">
+                          <h3 className="text-2xl font-black italic tracking-tighter text-foreground/80">Transcript Vacuum Detected.</h3>
+                          <p className="text-sm font-bold text-text-muted leading-relaxed">
+                             This semantic node has no captured transcript. Initiate the Aika Synthesis Protocol to generate one from the source video.
+                          </p>
+                       </div>
+                       <button 
+                         onClick={handleManualTranscriptGenerate}
+                         disabled={generatingTranscript}
+                         className="px-10 py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest crimson-glow hover:scale-105 transition-all shadow-xl disabled:opacity-50 flex items-center gap-3"
+                       >
+                          {generatingTranscript ? <Activity className="animate-spin" /> : <Zap size={18} />}
+                          {generatingTranscript ? 'ALGORITHMIC SYNTHESIS IN PROGRESS...' : 'INITIATE FORENSIC TRANSCRIPTION'}
+                       </button>
+                    </div>
+                  )}
+               </div>
+
+               {transcriptText && (
+                 <div className="p-10 border-t border-border bg-surface-alt/30 flex items-center justify-between">
+                    <div className="text-[10px] font-black text-text-muted uppercase tracking-widest">
+                       Length: {transcriptText.length} Characters • Forensic Status: {transcriptLecture?.transcript ? 'Committed' : 'Draft'}
+                    </div>
+                    <div className="flex gap-4">
+                       <button 
+                         onClick={handleManualTranscriptGenerate}
+                         disabled={generatingTranscript}
+                         className="px-6 py-4 bg-surface-alt border border-border rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-primary/40 hover:text-primary transition-all flex items-center gap-2"
+                         title="Regenerate from Source"
+                       >
+                          <Zap size={14} /> Re-Generate
+                       </button>
+                       <button 
+                         onClick={handleSaveTranscript}
+                         disabled={savingTranscript}
+                         className="px-12 py-4 bg-info text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-info/20 flex items-center gap-2"
+                       >
+                          {savingTranscript ? <Activity className="animate-spin" size={14} /> : <div className="w-2 h-2 rounded-full bg-white animate-pulse" />}
+                          {savingTranscript ? 'COMMITTING TO CORE...' : 'SAVE TRANSCRIPT CHANGES'}
+                       </button>
+                    </div>
+                 </div>
+               )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Global Floating Communication Interface */}
         <CommunicationFab recipientId={filteredStudents.length === 1 ? filteredStudents[0].student_id : undefined} recipientName={filteredStudents.length === 1 ? filteredStudents[0].full_name : 'Selected Participants'} />
-      </main>
-
       {/* Add Lecture Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-2xl z-[200] flex items-center justify-center p-6">

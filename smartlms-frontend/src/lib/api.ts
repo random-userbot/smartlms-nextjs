@@ -109,6 +109,7 @@ export const lecturesAPI = {
     });
   },
   deleteMaterial: (id: string) => api.delete(`/api/lectures/materials/${id}`),
+  generateTranscript: (id: string) => api.post(`/api/lectures/${id}/generate-transcript`),
 };
 
 export const engagementAPI = {
@@ -240,8 +241,12 @@ export const assignmentsAPI = {
   create: (data: any) => api.post('/api/assignments', data),
   submit: (data: any) => api.post('/api/assignments/submit', data),
   getSubmissions: (assignmentId: string) => api.get(`/api/assignments/${assignmentId}/submissions`),
-  grade: (data: { submission_id: string; score: number; feedback?: string }) => 
+  grade: (data: { submission_id: string; grade: number; teacher_feedback?: string }) => 
     api.put(`/api/assignments/submissions/${data.submission_id}/grade`, data),
+  generateAI: (data: { lecture_id: string; subject_type: string; difficulty: string }) => 
+    api.post('/api/assignments/generate-ai', data),
+  getReference: (assignmentId: string) => api.get(`/api/assignments/${assignmentId}/ai-reference`),
+  getRecap: (submissionId: string) => api.get(`/api/assignments/submissions/${submissionId}/ai-recap`),
 };
 
 export const adminAPI = {

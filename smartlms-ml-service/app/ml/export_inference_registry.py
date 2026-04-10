@@ -452,8 +452,9 @@ class ExportModelRegistry:
             self._loaded_models[model_id] = model
             return model
 
-        if not model_id.startswith("export::"):
-            raise ValueError("Not an export model id")
+        if not model_id or not model_id.startswith("export::"):
+            print(f"[MEMORY] Skipping model load for non-export ID: {model_id}", flush=True)
+            return None
 
         # Check Nightly Sleep Window (2 AM - 7 AM IST / UTC+5:30)
         if self.is_in_sleep_window():
@@ -461,9 +462,9 @@ class ExportModelRegistry:
             return None
 
         loader = self._load_model_loader()
-        # No longer checking for keras/tf runtime
+        # model_loader is legacy; ONNX models don't require it, so we only log if missing
         if not loader:
-            raise RuntimeError("Model loader definitions are missing.")
+            print("[BOOT] Warning: model_loader.py not found. Proceeding with native ONNX inference.", flush=True)
 
         # Aggressive memory management for free-tier hosting (Render/Railway/etc.)
         # Default to -1 (Unlimited) for AWS t3.large as requested by user
@@ -618,8 +619,13 @@ class ExportModelRegistry:
 
         model = self._get_or_load_export_model(model_id)
         if not model:
-            # Fallback if in sleep window or load failed
-            return {"model_id": model_id, "error": "Model sleep/unavailable", "fallback": True}
+            # Fallback if in sleep window, load failed, or invalid ID
+            return {
+                "model_id": model_id, 
+                "error": "Model unavailable or invalid ID",
+                "fallback": True,
+                "output": {"overall": 50.0, "engagement": 50.0, "status": "fallback"}
+            }
 
         if isinstance(model, ort.InferenceSession):
             input_name = model.get_inputs()[0].name

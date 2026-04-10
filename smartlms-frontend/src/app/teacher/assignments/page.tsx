@@ -19,7 +19,7 @@ import {
   Target
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
-import { coursesAPI, assignmentsAPI } from '@/lib/api';
+import { coursesAPI, assignmentsAPI, lecturesAPI } from '@/lib/api';
 import Link from 'next/link';
 
 export default function AssignmentsPage() {
@@ -36,6 +36,13 @@ export default function AssignmentsPage() {
   const [newDueDate, setNewDueDate] = useState('');
   const [newMaxScore, setNewMaxScore] = useState(100);
   const [creating, setCreating] = useState(false);
+  
+  // AI Generation State
+  const [lectures, setLectures] = useState<any[]>([]);
+  const [selectedLecture, setSelectedLecture] = useState<string>('');
+  const [subjectType, setSubjectType] = useState('technical');
+  const [difficulty, setDifficulty] = useState('medium');
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     loadCourses();
@@ -60,8 +67,15 @@ export default function AssignmentsPage() {
   const loadAssignments = async (courseId: string) => {
     setDataLoading(true);
     try {
-      const res = await assignmentsAPI.getByCourse(courseId);
-      setAssignments(res.data || []);
+      const [assignRes, lectureRes] = await Promise.all([
+        assignmentsAPI.getByCourse(courseId),
+        lecturesAPI.getByCourse(courseId)
+      ]);
+      setAssignments(assignRes.data || []);
+      setLectures(lectureRes.data || []);
+      if (lectureRes.data?.length > 0) {
+        setSelectedLecture(lectureRes.data[0].id);
+      }
     } catch (err) {
       console.error('Failed to load assignments', err);
     } finally {
@@ -93,6 +107,38 @@ export default function AssignmentsPage() {
       alert('Neural sync failure. Could not publish assignment node.');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleGenerateAI = async () => {
+    if (!selectedLecture) {
+      alert("Please select a lecture context first.");
+      return;
+    }
+    setGenerating(true);
+    try {
+      const res = await assignmentsAPI.generateAI({
+        lecture_id: selectedLecture,
+        subject_type: subjectType,
+        difficulty: difficulty
+      });
+      
+      const data = res.data;
+      setNewTitle(data.title);
+      
+      // Combine questions into instructions
+      let fullDesc = data.description + "\n\n### ASSIGNMENT TASKS\n";
+      data.questions.forEach((q: any, i: number) => {
+        fullDesc += `\n${i+1}. [${q.points}pts] ${q.question}\n`;
+      });
+      setNewDesc(fullDesc);
+      setNewMaxScore(data.max_score || 100);
+      
+    } catch (err: any) {
+      console.error('AI Generation failed', err);
+      alert(err.response?.data?.detail || "AI synthesis failed. The transcript neural link might be offline.");
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -259,6 +305,45 @@ export default function AssignmentsPage() {
                   <button onClick={() => setShowCreateModal(false)} className="p-3 hover:bg-surface-alt border border-border rounded-xl transition-all"><XCircle size={24} /></button>
                </div>
                
+               <div className="p-10 bg-primary/5 border-b border-border space-y-4">
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-primary">
+                     <Sparkles size={14} /> AI Magic Wand (Subject Aware)
+                  </div>
+                  <div className="grid grid-cols-12 gap-4">
+                     <div className="col-span-6 space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1">Lecture Context</label>
+                        <select 
+                          value={selectedLecture}
+                          onChange={(e) => setSelectedLecture(e.target.value)}
+                          className="w-full bg-surface border border-border rounded-xl p-3 text-xs font-bold outline-none"
+                        >
+                          {lectures.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
+                        </select>
+                     </div>
+                     <div className="col-span-3 space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1">Logic Pattern</label>
+                        <select 
+                          value={subjectType}
+                          onChange={(e) => setSubjectType(e.target.value)}
+                          className="w-full bg-surface border border-border rounded-xl p-3 text-xs font-bold outline-none"
+                        >
+                          <option value="technical">Technical</option>
+                          <option value="descriptive">Descriptive</option>
+                        </select>
+                     </div>
+                     <div className="col-span-3 flex items-end">
+                        <button 
+                          type="button"
+                          onClick={handleGenerateAI}
+                          disabled={generating}
+                          className="w-full py-3 bg-foreground text-background rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                        >
+                          {generating ? 'SYNTHESIZING...' : 'GENERATE AI'}
+                        </button>
+                     </div>
+                  </div>
+               </div>
+
                <form onSubmit={handleCreateAssignment} className="p-10 space-y-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1">Assignment Title</label>

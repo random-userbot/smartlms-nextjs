@@ -15,7 +15,8 @@ import {
   ArrowLeft,
   Filter,
   Activity,
-  Zap
+  Zap,
+  Bot
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import { assignmentsAPI, teacherAPI } from '@/lib/api';
@@ -31,6 +32,13 @@ function GradingContent() {
   const [grading, setGrading] = useState(false);
   const [score, setScore] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>('');
+
+  // AI Grading Assistance State
+  const [aiReference, setAiReference] = useState<any>(null);
+  const [aiRecap, setAiRecap] = useState<string>('');
+  const [loadingReference, setLoadingReference] = useState(false);
+  const [loadingRecap, setLoadingRecap] = useState(false);
+  const [showReferencePanel, setShowReferencePanel] = useState(false);
 
   useEffect(() => {
     if (assignmentId) {
@@ -50,10 +58,37 @@ function GradingContent() {
     }
   };
 
-  const handleSelectSubmission = (sub: any) => {
+  const handleSelectSubmission = async (sub: any) => {
     setSelectedSubmission(sub);
-    setScore(sub.score || 0);
-    setFeedback(sub.feedback || '');
+    setScore(sub.grade || 0); // Use grade instead of score to match backend
+    setFeedback(sub.teacher_feedback || '');
+    
+    // Load AI Recap for this specific submission
+    setLoadingRecap(true);
+    setAiRecap('');
+    try {
+      const res = await assignmentsAPI.getRecap(sub.id);
+      setAiRecap(res.data.recap);
+    } catch (err) {
+      console.error('Failed to load AI recap', err);
+    } finally {
+      setLoadingRecap(false);
+    }
+  };
+
+  const loadAIReference = async () => {
+    if (!assignmentId) return;
+    setLoadingReference(true);
+    try {
+      const res = await assignmentsAPI.getReference(assignmentId);
+      setAiReference(res.data);
+      setShowReferencePanel(true);
+    } catch (err) {
+      console.error('Failed to load AI reference', err);
+      alert('Could not synchronize AI reference key.');
+    } finally {
+      setLoadingReference(false);
+    }
   };
 
   const handleGrade = async () => {
@@ -63,8 +98,8 @@ function GradingContent() {
     try {
       await assignmentsAPI.grade({
         submission_id: selectedSubmission.id,
-        score: score,
-        feedback: feedback
+        grade: score,
+        teacher_feedback: feedback
       });
       alert('Pedagogical score synchronized successfully.');
       loadSubmissions();
@@ -104,11 +139,19 @@ function GradingContent() {
                  <h1 className="text-3xl font-black tracking-tighter text-foreground">Grading Sequence.</h1>
               </div>
            </div>
-           <div className="flex items-center gap-4">
-              <div className="px-6 py-2 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                 <Zap size={12} /> {submissions.length} Submissions Synchronized
-              </div>
-           </div>
+            <div className="flex items-center gap-4">
+               <button 
+                 onClick={loadAIReference}
+                 disabled={loadingReference}
+                 className="px-6 py-2 bg-info/10 border border-info/20 rounded-full text-[10px] font-black uppercase tracking-widest text-info flex items-center gap-2 hover:bg-info hover:text-white transition-all shadow-lg"
+               >
+                  {loadingReference ? <Activity size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                  Pedagogical Reference Key
+               </button>
+               <div className="px-6 py-2 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                  <Zap size={12} /> {submissions.length} Submissions Synchronized
+               </div>
+            </div>
         </header>
 
         <div className="flex-1 flex overflow-hidden">
@@ -144,9 +187,9 @@ function GradingContent() {
                           </div>
                        </div>
                     </div>
-                    {sub.score !== null ? (
+                    {sub.grade !== null ? (
                        <div className="text-right">
-                          <div className="text-xs font-black text-success">{sub.score} / {sub.max_score || 100}</div>
+                          <div className="text-xs font-black text-success">{sub.grade} / {sub.max_score || 100}</div>
                           <div className="text-[8px] font-black uppercase text-text-muted tracking-widest">Synchronized</div>
                        </div>
                     ) : (
@@ -171,9 +214,26 @@ function GradingContent() {
                         <FileText size={20} />
                         <h2 className="text-xl font-black uppercase tracking-widest">Submission Payload</h2>
                      </div>
+
+                     {/* AI Recap Display */}
+                     {(loadingRecap || aiRecap) && (
+                       <div className="p-8 bg-info/5 border-l-4 border-l-info rounded-r-[2rem] space-y-3 animate-fade-in">
+                          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-info">
+                             <Bot size={14} className="shimmer" /> Student Intelligence Recap
+                          </div>
+                          {loadingRecap ? (
+                            <div className="h-4 w-3/4 bg-info/10 animate-pulse rounded" />
+                          ) : (
+                            <p className="text-xs font-bold text-info/80 italic leading-relaxed">
+                               "{aiRecap}"
+                            </p>
+                          )}
+                       </div>
+                     )}
+
                      <div className="glass-card p-10 bg-surface min-h-[200px] border-primary/20 shadow-2xl relative">
                         <p className="text-foreground/90 font-medium leading-relaxed whitespace-pre-wrap italic">
-                           {selectedSubmission.content || "No textual payload provided. Verify external file resources (S3)."}
+                           {selectedSubmission.text || "No textual payload provided. Verify external file resources (S3)."}
                         </p>
                         <div className="absolute top-4 right-4 text-[10px] font-black uppercase tracking-widest text-primary/40">Student Node Transcript</div>
                      </div>
@@ -253,7 +313,49 @@ function GradingContent() {
              )}
           </section>
 
+           {/* AI Reference Sidebar (Far Right) */}
+           {showReferencePanel && (
+             <aside className="w-80 border-l border-border bg-surface-alt/50 overflow-y-auto animate-slide-in-right custom-scrollbar">
+                <div className="p-8 border-b border-border flex items-center justify-between sticky top-0 bg-surface/80 backdrop-blur-md z-10">
+                   <div className="flex items-center gap-3">
+                      <Sparkles size={20} className="text-info" />
+                      <h3 className="text-sm font-black uppercase tracking-widest">Aika Reference</h3>
+                   </div>
+                   <button onClick={() => setShowReferencePanel(false)} className="p-2 hover:bg-surface-alt rounded-lg"><X size={16} /></button>
+                </div>
+                
+                <div className="p-8 space-y-10">
+                   <div className="space-y-4">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-info flex items-center gap-2">
+                         <Award size={12} /> Ideal Solution
+                      </div>
+                      <div className="text-[11px] font-bold text-foreground/80 leading-relaxed bg-background/50 border border-border p-5 rounded-2xl italic">
+                         {aiReference?.perfect_answer || "Synthesizing ideal node..."}
+                      </div>
+                   </div>
+
+                   <div className="space-y-6">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-info flex items-center gap-2">
+                         <Activity size={12} /> Rubric Logic
+                      </div>
+                      <div className="space-y-4">
+                         {aiReference?.rubric?.map((r: any, i: number) => (
+                           <div key={i} className="p-4 bg-surface rounded-xl border border-border space-y-1">
+                              <div className="flex justify-between items-center">
+                                 <span className="text-[10px] font-black text-primary uppercase">{r.criterion}</span>
+                                 <span className="text-[10px] font-black text-text-muted">{r.weight}</span>
+                              </div>
+                              <p className="text-[10px] font-medium text-text-muted leading-tight">{r.description}</p>
+                           </div>
+                         ))}
+                      </div>
+                   </div>
+                </div>
+             </aside>
+           )}
+
         </div>
+
 
       </main>
     </div>

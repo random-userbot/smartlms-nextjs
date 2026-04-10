@@ -738,8 +738,18 @@ async def generate_ai_quiz(
                 lecture.transcript = transcript
                 await db.commit()
                 await db.refresh(lecture)
+        # Fallback logic: If no transcript, use description/summary to avoid 400 errors
+        context_fallback = []
+        if lecture.description: context_fallback.append(f"Description: {lecture.description}")
+        if lecture.summary: context_fallback.append(f"Summary: {lecture.summary}")
+        
+        transcript = "\n".join(context_fallback)
+        
         if not transcript:
-            raise HTTPException(status_code=400, detail="Transcript is not ready yet. It is being generated in the background. Please retry in a minute.")
+            raise HTTPException(
+                status_code=400, 
+                detail="No content found to generate quiz. Transcript is processing and no description was provided."
+            )
 
     try:
         questions = await generate_quiz_questions(

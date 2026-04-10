@@ -347,6 +347,7 @@ async def update_lecture(
 async def upload_lecture_video(
     lecture_id: str,
     request: Request,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
@@ -372,6 +373,26 @@ async def upload_lecture_video(
         "file_size": file_size,
         "message": "Video uploaded to Cloudinary successfully and transcription started.",
     }
+
+
+@router.post("/{lecture_id}/generate-transcript")
+async def manual_generate_transcript(
+    lecture_id: str,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+):
+    """Manually trigger AI transcript generation for a lecture."""
+    result = await db.execute(select(Lecture).where(Lecture.id == lecture_id))
+    lecture = result.scalar_one_or_none()
+    if not lecture:
+        raise HTTPException(status_code=404, detail="Lecture not found")
+
+    if not lecture.youtube_url and not lecture.video_url:
+        raise HTTPException(status_code=400, detail="No video source detected for this lecture.")
+
+    background_tasks.add_task(_generate_lecture_transcript_background, lecture.id, True)
+    return {"message": "Transcription task initiated in the background."}
 
 
 @router.delete("/{lecture_id}")

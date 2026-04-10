@@ -9,10 +9,14 @@ from datetime import datetime
 from app.database import get_db
 from app.models.models import (
     User, UserRole, Assignment, AssignmentSubmission, Course, 
-    ActivityLog, ICAPLevel
+    Lecture, ActivityLog, ICAPLevel
 )
 from app.middleware.auth import get_current_user, require_teacher_or_admin
 from app.services.icap_service import map_action_to_icap, get_action_evidence
+import json
+import re
+from app.config import settings
+from app.services.assignment_generator_service import generate_assignment
 
 router = APIRouter(prefix="/api/assignments", tags=["Assignments"])
 
@@ -35,6 +39,12 @@ class SubmissionCreate(BaseModel):
 class GradeSubmission(BaseModel):
     grade: float
     teacher_feedback: Optional[str] = None
+
+
+class AIAssignmentRequest(BaseModel):
+    lecture_id: str
+    subject_type: str = "technical"  # technical, descriptive
+    difficulty: str = "medium"
 
 
 @router.get("/course/{course_id}")
@@ -162,3 +172,126 @@ async def grade_submission(
     await db.commit()
 
     return {"message": "Submission graded", "grade": request.grade}
+
+
+@router.post("/generate-ai")
+async def generate_ai_assignment(
+    request: AIAssignmentRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+):
+    """Generate assignment questions using AI from lecture context"""
+    res = await db.execute(select(Lecture).where(Lecture.id == request.lecture_id))
+    lecture = res.scalar_one_or_none()
+    if not lecture:
+        raise HTTPException(status_code=404, detail="Lecture not found")
+
+    # Use transcript, falling back to description/summary
+    context_fallback = []
+    if lecture.transcript: context_fallback.append(lecture.transcript)
+    if lecture.description: context_fallback.append(f"Description: {lecture.description}")
+    if lecture.summary: context_fallback.append(f"Summary: {lecture.summary}")
+    
+    content = "\n\n".join(context_fallback)
+    if not content:
+        raise HTTPException(status_code=400, detail="No lecture content available for AI generation.")
+
+    try:
+        assignment_data = await generate_assignment(
+            content=content,
+            subject_type=request.subject_type,
+            difficulty=request.difficulty
+        )
+        return assignment_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{assignment_id}/ai-reference")
+async def get_assignment_ai_reference(
+    assignment_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+):
+    """Generate an ideal 'perfect answer' and rubric for an assignment."""
+    res = await db.execute(select(Assignment).where(Assignment.id == assignment_id))
+    assignment = res.scalar_one_or_none()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+
+    from app.services.groq_fallback import chat_completion_with_fallback
+    from groq import AsyncGroq
+    client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+
+    prompt = f"""You are a senior pedagogical evaluator. Based on the following assignment description, generate a 'Perfect Answer' and a 'Grading Rubric'.
+
+ASSIGNMENT TITLE: {assignment.title}
+DESCRIPTION:
+{assignment.description}
+
+FORMAT:
+{{
+  "perfect_answer": "...",
+  "rubric": [
+    {{ "criterion": "...", "weight": "25%", "description": "..." }}
+  ]
+}}
+"""
+    model_chain = settings.groq_chat_models_for_task(task="assignment_grading")
+    response, _ = await chat_completion_with_fallback(
+        client,
+        primary_model=model_chain[0],
+        fallback_models=model_chain[1:],
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3
+    )
+
+    try:
+        raw = response.choices[0].message.content.strip()
+        if "```" in raw: raw = re.sub(r"```(json)?", "", raw).split("```")[0].strip()
+        return json.loads(raw)
+    except Exception:
+        return {"perfect_answer": response.choices[0].message.content, "rubric": []}
+
+
+@router.get("/submissions/{submission_id}/ai-recap")
+async def get_submission_ai_recap(
+    submission_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+):
+    """Generate a high-level summary/recap of a student submission compared to the goal."""
+    res = await db.execute(
+        select(AssignmentSubmission, Assignment)
+        .join(Assignment, Assignment.id == AssignmentSubmission.assignment_id)
+        .where(AssignmentSubmission.id == submission_id)
+    )
+    row = res.one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    
+    submission, assignment = row
+
+    from app.services.groq_fallback import chat_completion_with_fallback
+    from groq import AsyncGroq
+    client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+
+    prompt = f"""Compare this student submission to the assignment goal. 
+Provide a 'Student Intelligence Recap' (3 sentences max).
+
+ASSIGNMENT GOAL:
+{assignment.description}
+
+STUDENT SUBMISSION:
+{submission.text}
+"""
+    model_chain = settings.groq_chat_models_for_task(task="assignment_grading")
+    response, _ = await chat_completion_with_fallback(
+        client,
+        primary_model=model_chain[0],
+        fallback_models=model_chain[1:],
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.5
+    )
+
+    return {"recap": response.choices[0].message.content.strip()}
