@@ -137,15 +137,15 @@ export default function LecturePage() {
     setLoading(true);
     trackEvent('lecture_finished', { lecture_id: lectureId });
     
-    // 1. Persist final waveform data
+    // 1. Mark session as permanent and finalize datasets
     try {
-      await engagementAPI.saveSessionEnd({
+      await engagementAPI.finalizeSession({
         session_id: sessionId.current,
         lecture_id: lectureId,
         waveform: fullWaveformRef.current
       });
     } catch (err) {
-      console.error("Failed to save session:", err);
+      console.error("Failed to finalize session:", err);
     }
 
     // 2. Determine next phase (Quiz or Feedback)

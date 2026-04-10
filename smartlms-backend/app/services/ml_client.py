@@ -50,7 +50,7 @@ class MLClient:
 
             # Simulated push if no SQS URL is provided
             if not self.queue_url:
-                print(f"║ [NEURAL_PUSH] SIMULATED | ID: {log_id[:8]}... | Mode: Local Dev ║", flush=True)
+                print(f"║ [ASYNC_TELEMETRY] SIMULATED | ID: {log_id[:8]}... | Mode: Local Dev ║", flush=True)
                 return True
 
             self._get_sqs().send_message(
@@ -58,10 +58,10 @@ class MLClient:
                 MessageBody=json.dumps(payload)
             )
             
-            print(f"║ [NEURAL_PUSH] SUCCESS   | ID: {log_id[:8]}... | Queue: ...{self.queue_url[-12:]} ║", flush=True)
+            print(f"║ [ASYNC_TELEMETRY] SUCCESS   | ID: {log_id[:8]}... | Queue: ...{self.queue_url[-12:]} ║", flush=True)
             return True
         except Exception as e:
-            print(f"║ [NEURAL_PUSH] FAILURE   | ID: {log_id[:8]}... | Error: {str(e)[:15]} ║", flush=True)
+            print(f"║ [ASYNC_TELEMETRY] FAILURE   | ID: {log_id[:8]}... | Error: {str(e)[:15]} ║", flush=True)
             logger.error(f"ML_CLIENT: Failed to push SQS job for {log_id}: {e}")
             return False
 

@@ -1,4 +1,4 @@
-"""Smart LMS - Assignments Router"""
+"""Smart LMS - Assignments Router (Forensic S3 Edition)"""
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +17,8 @@ import json
 import re
 from app.config import settings
 from app.services.assignment_generator_service import generate_assignment
+from app.services.storage_service import storage_service
+from app.services.pdf_service import pdf_service
 
 router = APIRouter(prefix="/api/assignments", tags=["Assignments"])
 
@@ -34,6 +36,7 @@ class SubmissionCreate(BaseModel):
     assignment_id: str
     file_url: Optional[str] = None
     text: Optional[str] = None
+    structured_answers: Optional[List[dict]] = None
 
 
 class GradeSubmission(BaseModel):
@@ -58,15 +61,51 @@ async def get_course_assignments(
         .order_by(Assignment.created_at.desc())
     )
     assignments = result.scalars().all()
-    return [
-        {
+    
+    # Process for rendering
+    processed = []
+    for a in assignments:
+        render_url = a.file_url
+        if render_url and "amazonaws.com/" in render_url:
+            render_url = storage_service.generate_presigned_url(render_url)
+            
+        processed.append({
             "id": a.id, "title": a.title, "description": a.description,
-            "file_url": a.file_url, "max_score": a.max_score,
+            "file_url": a.file_url, 
+            "render_url": render_url,
+            "max_score": a.max_score,
             "due_date": a.due_date.isoformat() if a.due_date else None,
             "created_at": a.created_at.isoformat(),
-        }
-        for a in assignments
-    ]
+        })
+    return processed
+
+
+@router.get("/{assignment_id}")
+async def get_assignment(
+    assignment_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Assignment).where(Assignment.id == assignment_id)
+    )
+    a = result.scalar_one_or_none()
+    if not a:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    render_url = a.file_url
+    if render_url and "amazonaws.com/" in render_url:
+        render_url = storage_service.generate_presigned_url(render_url)
+        
+    return {
+        "id": a.id, "title": a.title, "description": a.description,
+        "file_url": a.file_url, 
+        "render_url": render_url,
+        "questions": a.questions,
+        "max_score": a.max_score,
+        "due_date": a.due_date.isoformat() if a.due_date else None,
+        "created_at": a.created_at.isoformat(),
+    }
 
 
 @router.post("", status_code=201)
@@ -95,11 +134,28 @@ async def submit_assignment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # If a PDF was uploaded, attempt to extract text for the 'text' field fallback
+    final_text = request.text or ""
+    if request.file_url and ".pdf" in request.file_url.lower():
+        try:
+            pdf_bytes = await storage_service.get_file_as_bytes(request.file_url)
+            if pdf_bytes:
+                extracted = pdf_service.extract_text(pdf_bytes)
+                if extracted:
+                    # Append extracted text to manual text entry
+                    if final_text:
+                        final_text += f"\n\n--- Extracted from PDF ---\n\n{extracted}"
+                    else:
+                        final_text = extracted
+        except Exception as e:
+            print(f"[ASSIGNMENT] PDF text extraction failed: {e}")
+
     submission = AssignmentSubmission(
         assignment_id=request.assignment_id,
         student_id=current_user.id,
         file_url=request.file_url,
-        text=request.text,
+        text=final_text,
+        structured_answers=request.structured_answers
     )
     db.add(submission)
     await db.commit()
@@ -121,7 +177,7 @@ async def submit_assignment(
     db.add(log)
     await db.commit()
 
-    return {"id": submission.id, "message": "Assignment submitted"}
+    return {"id": submission.id, "message": "Assignment submitted successfully"}
 
 
 @router.get("/{assignment_id}/submissions")
@@ -140,16 +196,23 @@ async def get_submissions(
     result = await db.execute(query)
     rows = result.all()
 
-    return [
-        {
+    processed = []
+    for sub, user in rows:
+        render_url = sub.file_url
+        if render_url and "amazonaws.com/" in render_url:
+            render_url = storage_service.generate_presigned_url(render_url)
+            
+        processed.append({
             "id": sub.id, "student_name": user.full_name,
-            "file_url": sub.file_url, "text": sub.text,
+            "file_url": sub.file_url, 
+            "render_url": render_url,
+            "text": sub.text,
+            "structured_answers": sub.structured_answers,
             "grade": sub.grade, "teacher_feedback": sub.teacher_feedback,
             "submitted_at": sub.submitted_at.isoformat(),
             "graded_at": sub.graded_at.isoformat() if sub.graded_at else None,
-        }
-        for sub, user in rows
-    ]
+        })
+    return processed
 
 
 @router.put("/submissions/{submission_id}/grade")
@@ -237,7 +300,10 @@ FORMAT:
   ]
 }}
 """
-    model_chain = settings.groq_chat_models_for_task(task="assignment_grading")
+    model_chain = settings.groq_chat_models_for_task(
+        task="assignment_grading",
+        primary_model="llama-3.3-70b-versatile"
+    )
     response, _ = await chat_completion_with_fallback(
         client,
         primary_model=model_chain[0],
@@ -285,7 +351,10 @@ ASSIGNMENT GOAL:
 STUDENT SUBMISSION:
 {submission.text}
 """
-    model_chain = settings.groq_chat_models_for_task(task="assignment_grading")
+    model_chain = settings.groq_chat_models_for_task(
+        task="assignment_grading",
+        primary_model="llama-3.3-70b-versatile"
+    )
     response, _ = await chat_completion_with_fallback(
         client,
         primary_model=model_chain[0],

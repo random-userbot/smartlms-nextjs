@@ -232,21 +232,29 @@ async def _generate_lecture_transcript_background(lecture_id: str, prefer_local:
             transcript = await get_video_transcript(target_url, prefer_local=prefer_local)
             
             if transcript:
+                print(f"[DB] Received transcript of length: {len(transcript)}", flush=True)
                 lecture.transcript = transcript
+                await session.commit()
+                await session.refresh(lecture)
+                print(f"[DB] DATABASE COMMIT SUCCESS for: {lecture.title}", flush=True)
+                debug_logger.log("activity", f"Transcript committed to DB for: {lecture.title}")
                 
                 # Generate summary immediately after transcript
                 try:
-                    summary = await summary_service.generate_summary_from_transcript(transcript)
+                    summary = await summary_service.summarize_transcript(transcript)
                     if summary:
                         lecture.summary = summary
+                        await session.commit()
+                        print(f"[DB] SUMMARY COMMIT SUCCESS for: {lecture.title}", flush=True)
+                        debug_logger.log("activity", f"Summary generated and committed for: {lecture.title}")
                 except Exception as se:
+                    print(f"[DB] Summary Error: {se}", flush=True)
                     debug_logger.log("error", f"Summary generation failed for {lecture_id}: {str(se)}")
-                
-                await session.commit()
-                debug_logger.log("activity", f"Transcript and Summary generated for lecture: {lecture.title}")
             else:
+                print(f"[DB] Transcript returned EMPTY or null", flush=True)
                 debug_logger.log("error", f"Transcript generation returned empty for lecture {lecture_id}")
         except Exception as e:
+            print(f"[DB] CRITICAL ERROR in bg task: {e}", flush=True)
             debug_logger.log("error", f"Transcript generation failed for lecture {lecture_id}: {str(e)}")
 
 

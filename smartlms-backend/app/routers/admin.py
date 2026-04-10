@@ -392,3 +392,127 @@ async def get_admin_student_analytics(
             } for q in quiz_attempts
         ]
     }
+
+@router.get("/export-datasets")
+async def export_neural_datasets(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """
+    Export all finalized high-fidelity engagement logs platform-wide.
+    Returns a streamed JSON response to handle large telemetry sets.
+    """
+    from fastapi.responses import StreamingResponse
+    import json
+
+    async def generate_dataset():
+        yield "[\n"
+        
+        stmt = (
+            select(EngagementLog)
+            .where(EngagementLog.is_finalized == True)
+            .order_by(EngagementLog.created_at.desc())
+        )
+        
+        result = await db.execute(stmt)
+        logs = result.scalars().all()
+        
+        for i, log in enumerate(logs):
+            item = {
+                "id": log.id,
+                "student_id": log.student_id,
+                "lecture_id": log.lecture_id,
+                "overall_score": log.overall_score,
+                "icap_classification": log.icap_classification.value if log.icap_classification else None,
+                "telemetry": log.feature_timeline or [],
+                "created_at": log.created_at.isoformat()
+            }
+            
+            comma = "," if i < len(logs) - 1 else ""
+            yield json.dumps(item) + comma + "\n"
+            
+        yield "]"
+
+    return StreamingResponse(
+        generate_dataset(),
+        media_type="application/json",
+        headers={"Content-Disposition": "attachment; filename=platform_neural_dataset.json"}
+    )
+
+
+# --- LIVE MATRIX DATABASE EXPLORER ---
+
+@router.get("/db/tables")
+async def get_db_tables(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """List all available tables in the RDS schema"""
+    from sqlalchemy import inspect
+    from app.database import engine
+    
+    def sync_get_tables(conn):
+        inspector = inspect(conn)
+        return inspector.get_table_names()
+        
+    async with engine.connect() as conn:
+        tables = await conn.run_sync(sync_get_tables)
+        
+    return {"tables": sorted(tables)}
+
+
+@router.get("/db/tables/{table_name}")
+async def get_table_data(
+    table_name: str,
+    page: int = 1,
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """Fetch raw records from a specific table with pagination"""
+    from sqlalchemy import text
+    
+    # 1. Validate table name exists (prevents SQL injection)
+    from sqlalchemy import inspect
+    from app.database import engine
+    
+    def sync_verify_table(conn):
+        inspector = inspect(conn)
+        return table_name in inspector.get_table_names()
+        
+    async with engine.connect() as conn:
+        exists = await conn.run_sync(sync_verify_table)
+        
+    if not exists:
+        raise HTTPException(status_code=404, detail="Table not found")
+
+    # 2. Fetch data (Limited for safety)
+    offset = (page - 1) * limit
+    
+    # Use raw SQL for flexibility across reflected tables
+    # Note: table_name is verified against the schema above to prevent injection
+    query = text(f"SELECT * FROM {table_name} LIMIT {limit} OFFSET {offset}")
+    count_query = text(f"SELECT COUNT(*) FROM {table_name}")
+    
+    result = await db.execute(query)
+    count_result = await db.execute(count_query)
+    
+    rows = [dict(row._mapping) for row in result.all()]
+    total_count = count_result.scalar()
+    
+    # Format rows for JSON serialization
+    import datetime
+    for row in rows:
+        for k, v in row.items():
+            if isinstance(v, (datetime.datetime, datetime.date)):
+                row[k] = v.isoformat()
+            if isinstance(v, bytes):
+                row[k] = "<Binary Data>"
+
+    return {
+        "table": table_name,
+        "rows": rows,
+        "total": total_count,
+        "page": page,
+        "limit": limit
+    }

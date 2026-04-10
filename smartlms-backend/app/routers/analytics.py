@@ -168,7 +168,8 @@ async def get_teaching_score(
             EngagementLog.lecture_id.in_(
                 select(Lecture.id).where(Lecture.course_id == course_id)
             ),
-            # Filter: only include logs where the student has reached 80% completion in this session or overall
+            # Filter: only include finalized sessions
+            EngagementLog.is_finalized == True,
             (EngagementLog.watch_duration * 1.25 >= EngagementLog.total_duration)
         ).order_by(EngagementLog.started_at)
     )
@@ -478,6 +479,50 @@ async def get_teaching_score(
     }
 
 
+@router.get("/live-sessions")
+async def get_live_sessions(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+):
+    """
+    Fetch all active, non-finalized sessions for the teacher's radar.
+    This fulfills the requirement to see 'Live Flow' in real-time.
+    """
+    # Get all course IDs owned by this teacher
+    teacher_courses_stmt = select(Course.id).where(Course.teacher_id == current_user.id)
+    
+    from datetime import timedelta
+    # Get non-finalized logs for these courses
+    stmt = (
+        select(EngagementLog, User.full_name, Lecture.title, User.avatar_url)
+        .join(User, User.id == EngagementLog.student_id)
+        .join(Lecture, Lecture.id == EngagementLog.lecture_id)
+        .where(
+            EngagementLog.is_finalized == False,
+            EngagementLog.updated_at >= datetime.utcnow() - timedelta(minutes=30), # Only show sessions active in last 30m
+            EngagementLog.lecture_id.in_(teacher_courses_stmt)
+        )
+        .order_by(desc(EngagementLog.updated_at))
+    )
+    
+    result = await db.execute(stmt)
+    sessions = []
+    for log, student_name, lecture_title, avatar_url in result.all():
+        sessions.append({
+            "session_id": log.session_id,
+            "student_id": str(log.student_id),
+            "student_name": student_name,
+            "student_avatar": avatar_url,
+            "lecture_title": lecture_title,
+            "engagement": round(log.overall_score or 0, 1),
+            "status": log.icap_classification.value if hasattr(log.icap_classification, 'value') else str(log.icap_classification),
+            "last_active": log.updated_at.isoformat(),
+            "waveform": (log.scores_timeline if log.scores_timeline else [])[-20:] # Last 20 points for mini-wave
+        })
+    
+    return sessions
+
+
 @router.get("/course-dashboard/{course_id}")
 async def get_course_dashboard(
     course_id: str,
@@ -495,7 +540,8 @@ async def get_course_dashboard(
         ).where(
             EngagementLog.lecture_id.in_(
                 select(Lecture.id).where(Lecture.course_id == course_id)
-            )
+            ),
+            EngagementLog.is_finalized == True
         )
     )
     eng_total, eng_avg, boredom_avg, confusion_avg, tab_total = eng_summary_res.one()
@@ -544,7 +590,8 @@ async def get_lectures_engagement_summary(
         ).where(
             EngagementLog.lecture_id.in_(
                 select(Lecture.id).where(Lecture.course_id == course_id)
-            )
+            ),
+            EngagementLog.is_finalized == True
         ).group_by(EngagementLog.lecture_id)
     )
     rows = eng_res.all()
@@ -1135,12 +1182,62 @@ async def get_student_session_diagnostics(
             latest_features = log.features["raw_feature_mirror"]
             break
             
+    # 5. Get Activity Logs (Forensic Actions)
+    activity_query = select(ActivityLog).where(
+        ActivityLog.user_id == student_id,
+        ActivityLog.created_at >= logs[0].started_at,
+        ActivityLog.created_at <= (logs[-1].ended_at or datetime.utcnow())
+    ).order_by(ActivityLog.created_at.asc())
+    activity_res = await db.execute(activity_query)
+    activities = [
+        {
+            "action": a.action,
+            "timestamp": a.created_at.isoformat(),
+            "details": a.details
+        } for a in activity_res.scalars().all()
+    ]
+
+    # 6. Get Course Messages
+    msg_query = select(Message, User.full_name).join(User, User.id == Message.sender_id).where(
+        or_(Message.sender_id == student_id, Message.receiver_id == student_id),
+        Message.created_at >= logs[0].started_at,
+        Message.created_at <= (logs[-1].ended_at or datetime.utcnow())
+    ).order_by(Message.created_at.asc())
+    msg_res = await db.execute(msg_query)
+    messages = [
+        {
+            "sender": row[1],
+            "content": row[0].content,
+            "timestamp": row[0].created_at.isoformat()
+        } for row in msg_res.all()
+    ]
+
+    # 7. Get AI Tutor Chats (Aika)
+    from app.models.models import AITutorSession, AITutorMessage
+    chat_query = select(AITutorMessage).join(AITutorSession).where(
+        AITutorSession.student_id == student_id,
+        AITutorMessage.created_at >= logs[0].started_at,
+        AITutorMessage.created_at <= (logs[-1].ended_at or datetime.utcnow())
+    ).order_by(AITutorMessage.created_at.asc())
+    chat_res = await db.execute(chat_query)
+    chats = [
+        {
+            "role": c.role,
+            "content": c.content,
+            "timestamp": c.created_at.isoformat()
+        } for c in chat_res.scalars().all()
+    ]
+
     return {
         "student_id": student_id,
         "session_id": session_id,
         "timeline": full_timeline,
-        "aura_features": latest_features,
-        "icap_final": logs[-1].icap_classification.value if hasattr(logs[-1].icap_classification, 'value') else str(logs[-1].icap_classification)
+        "feature_timeline": [log.feature_timeline for log in logs if log.feature_timeline],
+        "biometric_features": latest_features,
+        "icap_final": logs[-1].icap_classification.value if hasattr(logs[-1].icap_classification, 'value') else str(logs[-1].icap_classification),
+        "activities": activities,
+        "messages": messages,
+        "ai_chats": chats
     }
 
 
@@ -1196,7 +1293,7 @@ async def get_feedback_analysis(
             "concerns": [],
             "suggestions": [],
             "top_keywords": [],
-            "ai_insights": "No synchronized feedback nodes detected. Encourage students to submit module reviews.",
+            "ai_insights": "No course feedback records available. Encourage students to submit module reviews.",
             "sentiment_summary": {"positive": 0, "neutral": 0, "negative": 0}
         }
 
@@ -1246,7 +1343,7 @@ async def get_feedback_analysis(
     elif len(suggestions) > len(feedbacks) * 0.5:
         insights = "High constructive engagement. Students are eager for supplementary depth. Consider deploying curricular patches for the requested modules."
     else:
-        insights = "Neural alignment is optimal. Sentiment clusters are predominantly positive. Maintain current pacing and responsiveness levels."
+        insights = "Course feedback trends are optimal. Sentiment clusters are predominantly positive. Maintain current pacing and responsiveness levels."
 
     return {
         "course_id": course_id,

@@ -15,11 +15,13 @@ import {
   AlertTriangle,
   X,
   ChevronRight,
-  Info
+  Info,
+  Zap
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Link from 'next/link';
 import MultiStudentWaves from '@/components/MultiStudentWaves';
+import EngagementWaveform from '@/components/EngagementWaveform';
 
 export default function TeacherDashboard() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -37,6 +39,7 @@ export default function TeacherDashboard() {
   const [feedbackAnalysis, setFeedbackAnalysis] = useState<any>(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [liveSessions, setLiveSessions] = useState<any[]>([]);
 
   useEffect(() => {
     coursesAPI.list().then(res => {
@@ -110,6 +113,18 @@ export default function TeacherDashboard() {
       setLoadingFeedback(false);
     }
   };
+
+  useEffect(() => {
+    const fetchLive = () => {
+      analyticsAPI.getLiveSessions().then(res => {
+        setLiveSessions(res.data || []);
+      }).catch(() => {});
+    };
+    
+    fetchLive();
+    const interval = setInterval(fetchLive, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (
@@ -193,6 +208,74 @@ export default function TeacherDashboard() {
               </div>
             ))}
           </section>
+        </div>
+
+        {/* Active Class Monitor Section */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-6 bg-success rounded-full" />
+              <h2 className="text-3xl font-black text-foreground tracking-tight uppercase italic">Active Class Monitor</h2>
+            </div>
+            {liveSessions.length > 0 && (
+              <div className="flex items-center gap-4 bg-success/10 border border-success/20 px-4 py-2 rounded-xl">
+                 <div className="w-2 h-2 rounded-full bg-success animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+                 <span className="text-[10px] font-black text-success uppercase tracking-widest">{liveSessions.length} STUDENTS SYNCED</span>
+              </div>
+            )}
+          </div>
+
+          {liveSessions.length === 0 ? (
+            <div className="p-12 border-2 border-dashed border-white/5 rounded-[3rem] text-center bg-surface/10">
+               <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-6 text-white/10">
+                  <Activity size={32} />
+               </div>
+               <h3 className="text-xl font-bold text-white/20 uppercase tracking-widest">No Active Sessions</h3>
+               <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.3em] mt-2 italic">Student monitoring is currently on standby.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {liveSessions.map((ls) => (
+                <div key={ls.session_id} className="glass-card p-6 border-white/5 bg-surface/40 hover:bg-surface transition-all group relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none" />
+                  
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-xl font-black text-foreground group-hover:border-primary/40 transition-colors uppercase">
+                      {ls.student_avatar ? <img src={ls.student_avatar} className="w-full h-full object-cover rounded-2xl" /> : ls.student_name?.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-black text-foreground truncate">{ls.student_name}</div>
+                      <div className="text-[9px] font-black text-text-muted uppercase tracking-widest truncate">{ls.lecture_title}</div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                       <div className={`text-sm font-black ${ls.engagement > 70 ? 'text-success' : ls.engagement > 40 ? 'text-warning' : 'text-primary'}`}>
+                          {ls.engagement.toFixed(0)}%
+                       </div>
+                       <div className="text-[7px] font-black text-text-muted uppercase tracking-widest">FOCUS</div>
+                    </div>
+                  </div>
+
+                  {/* Mini-Wave for each student */}
+                  <div className="h-16 w-full mb-4 opacity-50 group-hover:opacity-100 transition-opacity">
+                    <EngagementWaveform data={ls.waveform.map((e: any) => ({ engagement: e.engagement }))} isLive={false} />
+                  </div>
+
+                  <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
+                    <div className="flex items-center gap-2">
+                       <Zap size={10} className="text-primary" />
+                       <span className="text-[8px] font-black text-white/30 uppercase tracking-widest">{ls.status}</span>
+                    </div>
+                    <Link 
+                      href={`/teacher/students/${ls.student_id}`}
+                      className="text-[8px] font-black text-primary uppercase tracking-[0.2em] group-hover:underline"
+                    >
+                      View Report &rarr;
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Multi-Wave Engagement Dashboard */}
@@ -389,8 +472,8 @@ export default function TeacherDashboard() {
                 {[
                   { label: 'Engagement', value: '15%', data: `${components.engagement?.toFixed(1) || 0}%`, desc: 'Multi-wave attention synchronization' },
                   { label: 'Quiz Avg', value: '10%', data: `${components.quiz_performance?.toFixed(1) || 0}%`, desc: 'Summative assessment baseline' },
-                  { label: 'Responsiveness', value: '10%', data: `${components.responsiveness?.toFixed(1) || 0}%`, desc: 'Neural node handshake frequency' },
-                  { label: 'ICAP Depth', value: '10%', data: `${components.icap_score?.toFixed(1) || 0}%`, desc: 'Cognitive load classification' },
+                  { label: 'Responsiveness', value: '10%', data: `${components.responsiveness?.toFixed(1) || 0}%`, desc: 'Average message response rate' },
+                  { label: 'Subject Focused', value: '10%', data: `${components.icap_score?.toFixed(1) || 0}%`, desc: 'Active processing classification' },
                 ].map((item, i) => (
                   <div key={i} className="p-6 bg-surface-alt rounded-3xl border border-border space-y-2">
                     <div className="flex items-center justify-between">
@@ -472,7 +555,7 @@ export default function TeacherDashboard() {
               {loadingFeedback ? (
                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
                    <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                   <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Synchronizing Sentiment Nodes...</p>
+                   <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Analyzing Sentiment Data...</p>
                 </div>
               ) : (
                 <>
@@ -549,9 +632,9 @@ export default function TeacherDashboard() {
                   {/* Sentiment Summary */}
                   <div className="grid grid-cols-3 gap-6">
                     {[
-                      { label: 'Positive Resonance', val: feedbackAnalysis?.sentiment_summary?.positive || 0, color: 'text-info' },
-                      { label: 'Neural Neutral', val: feedbackAnalysis?.sentiment_summary?.neutral || 0, color: 'text-text-muted' },
-                      { label: 'Critical Overload', val: feedbackAnalysis?.sentiment_summary?.negative || 0, color: 'text-primary' },
+                      { label: 'Positive', val: feedbackAnalysis?.sentiment_summary?.positive || 0, color: 'text-info' },
+                      { label: 'Neutral', val: feedbackAnalysis?.sentiment_summary?.neutral || 0, color: 'text-text-muted' },
+                      { label: 'Critical', val: feedbackAnalysis?.sentiment_summary?.negative || 0, color: 'text-primary' },
                     ].map(s => (
                       <div key={s.label} className="p-6 bg-surface-alt rounded-3xl border border-border text-center space-y-1">
                          <div className={`text-3xl font-black ${s.color}`}>{s.val}</div>

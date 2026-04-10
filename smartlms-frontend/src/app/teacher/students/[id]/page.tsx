@@ -26,7 +26,7 @@ import {
   Zap
 } from 'lucide-react';
 import CommunicationFab from '@/components/CommunicationFab';
-import NeuralInsights from '@/components/teacher/NeuralInsights';
+import SessionDiagnostics from '@/components/teacher/SessionDiagnostics';
 import { Calendar, ChevronRight, Play } from 'lucide-react';
 
 export default function StudentDetailPage() {
@@ -101,7 +101,7 @@ export default function StudentDetailPage() {
                 <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
              </button>
              <div>
-                <div className="text-[10px] uppercase tracking-[0.3em] font-black text-primary mb-2">Student Intelligence Profile</div>
+                <div className="text-[10px] uppercase tracking-[0.3em] font-black text-primary mb-2">Student Performance Profile</div>
                 <h1 className="text-6xl font-black tracking-tighter text-foreground">{student.full_name}</h1>
                 <div className="flex items-center gap-4 mt-4">
                    <div className="flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-black text-primary uppercase tracking-widest">
@@ -236,12 +236,12 @@ export default function StudentDetailPage() {
            </section>
         </div>
 
-         {/* Neural Forensic Hub */}
+         {/* Session Diagnostic Hub */}
          <section className="space-y-10 pt-10 border-t border-white/5">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                <div className="space-y-1">
-                  <div className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Intelligence Pulse</div>
-                  <h2 className="text-4xl font-black text-foreground tracking-tighter italic">Neural Forensic Hub</h2>
+                  <div className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Learning Flow Monitor</div>
+                  <h2 className="text-4xl font-black text-foreground tracking-tighter italic">Session Diagnostic Analysis</h2>
                   <p className="text-sm font-medium text-text-muted">Analyze high-fidelity behavioral diagnostics for specific learning sessions.</p>
                </div>
                
@@ -262,7 +262,7 @@ export default function StudentDetailPage() {
                         </div>
                         <div className="text-xs font-black truncate">{session.lecture_title}</div>
                         <div className="flex items-center gap-2 text-[8px] font-bold uppercase opacity-60">
-                           <Play size={8} /> {Math.round(session.duration / 60)}m Sync
+                           <Play size={8} /> {Math.round(session.duration / 60)}m Activity
                         </div>
                      </button>
                   ))}
@@ -270,12 +270,12 @@ export default function StudentDetailPage() {
             </div>
 
             {selectedSession ? (
-               <NeuralInsights studentId={id as string} sessionId={selectedSession} />
+               <SessionDiagnostics studentId={id as string} sessionId={selectedSession} />
             ) : (
                <div className="h-96 glass-card flex flex-col items-center justify-center space-y-4 border-dashed border-white/10 opacity-30">
                   <Activity size={48} className="animate-pulse" />
                   <div className="text-xs font-black uppercase tracking-widest text-center">
-                     Synchronize with a past session period<br/>to begin forensic reconstruction
+                     Select a past session period<br/>to begin detailed analysis
                   </div>
                </div>
             )}

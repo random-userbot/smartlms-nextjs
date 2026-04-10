@@ -18,6 +18,8 @@ from app.services.auth_service import (
 )
 from app.middleware.auth import get_current_user
 from app.services.debug_logger import debug_logger
+import traceback
+import sys
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -25,66 +27,84 @@ router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db)):
     """Register a new user"""
-    # Check existing
-    if await get_user_by_username(db, request.username):
-        raise HTTPException(status_code=400, detail="Username already taken")
-    if await get_user_by_email(db, request.email):
-        raise HTTPException(status_code=400, detail="Email already registered")
+    try:
+        # Check existing
+        if await get_user_by_username(db, request.username):
+            raise HTTPException(status_code=400, detail="Username already taken")
+        if await get_user_by_email(db, request.email):
+            raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Validate role
-    if request.role not in ["student", "teacher"]:
-        raise HTTPException(status_code=400, detail="Role must be 'student' or 'teacher'")
+        # Validate role
+        if request.role not in ["student", "teacher"]:
+            raise HTTPException(status_code=400, detail="Role must be 'student' or 'teacher'")
 
-    # Create user
-    user = User(
-        username=request.username,
-        email=request.email,
-        password_hash=hash_password(request.password),
-        role=UserRole(request.role),
-        full_name=request.full_name,
-    )
-    db.add(user)
-    await db.flush()
+        # Create user
+        user = User(
+            username=request.username,
+            email=request.email,
+            password_hash=hash_password(request.password),
+            role=UserRole(request.role),
+            full_name=request.full_name,
+        )
+        db.add(user)
+        await db.flush()
 
-    # Create gamification profile for students
-    if request.role == "student":
-        gamification = Gamification(user_id=user.id)
-        db.add(gamification)
+        # Create gamification profile for students
+        if request.role == "student":
+            gamification = Gamification(user_id=user.id)
+            db.add(gamification)
 
-    await db.commit()
-    await db.refresh(user)
+        await db.commit()
+        await db.refresh(user)
 
-    # Generate token
-    token = create_access_token({"sub": user.id, "role": user.role.value})
+        # Generate token
+        token = create_access_token({"sub": user.id, "role": user.role.value})
 
-    debug_logger.log("activity", f"User registered: {user.username} ({user.role.value})",
-                     user_id=user.id)
+        debug_logger.log("activity", f"User registered: {user.username} ({user.role.value})",
+                         user_id=user.id)
 
-    return TokenResponse(
-        access_token=token,
-        user=UserResponse.model_validate(user)
-    )
+        return TokenResponse(
+            access_token=token,
+            user=UserResponse.model_validate(user)
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("\n" + "!" * 60)
+        print(f"  [FORENSIC ERROR] Registration Failed: {str(e)}")
+        traceback.print_exc()
+        print("!" * 60 + "\n")
+        raise HTTPException(status_code=500, detail=f"Registration error: {str(e)}")
 
 
 @router.post("/login", response_model=TokenResponse)
 async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
     """Login with username/email and password"""
-    user = await authenticate_user(db, request.username, request.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials or account locked"
+    try:
+        user = await authenticate_user(db, request.username, request.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials or account locked"
+            )
+
+        token = create_access_token({"sub": user.id, "role": user.role.value})
+
+        debug_logger.log("activity", f"User logged in: {user.username}",
+                         user_id=user.id)
+
+        return TokenResponse(
+            access_token=token,
+            user=UserResponse.model_validate(user)
         )
-
-    token = create_access_token({"sub": user.id, "role": user.role.value})
-
-    debug_logger.log("activity", f"User logged in: {user.username}",
-                     user_id=user.id)
-
-    return TokenResponse(
-        access_token=token,
-        user=UserResponse.model_validate(user)
-    )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("\n" + "!" * 60)
+        print(f"  [FORENSIC ERROR] Login Failed: {str(e)}")
+        traceback.print_exc()
+        print("!" * 60 + "\n")
+        raise HTTPException(status_code=500, detail=f"Login error: {str(e)}")
 
 
 @router.post("/google", response_model=TokenResponse)

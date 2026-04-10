@@ -58,14 +58,24 @@ async def get_db():
     async with async_session() as session:
         try:
             yield session
+        except Exception as e:
+            print(f"[DB ERROR] Session failure: {e}")
+            raise
         finally:
             await session.close()
 
 
 async def create_tables():
     """Create all tables (for development — use Alembic in production)"""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    print(f"[DB] Initiating startup connection audit...")
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        print("[DB] [OK] Global schema synchronization complete.")
+    except Exception as e:
+        print(f"[DB] [CRITICAL] Connection Audit Failed: {e}")
+        # We don't raise here to allow the app to start (and potentially show a 500 error instead of 503)
+        # but the log will be captured in CloudWatch.
 
 
 async def drop_tables():

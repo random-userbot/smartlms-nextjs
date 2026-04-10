@@ -75,7 +75,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=True) # Nullable for Google users
     google_id = Column(String(100), unique=True, nullable=True, index=True)
-    role = Column(SQLEnum(UserRole), nullable=False, default=UserRole.STUDENT, index=True)
+    role = Column(SQLEnum(UserRole, native_enum=False), nullable=False, default=UserRole.STUDENT, index=True)
     full_name = Column(String(255), nullable=False)
     avatar_url = Column(String(500), nullable=True)
     bio = Column(Text, nullable=True)
@@ -137,7 +137,7 @@ class Enrollment(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     student_id = Column(String, ForeignKey("users.id"), nullable=False)
     course_id = Column(String, ForeignKey("courses.id"), nullable=False)
-    status = Column(SQLEnum(EnrollmentStatus), default=EnrollmentStatus.ACTIVE)
+    status = Column(SQLEnum(EnrollmentStatus, native_enum=False), default=EnrollmentStatus.ACTIVE)
     progress = Column(Float, default=0.0)  # 0-100%
     enrolled_at = Column(DateTime, default=datetime.utcnow)
 
@@ -275,7 +275,8 @@ class EngagementLog(Base):
     session_id = Column(String, nullable=False)
 
     # Status
-    status = Column(SQLEnum(EngagementStatus), default=EngagementStatus.PROCESSING)
+    status = Column(SQLEnum(EngagementStatus, native_enum=False), default=EngagementStatus.PROCESSING)
+    is_finalized = Column(Boolean, default=False, index=True)
     error_message = Column(Text, nullable=True)
 
     # Scores
@@ -290,6 +291,8 @@ class EngagementLog(Base):
     # features: {gaze_score, head_pose, eye_aspect_ratio, blink_rate, au_values, ...}
     scores_timeline = Column(JSON, nullable=True)
     # scores_timeline: [{timestamp, engagement, boredom, confusion, frustration}, ...]
+    feature_timeline = Column(JSON, nullable=True)
+    # feature_timeline: [{timestamp, au_values, gaze, head_pose, ear, mar, ...}]
 
     # SHAP explanations
     shap_explanations = Column(JSON, nullable=True)
@@ -300,7 +303,7 @@ class EngagementLog(Base):
     actual_vs_forecast_error = Column(Float, nullable=True) # Difference from previous prediction
 
     # ICAP classification
-    icap_classification = Column(SQLEnum(ICAPLevel), nullable=True)
+    icap_classification = Column(SQLEnum(ICAPLevel, native_enum=False), nullable=True)
     icap_evidence = Column(JSON, nullable=True)
 
     # Behavioral data
@@ -318,6 +321,7 @@ class EngagementLog(Base):
     total_duration = Column(Integer, default=0)  # video total length
     started_at = Column(DateTime, default=datetime.utcnow)
     ended_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     student = relationship("User", back_populates="engagement_logs")
@@ -400,6 +404,7 @@ class AssignmentSubmission(Base):
     student_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     file_url = Column(String(500), nullable=True)
     text = Column(Text, nullable=True)
+    structured_answers = Column(JSON, nullable=True)
     grade = Column(Float, nullable=True)
     teacher_feedback = Column(Text, nullable=True)
     submitted_at = Column(DateTime, default=datetime.utcnow)
@@ -474,7 +479,7 @@ class Notification(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
     sender_id = Column(String, ForeignKey("users.id"), nullable=True)
-    type = Column(SQLEnum(NotificationType), nullable=False)
+    type = Column(SQLEnum(NotificationType, native_enum=False), nullable=False)
     title = Column(String(300), nullable=False)
     message = Column(Text, nullable=True)
     extra_data = Column(JSON, nullable=True)  # {course_id, lecture_id, quiz_id, etc}
@@ -541,7 +546,7 @@ class ICAPLog(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     student_id = Column(String, ForeignKey("users.id"), nullable=False)
     lecture_id = Column(String, ForeignKey("lectures.id", ondelete="CASCADE"), nullable=False)
-    classification = Column(SQLEnum(ICAPLevel), nullable=False)
+    classification = Column(SQLEnum(ICAPLevel, native_enum=False), nullable=False)
     evidence = Column(JSON, nullable=True)
     # evidence: {keyboard_activity, quiz_score, note_taking, interaction_count, ...}
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -566,7 +571,7 @@ class Message(Base):
     course_id = Column(String, ForeignKey("courses.id", ondelete="CASCADE"), nullable=True)  # Optional: linked to course context
     subject = Column(String(300), nullable=True)
     content = Column(Text, nullable=False)
-    category = Column(SQLEnum(MessageCategory), default=MessageCategory.GENERAL)
+    category = Column(SQLEnum(MessageCategory, native_enum=False), default=MessageCategory.GENERAL)
     is_read = Column(Boolean, default=False)
     parent_id = Column(String, ForeignKey("messages.id"), nullable=True)  # For threads
     analytics_context = Column(JSON, nullable=True)

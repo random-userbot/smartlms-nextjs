@@ -755,8 +755,6 @@ async def generate_ai_quiz(
                 status_code=400, 
                 detail="No context available for quiz generation. Please ensure the lecture has a description, summary, or transcript."
             )
-                detail="No content found to generate quiz. Transcript is processing and no description was provided."
-            )
 
     try:
         questions = await generate_quiz_questions(

@@ -36,6 +36,10 @@ from app.routers import messaging as messaging_router
 
 
 
+from app.services.db_sync import run_db_sync
+
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
@@ -43,6 +47,9 @@ async def lifespan(app: FastAPI):
     print("\n" + "=" * 60)
     print("  Smart LMS Backend Starting...")
     print("=" * 60)
+
+    # 1. Database Schema Guard (Self-Healing)
+    await run_db_sync()
 
     # In Render free tier, we might want to skip strict checks for now or just warn
     if (
@@ -56,7 +63,11 @@ async def lifespan(app: FastAPI):
         await create_tables()
         print("[OK] Database tables created/verified")
     else:
-        print("[INFO] AUTO_CREATE_TABLES disabled; expecting managed migrations")
+        print("[INFO] AUTO_CREATE_TABLES disabled")
+
+    # CORS Diagnostic
+    print(f"[CORS] Allowed Origins: {settings.allowed_origins()}")
+    print(f"[CORS] Mode: {'Universal' if settings.ALLOW_ALL_CORS_IN_DEV else 'Restricted'}")
 
     if settings.AUTO_CREATE_INDEXES:
         await ensure_performance_indexes()
@@ -102,26 +113,9 @@ rate_limiter = InMemoryRateLimiter(
 )
 rate_limit_exempt_paths = settings.rate_limit_exempt_paths()
 
-# Serve uploaded lecture/material files
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-app.mount("/media", StaticFiles(directory=settings.UPLOAD_DIR), name="media")
+# --- MIDDLEWARE STACK ---
 
-# CORS
-allow_origin_regex = None
-if settings.APP_ENV != "production" and settings.ALLOW_ALL_CORS_IN_DEV:
-    allow_origin_regex = "https?://.*"
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.allowed_origins(),
-    allow_origin_regex=allow_origin_regex,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-# Request logging middleware
+# 1. Request logging middleware
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
@@ -140,6 +134,18 @@ async def log_requests(request: Request, call_next):
     return response
 
 
+# 2. Root heartbeat for ALB
+@app.get("/")
+async def root_heartbeat():
+    """Root heartbeat for AWS ALB default health checks"""
+    return {
+        "status": "SmartLMS Core Online",
+        "node": "Matrix-Production-01",
+        "timestamp": time.time()
+    }
+
+
+# 3. Rate limiting middleware
 @app.middleware("http")
 async def apply_rate_limit(request: Request, call_next):
     if not settings.RATE_LIMIT_ENABLED:
@@ -187,6 +193,23 @@ app.include_router(assignments_router.router)
 app.include_router(activity_router.router)
 app.include_router(tutor_router.router)
 app.include_router(messaging_router.router)
+
+
+# --- FINAL MIDDLEWARE WRAPPER (OUTERMOST) ---
+# We add CORS last so it is the first to handle the request 
+# and the last to handle the response (wrapping all other middlewares).
+allow_origin_regex = None
+if settings.APP_ENV != "production" and settings.ALLOW_ALL_CORS_IN_DEV:
+    allow_origin_regex = "https?://.*"
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allowed_origins(),
+    allow_origin_regex=allow_origin_regex,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/api/health")

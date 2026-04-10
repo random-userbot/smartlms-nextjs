@@ -28,7 +28,7 @@ import {
   LayoutGrid,
   List as ListIcon
 } from 'lucide-react';
-import { coursesAPI, lecturesAPI, quizzesAPI, analyticsAPI, teacherAPI, messagesAPI } from '@/lib/api';
+import { coursesAPI, lecturesAPI, quizzesAPI, analyticsAPI, teacherAPI, messagesAPI, engagementAPI } from '@/lib/api';
 import Sidebar from '@/components/Sidebar';
 import CommunicationFab from '@/components/CommunicationFab';
 

@@ -55,7 +55,8 @@ export const authAPI = {
 };
 
 export const coursesAPI = {
-  list: () => api.get('/api/courses'),
+  list: (params?: { view?: string; search?: string; category?: string; teacher_id?: string }) => 
+    api.get('/api/courses', { params }),
   get: (id: string) => api.get(`/api/courses/${id}`),
   getMyCourses: () => api.get('/api/courses/enrolled/my-courses'),
   enroll: (id: string) => api.post(`/api/courses/${id}/enroll`),
@@ -118,8 +119,8 @@ export const engagementAPI = {
   getHeatmap: (lectureId: string) => api.get(`/api/engagement/heatmap/${lectureId}`),
   getLiveWatchers: (lectureId: string) => api.get(`/api/engagement/live-watchers/${lectureId}`),
   getHistory: (lectureId: string) => api.get(`/api/engagement/history/${lectureId}`),
-  saveSessionEnd: (data: { session_id: string; lecture_id: string; waveform: any[] }) => 
-    api.post('/api/engagement/session-end', data),
+  finalizeSession: (data: { session_id: string; lecture_id: string; waveform: any[] }) => 
+    api.post('/api/engagement/finalize-session', data),
 };
 
 export const analyticsAPI = {
@@ -135,6 +136,7 @@ export const analyticsAPI = {
   getLecturesEngagement: (courseId: string) => api.get(`/api/analytics/course/${courseId}/lectures-engagement`),
   getFeedbackAnalysis: (courseId: string) => api.get(`/api/analytics/course/${courseId}/feedback-analysis`),
   getTeachingScore: (courseId: string) => api.get(`/api/analytics/teaching-score/${courseId}`),
+  getLiveSessions: () => api.get('/api/analytics/live-sessions'),
   deployPatch: (courseId: string) => api.post(`/api/analytics/course/${courseId}/deploy-patch`),
 };
 
@@ -237,6 +239,7 @@ export const notificationsAPI = {
 };
 
 export const assignmentsAPI = {
+  get: (id: string) => api.get(`/api/assignments/${id}`),
   getByCourse: (courseId: string) => api.get(`/api/assignments/course/${courseId}`),
   create: (data: any) => api.post('/api/assignments', data),
   submit: (data: any) => api.post('/api/assignments/submit', data),
@@ -258,6 +261,10 @@ export const adminAPI = {
   deleteCourse: (id: string) => api.delete(`/api/admin/courses/${id}`),
   getSystemStats: () => api.get('/api/admin/system-stats'),
   getEngagementCorrelation: () => api.get('/api/admin/engagement-correlation'),
+  exportDatasets: () => api.get('/api/admin/export-datasets', { responseType: 'blob' }),
+  getDBTables: () => api.get('/api/admin/db/tables'),
+  getTableData: (tableName: string, page: number = 1) => 
+    api.get(`/api/admin/db/tables/${tableName}?page=${page}`),
 };
 
 export const activityAPI = {

@@ -438,7 +438,7 @@ async def submit_engagement_data(
     # --- High-Visibility Terminal Metrics (Refined) ---
     ts_str = datetime.now().strftime("%H:%M:%S")
     print("\n" + "═"*70, flush=True)
-    print(f"║ NEURAL HUB | {ts_str} | Session: {request.session_id[:8]}... ║", flush=True)
+    print(f"║ ENGAGEMENT ENGINE | {ts_str} | Session: {request.session_id[:8]}... ║", flush=True)
     print("╟" + "─"*68 + "╢", flush=True)
     print(f"║ Lecture: {request.lecture_id[:12]}...  ║ User: {current_user.full_name[:15]} ║", flush=True)
     print("╟" + "─"*68 + "╢", flush=True)
@@ -446,7 +446,7 @@ async def submit_engagement_data(
     
     if final_scores.get("ensemble_model_count"):
         m_count = final_scores.get("ensemble_model_count", 0)
-        print(f"║ NEURAL ENSEMBLE ({m_count} SOTA): {final_scores['overall']:.1f}% (+Refined Logic Active) ║", flush=True)
+        print(f"║ ENSEMBLE ANALYTICS ({m_count} SOTA): {final_scores['overall']:.1f}% (+Refined Logic Active) ║", flush=True)
     
     print(f"║ ICAP STATE: {icap_level.upper()} | CONFIDENCE: {icap_confidence:.2f} ║", flush=True)
     print("╚" + "═"*68 + "╝\n", flush=True)
@@ -472,33 +472,44 @@ async def submit_engagement_data(
             is_stable = True
 
     if is_stable:
-        # --- UPDATE STABLE STATE ---
+        # --- UPDATE STABLE STATE (Live Flow) ---
         last_log.ended_at = datetime.utcnow()
+        last_log.updated_at = datetime.utcnow()
         last_log.watch_duration += request.watch_duration
         last_log.keyboard_events += request.keyboard_events
         last_log.mouse_events += request.mouse_events
         last_log.tab_switches += request.tab_switches
         
-        # Aggregate features for SHAP/Forensics (Last-N sample approach)
+        # Append to Rich feature timeline for Dataset preparation
+        if last_log.feature_timeline is None:
+            last_log.feature_timeline = []
+        
+        # Add new features to the timeline
+        last_log.feature_timeline.extend(features_dicts)
+        
+        # Aggregated stats in the features blob
         if isinstance(last_log.features, dict):
             last_log.features["aggregated_samples"] = last_log.features.get("aggregated_samples", 0) + 1
-            # We preserve a sample of the raw AU features for the SHAP map
-            if "raw_feature_mirror" not in last_log.features:
-                last_log.features["raw_feature_mirror"] = features_dicts[0] if features_dicts else {}
+            last_log.features["raw_feature_mirror"] = features_dicts[0] if features_dicts else {}
         
-        # Update the overall score with a moving average to smooth transitions
+        # Update scores (Moving average for smoothness)
         last_log.overall_score = (last_log.overall_score + final_scores['overall']) / 2
+        last_log.boredom_score = (last_log.boredom_score + final_scores['boredom']) / 2
+        last_log.engagement_score = (last_log.engagement_score + final_scores['engagement']) / 2
+        last_log.confusion_score = (last_log.confusion_score + final_scores['confusion']) / 2
+        last_log.frustration_score = (last_log.frustration_score + final_scores['frustration']) / 2
         
         db.add(last_log)
         log = last_log
         # print moved after commit/refresh
     else:
-        # --- CREATE NEW STATE BLOCK ---
+        # --- CREATE NEW STATE BLOCK (Live Flow - Temporary) ---
         log = EngagementLog(
             student_id=current_user.id,
             lecture_id=request.lecture_id,
             session_id=request.session_id,
             status=EngagementStatus.PROCESSING,
+            is_finalized=False, # MARK AS TEMPORARY
             overall_score=final_scores['overall'], 
             boredom_score=final_scores['boredom'],
             engagement_score=final_scores['engagement'],
@@ -510,6 +521,7 @@ async def submit_engagement_data(
                 "ensemble_stats": final_scores.get("model_breakdown", {}),
                 "raw_feature_mirror": features_dicts[0] if features_dicts else {},
             },
+            feature_timeline=features_dicts, # START TIMELINE in dedicated column
             scores_timeline=timeline_points,
             icap_classification=ICAPLevel(icap_level),
             icap_evidence={**icap_evidence, "confidence": icap_confidence},
@@ -524,7 +536,8 @@ async def submit_engagement_data(
             watch_duration=request.watch_duration,
             total_duration=request.total_duration,
             started_at=datetime.utcnow(),
-            ended_at=datetime.utcnow()
+            ended_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
         )
         db.add(log)
         # print moved after commit/refresh
@@ -619,13 +632,16 @@ async def get_job_status(
     return response
 
 
-@router.post("/session-end")
-async def finalize_session_waveform(
+@router.post("/finalize-session")
+async def finalize_session(
     request: Dict[str, Any],
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Save the complete lecture waveform at the end of a session for forensic analysis."""
+    """
+    Mark the session as permanent and finalize datasets.
+    This fulfills the requirement to only store permanent data upon completion.
+    """
     session_id = request.get("session_id")
     lecture_id = request.get("lecture_id")
     waveform = request.get("waveform", [])
@@ -633,18 +649,47 @@ async def finalize_session_waveform(
     if not session_id or not lecture_id:
         raise HTTPException(status_code=400, detail="Missing session_id or lecture_id")
 
-    # Update all logs for this session with the final waveform or create a summary
+    # 1. Update all logs for this session to finalized
     stmt = (
         update(EngagementLog)
-        .where(EngagementLog.session_id == session_id)
-        .values(scores_timeline=waveform, ended_at=datetime.utcnow())
+        .where(
+            EngagementLog.session_id == session_id,
+            EngagementLog.student_id == current_user.id
+        )
+        .values(
+            is_finalized=True, 
+            scores_timeline=waveform, 
+            ended_at=datetime.utcnow(),
+            status=EngagementStatus.COMPLETED
+        )
     )
     await db.execute(stmt)
+    
+    # 2. Trigger clean-up of any stale sessions (Self-cleaning logic)
+    # Delete non-finalized sessions older than 2 hours
+    cutoff = datetime.utcnow() - timedelta(hours=2)
+    cleanup_stmt = (
+        update(EngagementLog)
+        .where(
+            EngagementLog.is_finalized == False,
+            EngagementLog.updated_at < cutoff
+        )
+        .values(status=EngagementStatus.FAILED, error_message="Session timed out or abandoned")
+    )
+    # Actually, user said 'don't store that data'. 
+    # To truly 'not store', we should DELETE.
+    from sqlalchemy import delete
+    del_stmt = delete(EngagementLog).where(
+        EngagementLog.is_finalized == False,
+        EngagementLog.updated_at < cutoff
+    )
+    await db.execute(del_stmt)
+
     await db.commit()
     
-    print(f"\n✅ [SESSION_FINALIZED] ID: {session_id[:8]} | Waveform Points Persisted: {len(waveform)}", flush=True)
+    print(f"\n🏆 [SESSION_FINALIZED] ID: {session_id[:8]} | Marked Permanent | Waveform: {len(waveform)}", flush=True)
     
-    return {"status": "success", "points_persisted": len(waveform)}
+    return {"status": "success", "finalized": True}
 
 
 @router.get("/history/{lecture_id}")
@@ -658,6 +703,7 @@ async def get_engagement_history(
         select(EngagementLog).where(
             EngagementLog.student_id == current_user.id,
             EngagementLog.lecture_id == lecture_id,
+            EngagementLog.is_finalized == True # EXCLUDE LIVE FLOW BLOCKS
         ).order_by(EngagementLog.started_at.desc())
     )
     logs = result.scalars().all()
@@ -693,7 +739,10 @@ async def get_student_engagement_summary(
         raise HTTPException(status_code=403, detail="Cannot view other students' data")
 
     result = await db.execute(
-        select(EngagementLog).where(EngagementLog.student_id == student_id)
+        select(EngagementLog).where(
+            EngagementLog.student_id == student_id,
+            EngagementLog.is_finalized == True # DATASET INTEGRITY
+        )
         .order_by(EngagementLog.started_at.desc())
     )
     logs = result.scalars().all()

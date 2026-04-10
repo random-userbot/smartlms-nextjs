@@ -13,13 +13,14 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     APP_PORT: int = 8000
     FRONTEND_URL: str = "http://localhost:5173"
+    API_BASE_URL: str = "http://localhost:8000"
     APP_TRUSTED_ORIGINS: str = ""
     ALLOW_ALL_CORS_IN_DEV: bool = True
     AUTO_CREATE_TABLES: bool = True
     AUTO_CREATE_INDEXES: bool = True
     REQUIRE_SECURE_JWT_IN_PROD: bool = True
     ANALYTICS_MAX_LOG_ROWS: int = 1200
-    STORAGE_PROVIDER: str = "cloudinary"  # 'cloudinary', 's3', or 'local'
+    STORAGE_PROVIDER: str = "s3"  # prioritized 's3', fallback to 'cloudinary' or 'local'
     ML_SERVICE_URL: str = "http://localhost:8001"  # dedicated ML instance
 
     # API rate limiting
@@ -59,7 +60,8 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
     AWS_REGION: str = "us-east-1"
-    AWS_S3_BUCKET: str = ""
+    AWS_S3_BUCKET: str = "smartlms-assets-friedrice"
+    AWS_S3_MODEL_BUCKET: str = "smartlms-assets-friedrice"
     AWS_S3_PATH_STYLE: bool = False
     
     # AWS SQS (Async ML Pipeline)
@@ -69,6 +71,8 @@ class Settings(BaseSettings):
     # YouTube resilience
     YOUTUBE_PROXY: Optional[str] = None
     YOUTUBE_COOKIES: Optional[str] = None  # Raw string or base64 encoded cookies.txt
+    YOUTUBE_USER_AGENT: Optional[str] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    YOUTUBE_API_KEY: Optional[str] = None
 
     # Debug
     DEBUG_MODE: bool = False
@@ -76,10 +80,10 @@ class Settings(BaseSettings):
 
     # SQL / Performance
     SQL_ECHO: bool = False
-    DB_POOL_SIZE: int = 3
-    DB_MAX_OVERFLOW: int = 2
-    DB_POOL_RECYCLE_SECONDS: int = 1800
-    DB_CONNECT_TIMEOUT_SECONDS: float = 10.0
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
+    DB_POOL_RECYCLE_SECONDS: int = 3600
+    DB_CONNECT_TIMEOUT_SECONDS: float = 30.0
     DB_COMMAND_TIMEOUT_SECONDS: float = 30.0
 
     # Local media storage (store file path in DB, bytes on disk/object store)

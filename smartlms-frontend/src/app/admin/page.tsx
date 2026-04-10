@@ -23,6 +23,7 @@ import Sidebar from '@/components/Sidebar';
 export default function AdminPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -36,6 +37,26 @@ export default function AdminPage() {
       console.error('Failed to load admin stats', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExportDataset = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const response = await adminAPI.exportDatasets();
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `platform_neural_dataset_${new Date().toISOString().split('T')[0]}.json`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Dataset export failed', err);
+      alert('Failed to export dataset. Please ensure there are finalized sessions available.');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -123,8 +144,34 @@ export default function AdminPage() {
                   ))}
                 </div>
 
-                <div className="p-8 bg-primary/5 border border-primary/20 rounded-[2rem] space-y-4">
-                  <div className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                {/* New Neural Research Section */}
+                <div className="p-8 bg-primary/5 border border-primary/20 rounded-[2rem] space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                       <Database size={16} /> Neural Research Workspace
+                    </div>
+                    {exporting && (
+                       <div className="flex items-center gap-2 text-[10px] font-black text-primary animate-pulse uppercase">
+                         <Layers size={12} className="animate-spin" /> Building Platform Dataset...
+                       </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col md:flex-row items-center gap-6">
+                    <p className="flex-1 text-sm font-medium text-white/70 leading-relaxed">
+                      Aggregate and export high-fidelity engagement telemetry from all finalized sessions across the platform. Use this data for SOTA ML training and behavioral analysis.
+                    </p>
+                    <button 
+                      onClick={handleExportDataset}
+                      disabled={exporting}
+                      className={`px-8 py-4 bg-primary text-background font-black text-sm uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 whitespace-nowrap ${exporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {exporting ? 'Syncing...' : 'Export Platform Dataset'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-8 bg-surface/5 border border-white/5 rounded-[2rem] space-y-4">
+                  <div className="text-xs font-black uppercase tracking-widest text-text-muted flex items-center gap-2">
                     <Activity size={16} /> Operational Insights
                   </div>
                   <p className="text-sm font-medium text-white/90 leading-relaxed italic">
@@ -148,10 +195,12 @@ export default function AdminPage() {
                     { label: 'User Indexing', desc: 'Manage all accounts and permissions', icon: Users, href: '/admin/users' },
                     { label: 'Teacher Validation', desc: 'Audit educational staff and scores', icon: ShieldCheck, href: '/admin/teachers' },
                     { label: 'Module Registry', desc: 'Audit system-wide course content', icon: Layers, href: '/admin/courses' },
+                    { label: 'Database Explorer', desc: 'Audit raw RDS records and schema', icon: Database, href: '/admin/database' },
                     { label: 'Matrix Config', desc: 'Adjust global system parameters', icon: Settings, href: '/admin/settings' },
                   ].map(action => (
-                    <button 
+                    <a 
                       key={action.label} 
+                      href={action.href}
                       className="w-full p-6 bg-white/5 border border-white/10 rounded-3xl hover:bg-white/10 hover:border-primary/40 transition-all flex items-center gap-6 group text-left"
                     >
                       <div className="w-14 h-14 bg-background rounded-2xl border border-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
@@ -162,7 +211,7 @@ export default function AdminPage() {
                         <div className="text-[10px] font-black text-text-muted uppercase tracking-widest mt-0.5">{action.desc}</div>
                       </div>
                       <ChevronRight size={20} className="text-white/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                    </button>
+                    </a>
                   ))}
                 </div>
               </div>

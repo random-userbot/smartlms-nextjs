@@ -11,10 +11,17 @@ import glob
 import time
 import tempfile
 import shutil
+import requests
+import http.cookiejar
 from typing import List, Dict, Optional
 import yt_dlp
 import base64
 from youtube_transcript_api import YouTubeTranscriptApi
+try:
+    from googleapiclient.discovery import build
+    GOOGLE_API_CLIENT_AVAILABLE = True
+except ImportError:
+    GOOGLE_API_CLIENT_AVAILABLE = False
 from groq import Groq
 from app.config import settings
 from app.services.groq_fallback import AllModelsRateLimitedError, transcription_with_fallback
@@ -40,16 +47,34 @@ class YouTubeService:
             "no_warnings": True,
             "extract_flat": True,
             "skip_download": True,
+            "nocheckcertificate": True,
+            "ignoreerrors": True,
+            "no_color": True,
+            "geo_bypass": True,
         }
         self._groq_cooldown_until = 0.0
         self._cookie_path = None
-        self._setup_resilience()
+        # Lazy resilience setup happens on first use to ensure environment is loaded
 
     def _setup_resilience(self):
         """Configure cookies and proxies from settings."""
+        if self._cookie_path: # Already setup
+            return
+
+        print(f"[YOUTUBE] CONFIG CHECK: Cookies present: {bool(settings.YOUTUBE_COOKIES)} | API Key present: {bool(settings.YOUTUBE_API_KEY)} | UA present: {bool(settings.YOUTUBE_USER_AGENT)}", flush=True)
+
         if settings.YOUTUBE_PROXY:
             self.ydl_opts["proxy"] = settings.YOUTUBE_PROXY
-            print(f"[YOUTUBE] Using proxy: {settings.YOUTUBE_PROXY[:20]}...", flush=True)
+
+        if settings.YOUTUBE_USER_AGENT:
+            self.ydl_opts["user_agent"] = settings.YOUTUBE_USER_AGENT
+            self.ydl_opts["http_headers"] = {
+                "User-Agent": settings.YOUTUBE_USER_AGENT,
+                "Referer": "https://www.youtube.com/",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,webp,image/apng,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+            }
+            print(f"[YOUTUBE] Matching User-Agent and Headers applied.", flush=True)
 
         if settings.YOUTUBE_COOKIES:
             try:
@@ -58,45 +83,72 @@ class YouTubeService:
                 if self._cookie_path:
                     self.ydl_opts["cookiefile"] = self._cookie_path
                     print(f"[YOUTUBE] Authentication cookies loaded from environment.", flush=True)
+                else:
+                    print(f"[YOUTUBE] [WARNING] Cookies provided but failed to write to temp file.", flush=True)
             except Exception as e:
-                print(f"[YOUTUBE] Failed to setup cookies: {e}", flush=True)
+                print(f"[YOUTUBE] [ERROR] Failed to setup cookies: {e}", flush=True)
 
     def _get_cookie_file(self, cookie_str: str) -> Optional[str]:
         """Decode and write cookies to a temporary file for yt-dlp."""
         try:
-            # 1. Check if it's base64 encoded
-            try:
-                decoded = base64.b64decode(cookie_str).decode('utf-8')
-                content = decoded
-            except Exception:
-                # Fallback to raw string
+            if not cookie_str:
+                return None
+
+            content = ""
+            # Detection and normalization logic preserved...
+            is_probably_base64 = re.match(r'^[A-Za-z0-9+/=]+$', cookie_str.strip().replace('\n', '').replace('\r', ''))
+            
+            if is_probably_base64:
+                try:
+                    decoded = base64.b64decode(cookie_str).decode('utf-8')
+                    if "# Netscape" in decoded or "youtube.com" in decoded or "domain" in decoded:
+                        content = decoded
+                    else:
+                        content = cookie_str
+                except Exception:
+                    content = cookie_str
+            else:
                 content = cookie_str
 
-            # 2. Check and normalize format
-            # If it's a raw header string (key=val; key2=val2), convert to Netscape format
-            if ";" in content and "=" in content and "Netscape" not in content and "# HTTP Cookie File" not in content:
-                print("[YOUTUBE] Detected raw cookie header format. Converting...", flush=True)
+            if ";" in content and "=" in content and "# Netscape" not in content and "# HTTP Cookie File" not in content:
                 netscape_lines = ["# Netscape HTTP Cookie File", "# http://curl.haxx.se/rfc/cookie_spec.html", "# This is a generated file! Do not edit.", ""]
                 for part in content.split(";"):
                     if "=" in part:
                         k, v = part.strip().split("=", 1)
-                        # Format: domain, flag, path, secure, expiration, name, value
-                        # Using .youtube.com for global applicability
                         netscape_lines.append(f".youtube.com\tTRUE\t/\tTRUE\t0\t{k}\t{v}")
                 content = "\n".join(netscape_lines)
 
-            if not content or ("Netscape" not in content and "# HTTP Cookie File" not in content):
-                print("[YOUTUBE] Invalid cookie format. Expected Netscape or Header format.", flush=True)
+            if not content or ("# Netscape" not in content and "# HTTP Cookie File" not in content):
                 return None
 
             temp_dir = tempfile.gettempdir()
             path = os.path.join(temp_dir, f"yt_cookies_{int(time.time())}.txt")
             with open(path, "w", encoding='utf-8') as f:
                 f.write(content)
+            
             return path
         except Exception as e:
-            print(f"[YOUTUBE] Error creating temp cookie file: {e}", flush=True)
+            print(f"[YOUTUBE] [ERROR] Error creating temp cookie file: {e}", flush=True)
             return None
+
+    def _create_authenticated_session(self) -> requests.Session:
+        """Create a requests session with manually loaded cookies."""
+        session = requests.Session()
+        session.headers.update({
+            "User-Agent": settings.YOUTUBE_USER_AGENT or "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+        })
+        
+        if self._cookie_path and os.path.exists(self._cookie_path):
+            try:
+                cj = http.cookiejar.MozillaCookieJar(self._cookie_path)
+                cj.load(ignore_discard=True, ignore_expires=True)
+                session.cookies.update(cj)
+                print("[YOUTUBE] Injected cookies into requests session.", flush=True)
+            except Exception as e:
+                print(f"[YOUTUBE] [WARNING] Failed to load cookies into session: {e}", flush=True)
+        
+        return session
 
     def _get_ydl_opts(self, extra_opts: Optional[Dict] = None) -> Dict:
         """Get consolidated yt-dlp options."""
@@ -184,17 +236,30 @@ class YouTubeService:
         Get transcript with a multi-layered fallback strategy.
         Supports YouTube URLs and direct media URLs (e.g., Cloudinary).
         """
+        self._setup_resilience() # Ensure cookies/UA are loaded
         video_id = self.extract_video_id(video_url)
         
         # Scenario A: YouTube Video
         if video_id:
-            # Tier 1: YouTube Transcript API
+            # Tier 0: Official YouTube Data API
+            if settings.YOUTUBE_API_KEY and GOOGLE_API_CLIENT_AVAILABLE:
+                try:
+                    print(f"[YOUTUBE] [Tier 0] Trying Official API for {video_id}...", flush=True)
+                    transcript_text = await self._fetch_official_api_info(video_id)
+                    # Note: captions().download() usually needs OAuth, so we mostly use this for metadata
+                    # and then fallback to the scraper which now has the API key info if needed.
+                except Exception as e:
+                    print(f"Official API metadata check failed: {e}")
+
+            # Tier 1: YouTube Transcript API (The Scraper)
             try:
+                print(f"[YOUTUBE] [Tier 1] Fetching scraper transcript for {video_id}...", flush=True)
                 transcript_text = await self._fetch_api_transcript(video_id)
                 if transcript_text:
+                    print(f"[YOUTUBE] Success via scraper transcript.", flush=True)
                     return transcript_text
             except Exception as e:
-                print(f"Transcript API failed: {e}")
+                print(f"Scraper transcript fetch failed: {e}")
 
             # Fallback to Media Transcription (Local or Groq)
             try:
@@ -211,33 +276,77 @@ class YouTubeService:
         
         return ""
 
+    async def _fetch_official_api_info(self, video_id: str) -> Optional[str]:
+        """Fetch metadata via Official API to see if we can get better context."""
+        def _api():
+            try:
+                youtube = build("youtube", "v3", developerKey=settings.YOUTUBE_API_KEY)
+                request = youtube.videos().list(part="snippet,contentDetails", id=video_id)
+                response = request.execute()
+                if response['items']:
+                    snippet = response['items'][0]['snippet']
+                    print(f"[YOUTUBE] Official API verified video: {snippet['title']}", flush=True)
+                return None # Usually doesn't return transcript text directly without OAuth
+            except Exception as e:
+                print(f"Official API error: {e}")
+                return None
+        return await asyncio.get_event_loop().run_in_executor(None, _api)
+
     async def _fetch_api_transcript(self, video_id: str) -> Optional[str]:
-        """Internal helper for Tier 1 transcript fetching."""
+        """Internal helper for Tier 1 transcript fetching with safety timeout."""
         def _ytt():
             try:
-                # Prepare proxies for YouTubeTranscriptApi
-                proxies = None
-                if settings.YOUTUBE_PROXY:
-                    proxies = {
-                        "http": settings.YOUTUBE_PROXY,
-                        "https": settings.YOUTUBE_PROXY
-                    }
-
-                t_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=proxies)
-                langs = ['en', 'ja', 'hi', 'es', 'fr', 'de', 'pt', 'ru', 'ko', 'zh-Hans', 'zh-Hant', 'ar', 'id', 'tr']
+                # 1. Create authenticated session
+                session = self._create_authenticated_session()
+                
+                # 2. Instantiate API with custom session (bypass library restrictions)
+                api_instance = YouTubeTranscriptApi(http_client=session)
+                
+                print(f"[YOUTUBE] [Tier 1] Fetching via authenticated session...", flush=True)
+                
+                # 3. Fetch transcript list
                 try:
-                    transcript = t_list.find_transcript(langs)
-                except:
+                    transcript_list = api_instance.list(video_id)
+                    
+                    # 4. English Selection Strategy
+                    # Tier 1: Manual or Generated English
                     try:
-                        transcript = t_list.find_generated_transcript(langs)
+                        transcript = transcript_list.find_transcript(['en'])
+                        print(f"[YOUTUBE] SELECTED LANGUAGE: {transcript.language_code} ({transcript.language})", flush=True)
                     except:
-                        transcript = next(iter(t_list))
-                if transcript:
-                    return " ".join([p['text'] for p in transcript.fetch()])
-            except:
+                        try:
+                            # Tier 2: Any English (Generated)
+                            transcript = transcript_list.find_generated_transcript(['en'])
+                            print(f"[YOUTUBE] SELECTED GENERATED: {transcript.language_code}", flush=True)
+                        except:
+                            # Tier 3: Translate whatever is first to English
+                            first_available = next(iter(transcript_list))
+                            transcript = first_available.translate('en')
+                            print(f"[YOUTUBE] FALLBACK TRANSLATION: {first_available.language_code} -> en", flush=True)
+                    
+                    data = transcript.fetch()
+                    result = " ".join([p['text'] if isinstance(p, dict) else p.text for p in data])
+                    print(f"[YOUTUBE] CONTENT PREVIEW: {result[:100]}...", flush=True)
+                    return result
+                except Exception as ex:
+                    print(f"[YOUTUBE] Scraper Fetch Failed: {ex}", flush=True)
+                    return None
+            except Exception as e:
+                print(f"[YOUTUBE] Scraper Setup Failed: {e}", flush=True)
                 return None
+
+        try:
+            # Enforce a 45-second timeout to prevent background task hangs
+            return await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(None, _ytt),
+                timeout=45.0
+            )
+        except asyncio.TimeoutError:
+            print("[YOUTUBE] [Tier 1] Scraper timed out after 45s. pivoting to fallback.", flush=True)
             return None
-        return await asyncio.get_event_loop().run_in_executor(None, _ytt)
+        except Exception as e:
+            print(f"[YOUTUBE] Scraper execution error: {e}", flush=True)
+            return None
 
     async def _download_media_audio(self, url: str, is_youtube: bool = True) -> Optional[str]:
         """Download audio from YouTube or a direct URL to a temp file."""
@@ -245,12 +354,17 @@ class YouTubeService:
         temp_dir = tempfile.mkdtemp(prefix=f"audio_proc_{identifier}_")
         output_path = os.path.join(temp_dir, f'{identifier}.%(ext)s')
 
+        self._setup_resilience()
         if is_youtube:
             ydl_opts = self._get_ydl_opts({
                 'format': '139/249/bestaudio[abr<=64]/bestaudio/best',
                 'outtmpl': output_path,
                 'quiet': True,
                 'no_warnings': True,
+                'nocheckcertificate': True,
+                'ignoreerrors': True,
+                'user_agent': settings.YOUTUBE_USER_AGENT or self.ydl_opts.get('user_agent'),
+                'cookiefile': self._cookie_path
             })
         else:
             # For direct URLs, we just download the file
