@@ -160,7 +160,7 @@ export default function TeacherDashboard() {
               onChange={(e) => setSelectedCourse(e.target.value)}
               className="bg-surface border border-border text-foreground text-sm font-bold rounded-2xl px-6 py-3 crimson-glow"
             >
-              {courses.map((c: any) => (
+              {(courses || []).map((c: any) => (
                 <option key={c.id} value={c.id}>{c.title}</option>
               ))}
             </select>
@@ -235,7 +235,7 @@ export default function TeacherDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {liveSessions.map((ls) => (
+              {(liveSessions || []).map((ls: any) => (
                 <div key={ls.session_id} className="glass-card p-6 border-white/5 bg-surface/40 hover:bg-surface transition-all group relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none" />
                   
@@ -249,7 +249,7 @@ export default function TeacherDashboard() {
                     </div>
                     <div className="flex flex-col items-end">
                        <div className={`text-sm font-black ${ls.engagement > 70 ? 'text-success' : ls.engagement > 40 ? 'text-warning' : 'text-primary'}`}>
-                          {ls.engagement.toFixed(0)}%
+                          {(ls.engagement || 0).toFixed(0)}%
                        </div>
                        <div className="text-[7px] font-black text-text-muted uppercase tracking-widest">FOCUS</div>
                     </div>
@@ -294,7 +294,7 @@ export default function TeacherDashboard() {
                   onChange={(e) => setSelectedLecture(e.target.value)}
                   className="bg-surface border border-border text-xs font-bold text-foreground rounded-xl px-4 py-2"
                 >
-                  {lectures.map(l => (
+                  {(lectures || []).map(l => (
                     <option key={l.id} value={l.id}>{l.title}</option>
                   ))}
                 </select>
@@ -319,7 +319,7 @@ export default function TeacherDashboard() {
                 <Users size={12} /> Student List
               </div>
               <div className="space-y-2">
-                {students.map(s => (
+                {(students || []).map(s => (
                   <div 
                     key={s.student_id}
                     onClick={() => {
@@ -402,7 +402,7 @@ export default function TeacherDashboard() {
              </div>
 
               <div className="space-y-4">
-                {atRiskStudents.length > 0 ? atRiskStudents.map((r, i) => (
+                {(atRiskStudents || []).length > 0 ? (atRiskStudents || []).map((r, i) => (
                   <Link 
                     key={i} 
                     href={`/teacher/students/${r.student_id}`}
@@ -414,22 +414,22 @@ export default function TeacherDashboard() {
                         <div className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{r.full_name}</div>
                         <div className="flex items-center gap-2">
                           <div className={`text-[10px] font-black uppercase tracking-widest ${r.visibility_score < 85 ? 'text-primary' : 'text-text-muted'}`}>
-                            {r.visibility_score < 100 ? `Visibility: ${r.visibility_score.toFixed(0)}%` : 'Full Sync'}
+                            {r.visibility_score < 100 ? `Visibility: ${(r.visibility_score || 0).toFixed(0)}%` : 'Full Sync'}
                           </div>
                           <span className="text-[10px] text-foreground/20">•</span>
                           <div className={`text-[10px] font-black uppercase tracking-widest ${r.tab_switches > 5 ? 'text-info' : 'text-text-muted'}`}>
-                            Tabs: {r.tab_switches}
+                            Tabs: {r.tab_switches || 0}
                           </div>
                           <span className="text-[10px] text-foreground/20">•</span>
-                          <div className="text-[10px] font-bold text-text-muted uppercase">{r.sessions} sessions</div>
+                          <div className="text-[10px] font-bold text-text-muted uppercase">{r.sessions || 0} sessions</div>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className={`text-sm font-black ${r.engagement_score < 40 ? 'text-primary' : r.engagement_score < 70 ? 'text-warning' : 'text-success'}`}>
-                        {r.engagement_score < 40 ? 'Needs Help' : r.engagement_score < 70 ? 'Doing Okay' : 'Great Job'}
+                      <div className={`text-sm font-black ${(r.engagement_score || 0) < 40 ? 'text-primary' : (r.engagement_score || 0) < 70 ? 'text-warning' : 'text-success'}`}>
+                        {(r.engagement_score || 0) < 40 ? 'Needs Help' : (r.engagement_score || 0) < 70 ? 'Doing Okay' : 'Great Job'}
                       </div>
-                      <div className="text-[10px] font-bold text-text-muted">{r.engagement_score.toFixed(0)}% focus</div>
+                      <div className="text-[10px] font-bold text-text-muted">{(r.engagement_score || 0).toFixed(0)}% focus</div>
                     </div>
                   </Link>
                 )) : (

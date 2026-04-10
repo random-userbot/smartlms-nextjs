@@ -36,9 +36,9 @@ export default function EngagementWaveform({
 }: EngagementWaveformProps) {
   
   const { pathData, lineData, ghostLine, latestY } = useMemo(() => {
-    if (!data || data.length === 0) return { pathData: '', lineData: '', ghostLine: '', latestY: 100 };
+    if (!data || !Array.isArray(data) || data.length === 0) return { pathData: '', lineData: '', ghostLine: '', latestY: 100 };
 
-    const engagementValues = data.map(d => d.engagement);
+    const engagementValues = data.map(d => d.engagement || 0);
     const minVal = Math.min(...engagementValues);
     const maxVal = Math.max(...engagementValues);
     

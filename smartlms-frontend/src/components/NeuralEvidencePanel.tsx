@@ -68,7 +68,8 @@ export default function NeuralEvidencePanel() {
     if (logs.length === 0) return;
     
     const headers = ["Timestamp", "Action", "Context"];
-    const rows = logs.map(log => [
+    const validLogs = Array.isArray(logs) ? logs : [];
+    const rows = validLogs.map(log => [
       new Date(log.created_at).toLocaleString(),
       log.action,
       JSON.stringify(log.details).replace(/"/g, '""')
@@ -112,13 +113,13 @@ export default function NeuralEvidencePanel() {
       </div>
 
       <div className="flex-1 overflow-y-auto max-h-[450px] p-4 space-y-3 custom-scrollbar">
-        {logs.length === 0 ? (
+        {!Array.isArray(logs) || logs.length === 0 ? (
           <div className="p-20 text-center opacity-40">
              <div className="text-sm font-bold text-white mb-2">No activity detected here yet.</div>
              <p className="text-xs text-text-muted">Start a lesson to see some results.</p>
           </div>
         ) : (
-          logs.map((log, i) => (
+          logs.map((log: any, i: number) => (
             <div 
               key={log.id || i} 
               className="group flex flex-col gap-3 p-5 rounded-[2rem] bg-background/40 border border-white/5 hover:border-primary/40 hover:bg-primary/5 transition-all animate-fade-in"

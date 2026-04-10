@@ -40,23 +40,25 @@ export default function MultiStudentWaves({
         // Transform data for Recharts
         // The API returns { timeline: [0, 1, 2...], students: [{ name, wave: [score,...] }] }
         // Recharts needs [ { minute: 0, studentA: 80, studentB: 70 }, ... ]
-        const timeline = res.data.timeline || [];
-        const students = res.data.students || [];
+        const timeline = Array.isArray(res.data?.timeline) ? res.data.timeline : [];
+        const students = Array.isArray(res.data?.students) ? res.data.students : [];
         
         const chartData = timeline.map((min: number, idx: number) => {
           const point: any = { minute: min };
           students.forEach((s: any) => {
-            point[s.student_name] = s.wave[idx];
+            if (s && s.wave && Array.isArray(s.wave)) {
+              point[s.student_name] = s.wave[idx];
+            }
             // Store lapses as hidden properties for the custom tooltip
-            point[`${s.student_name}_lapses`] = s.lapse_wave ? s.lapse_wave[idx] : 0;
-            point[`${s.student_name}_tabs`] = s.tab_wave ? s.tab_wave[idx] : 0;
+            point[`${s.student_name}_lapses`] = (s && Array.isArray(s.lapse_wave)) ? s.lapse_wave[idx] : 0;
+            point[`${s.student_name}_tabs`] = (s && Array.isArray(s.tab_wave)) ? s.tab_wave[idx] : 0;
           });
           return point;
         });
         
         setData({
           chartData,
-          studentNames: students.map((s: any) => s.student_name)
+          studentNames: students.map((s: any) => s.student_name || 'Unknown')
         });
       })
       .catch(err => console.error("Failed to fetch wave data:", err))

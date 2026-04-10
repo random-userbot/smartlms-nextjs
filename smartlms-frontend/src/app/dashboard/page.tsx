@@ -101,7 +101,7 @@ export default function DashboardPage() {
             </div>
             
             <div className="h-48 w-full flex items-end gap-1 relative z-10">
-              {data?.focus_pulse?.map((h: number, i: number) => (
+              {(Array.isArray(data?.focus_pulse) ? data.focus_pulse : []).map((h: number, i: number) => (
                 <div 
                   key={i} 
                   className="flex-1 bg-primary/20 rounded-full transition-all duration-1000 group-hover:bg-primary/40"

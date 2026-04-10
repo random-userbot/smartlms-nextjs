@@ -20,21 +20,38 @@ if (typeof window !== 'undefined') {
   api.interceptors.response.use(
     (response) => {
       const { data } = response;
-      
-      // Safety: ensure common list endpoints or nested array fields always return arrays
-      const arrayKeys = ['questions', 'tables', 'rows', 'messages', 'concentrations', 'concerns', 'suggestions', 'waveform', 'forensic_logs', 'components'];
-      
-      if (data === null || data === undefined) {
-        response.data = [];
-      } else if (typeof data === 'object' && !Array.isArray(data)) {
-        // Recursively fix known array keys in objects
-        for (const key of arrayKeys) {
-          if (data[key] === null || data[key] === undefined) {
-            data[key] = [];
-          }
+      if (!data) return response;
+
+      // Exhaustive list of all possible array-like keys across the entire platform
+      const arrayKeys = new Set([
+        'questions', 'tables', 'rows', 'messages', 'concentrations', 'concerns', 
+        'suggestions', 'waveform', 'forensic_logs', 'components', 'active_nodes', 
+        'focus_pulse', 'top_keywords', 'recommendations', 'teachingScore', 
+        'history', 'students', 'courses', 'lectures', 'attempts', 'notifications',
+        'feedbacks', 'analysis', 'timeline', 'entries', 'points', 'lapses', 'switches'
+      ]);
+
+      const deepFix = (obj: any) => {
+        if (!obj || typeof obj !== 'object') return obj;
+        
+        if (Array.isArray(obj)) {
+          obj.forEach(deepFix);
+          return obj;
         }
-      }
-      
+
+        for (const key in obj) {
+          if (arrayKeys.has(key)) {
+            if (obj[key] === null || obj[key] === undefined || typeof obj[key] === 'string') {
+              // Forced initialization if null or invalid type
+              obj[key] = Array.isArray(obj[key]) ? obj[key] : [];
+            }
+          }
+          deepFix(obj[key]);
+        }
+        return obj;
+      };
+
+      response.data = deepFix(data);
       return response;
     },
     (error) => {

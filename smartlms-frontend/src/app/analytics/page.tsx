@@ -158,7 +158,7 @@ export default function AnalyticsPage() {
             </div>
             
             <div className="flex-1 min-h-[200px] mb-6">
-              <EngagementWaveform data={recentHistory.map((h: any) => ({ engagement: h.engagement_score }))} />
+              <EngagementWaveform data={(Array.isArray(recentHistory) ? recentHistory : []).map((h: any) => ({ engagement: h.engagement_score || 0 }))} />
             </div>
 
             <div className="grid grid-cols-4 gap-4 pt-8 border-t border-border">
@@ -199,12 +199,12 @@ export default function AnalyticsPage() {
             </div>
 
             <div className="w-full space-y-4">
-              {[
+              {([
                 { name: 'Interactive', weight: icapDist?.distribution?.interactive || 0 },
                 { name: 'Constructive', weight: icapDist?.distribution?.constructive || 0 },
                 { name: 'Active', weight: icapDist?.distribution?.active || 0 },
                 { name: 'Passive', weight: icapDist?.distribution?.passive || 0 }
-              ].map((level, i) => (
+              ] || []).map((level, i) => (
                 <div key={level.name} className="flex items-center justify-between">
                   <span className="text-xs font-bold text-text-muted uppercase tracking-widest">{level.name}</span>
                   <div className="flex-1 mx-4 h-1 bg-surface-alt rounded-full overflow-hidden border border-border">
