@@ -17,7 +17,7 @@ from app.middleware.auth import get_current_user
 from app.services.debug_logger import debug_logger
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-router = APIRouter(prefix="/api/feedback", tags=["Feedback"])
+router = APIRouter(prefix="/api/feedback", tags=["Feedback"], redirect_slashes=True)
 analyzer = SentimentIntensityAnalyzer()
 
 class FeedbackSubmit(BaseModel):
@@ -116,7 +116,7 @@ def extract_keywords_advanced(text: str) -> List[str]:
     for w in filtered: freq[w] = freq.get(w, 0) + 1
     return sorted(freq, key=freq.get, reverse=True)[:8]
 
-@router.post("", response_model=FeedbackResponse, status_code=201)
+@router.post("/", response_model=FeedbackResponse, status_code=201)
 async def submit_feedback(
     request: FeedbackSubmit,
     db: AsyncSession = Depends(get_db),
@@ -151,13 +151,27 @@ async def submit_feedback(
     await db.commit()
     await db.refresh(feedback)
 
-    debug_logger.log("activity",
-                     f"Advanced NLP Feedback: rating={request.overall_rating}, top_emotion={max(emotions, key=emotions.get)}",
-                     user_id=current_user.id)
+    # Align DB model with Response schema
+    response_data = {
+        "id": feedback.id,
+        "student_id": feedback.student_id,
+        "lecture_id": feedback.lecture_id,
+        "course_id": feedback.course_id,
+        "overall_rating": feedback.overall_rating,
+        "content_quality": feedback.content_quality,
+        "teaching_clarity": feedback.teaching_clarity,
+        "difficulty_level": feedback.difficulty_level,
+        "text": feedback.text,
+        "suggestions": feedback.suggestions,
+        "sentiment": feedback.sentiment,
+        "emotions": feedback.emotions,
+        "keywords": feedback.keywords,
+        "themes": feedback.themes,
+        "aspects": aspects,
+        "created_at": feedback.created_at
+    }
 
-    resp = FeedbackResponse.model_validate(feedback)
-    resp.aspects = aspects
-    return resp
+    return FeedbackResponse(**response_data)
 
 @router.get("/lecture/{lecture_id}", response_model=List[FeedbackResponse])
 async def get_lecture_feedback(

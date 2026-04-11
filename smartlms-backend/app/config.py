@@ -109,6 +109,9 @@ class Settings(BaseSettings):
                 if cleaned:
                     origins.append(cleaned)
 
+        # Production Vercel Deployment whitelisting
+        origins.append("https://smartlms-nextjs.vercel.app")
+        
         if self.APP_ENV != "production" and self.ALLOW_ALL_CORS_IN_DEV:
             origins.extend([
                 "http://localhost:5173",

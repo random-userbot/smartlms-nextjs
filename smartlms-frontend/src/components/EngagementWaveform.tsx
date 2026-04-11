@@ -35,15 +35,13 @@ export default function EngagementWaveform({
   isLive = true
 }: EngagementWaveformProps) {
   
-  const { pathData, lineData, ghostLine, latestY } = useMemo(() => {
-    if (!data || !Array.isArray(data) || data.length === 0) return { pathData: '', lineData: '', ghostLine: '', latestY: 100 };
+  const { lineData, latestY } = useMemo(() => {
+    if (!data || !Array.isArray(data) || data.length === 0) return { lineData: '', latestY: 100 };
 
-    const engagementValues = Array.isArray(data) ? data.map(d => d.engagement || 0) : [0];
-    const safeEngagementValues = engagementValues.length > 0 ? engagementValues : [0];
-    const minVal = Math.min(...safeEngagementValues);
-    const maxVal = Math.max(...safeEngagementValues);
+    const engagementValues = data.map(d => d.engagement || 0);
+    const minVal = Math.min(...engagementValues);
+    const maxVal = Math.max(...engagementValues);
     
-    // Smooth the ripple
     const padding = 15;
     const range = Math.max(25, maxVal - minVal);
     const center = (maxVal + minVal) / 2;
@@ -58,19 +56,10 @@ export default function EngagementWaveform({
       return [x, 100 - (relativePos * 100)];
     });
 
-    const ghostCoords: [number, number][] = coords.map(([x, y], i) => {
-        const lag = Math.sin(i * 0.5) * 2;
-        return [x, y + lag];
-    });
-
     const smoothLine = getSmoothPath(coords);
-    const smoothGhost = getSmoothPath(ghostCoords);
-    const smoothPath = `${smoothLine} L 100,100 L 0,100 Z`;
 
     return { 
-      pathData: smoothPath, 
       lineData: smoothLine, 
-      ghostLine: smoothGhost,
       latestY: coords[coords.length - 1][1]
     };
   }, [data]);
@@ -117,104 +106,48 @@ export default function EngagementWaveform({
 
       {/* Main Wave Area */}
       <div className="flex-1 relative">
-        {/* Y-Axis Label */}
-        <div className="absolute -left-6 top-1/2 -translate-y-1/2 -rotate-90 origin-center whitespace-nowrap">
-           <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.4em]">ENGAGEMENT_INDEX</span>
-        </div>
-
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full overflow-visible">
           <defs>
-            <linearGradient id="mainGradient" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity="0.4" />
-              <stop offset="60%" stopColor={color} stopOpacity="0.05" />
-              <stop offset="100%" stopColor={color} stopOpacity="0" />
-            </linearGradient>
-            
-            <filter id="neonPulse">
-              <feGaussianBlur stdDeviation="1.2" result="blur" />
+            <filter id="simpleLineGlow">
+              <feGaussianBlur stdDeviation="0.8" result="blur" />
               <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-
-            <filter id="ghostBlur">
-              <feGaussianBlur stdDeviation="2.5" />
             </filter>
           </defs>
 
-          {/* Technical Grid Overlay */}
-          <g opacity="0.1">
-              {[20, 40, 60, 80].map(y => (
+          {/* Technical Grid Overlay (Minimal) */}
+          <g opacity="0.05">
+              {[25, 50, 75].map(y => (
                   <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="white" strokeWidth="0.1" strokeDasharray="1,2" />
-              ))}
-              {[25, 50, 75].map(x => (
-                  <line key={x} x1={x} y1="0" x2={x} y2="100" stroke="white" strokeWidth="0.1" strokeDasharray="1,2" />
               ))}
           </g>
 
-          {/* Ghost Wave (Lagging Echo) */}
-          <motion.path 
-            d={ghostLine} 
-            fill="none" 
-            stroke={color} 
-            strokeWidth="0.8" 
-            opacity="0.15"
-            style={{ filter: 'url(#ghostBlur)' }}
-            animate={{ d: ghostLine }}
-            transition={{ duration: 1.2, ease: "linear" }}
-          />
-
-          {/* Ambient Area Fill */}
-          <motion.path 
-            d={pathData} 
-            fill="url(#mainGradient)"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          />
-
-          {/* Main Engagement Pulse Line */}
+          {/* Main Engagement Line */}
           <motion.path 
             d={lineData} 
             fill="none" 
             stroke={color} 
-            strokeWidth="1.5" 
+            strokeWidth="1.2" 
             strokeLinecap="round" 
             strokeLinejoin="round"
             animate={{ d: lineData }}
-            transition={{ duration: 0.6, ease: "linear" }}
-            style={{ filter: 'url(#neonPulse)' }}
+            transition={{ duration: 0.8, ease: "linear" }}
+            style={{ filter: 'url(#simpleLineGlow)' }}
           />
 
-          {/* Trailing Engagement Node */}
-          <motion.g animate={{ y: latestY }} transition={{ duration: 0.6, ease: "linear" }}>
-              <circle cx="100" cy="0" r="3" fill={color} opacity="0.2" style={{ filter: 'url(#neonPulse)' }} />
-              <motion.circle 
-                  cx="100" cy="0" r="1.5" 
-                  fill="white"
-                  animate={{ scale: [1, 1.8, 1], opacity: [0.8, 1, 0.8] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-              />
-          </motion.g>
-
-          {/* Horizontal Line Labels */}
-          <g className="text-[2px] font-black" fill="white" fillOpacity="0.2">
-             <text x="1" y="22">INTENSITY_HIGH</text>
-             <text x="1" y="52">INTENSITY_MED</text>
-             <text x="1" y="82">INTENSITY_LOW</text>
-          </g>
+          {/* Trailing Node */}
+          <motion.circle 
+              animate={{ cy: latestY }}
+              cx="100" r="1.2" 
+              fill={color}
+              className="crimson-glow"
+              transition={{ duration: 0.8, ease: "linear" }}
+          />
         </svg>
 
         {/* X-Axis Label */}
         <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-           <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.4em]">TELEMETRY_TIMELINE</span>
+           <span className="text-[8px] font-black text-white/10 uppercase tracking-[0.4em]">REAL_TIME_ENROLLMENT_STREAM</span>
         </div>
-      </div>
-
-      {/* Decorative scanline */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden mix-blend-overlay opacity-10">
-         <motion.div 
-            className="w-full h-1/2 bg-gradient-to-b from-white to-transparent"
-            animate={{ top: ['-100%', '200%'] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-         />
       </div>
     </div>
   );
