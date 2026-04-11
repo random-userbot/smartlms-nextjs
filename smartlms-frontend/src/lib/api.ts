@@ -160,7 +160,7 @@ export const engagementAPI = {
   getHeatmap: (lectureId: string) => api.get(`/api/engagement/heatmap/${lectureId}`),
   getLiveWatchers: (lectureId: string) => api.get(`/api/engagement/live-watchers/${lectureId}`),
   getHistory: (lectureId: string) => api.get(`/api/engagement/history/${lectureId}`),
-  finalizeSession: (data: { session_id: string; lecture_id: string; waveform: any[] }) => 
+  finalizeSession: (data: { session_id: string; lecture_id: string; waveform: any[]; watch_duration?: number; total_duration?: number }) => 
     api.post('/api/engagement/finalize-session', data),
 };
 

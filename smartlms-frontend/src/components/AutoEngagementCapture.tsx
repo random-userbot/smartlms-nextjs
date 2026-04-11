@@ -66,42 +66,37 @@ export default function AutoEngagementCapture({
   }, [playing, enabled]);
 
   const handleFeaturesDetected = useCallback((features: any) => {
-    // Strict Sync: Only process if playing
-    if (!playing) {
-      if (status !== 'idle' && status !== 'denied') setStatus('idle');
-      return;
-    }
-
+    // Models run continuously for visual feedback regardless of playing state
+    // We update the local 'lastActivity' and 'status' to keep the UI 'alive'
+    
     if (!features.face_detected) {
       if (status === 'active' && onViolation && mode === 'proctoring') {
          onViolation({ type: 'face_not_found', timestamp: Date.now() });
       }
       
       // PERSISTENCE GUARD: Don't drop 'active' status immediately if face is lost
-      // Show 'Syncing' instead of 'Idle' to reassure the user that models are alive
       trackEvent('user_face_lost', { lecture_id: lectureId, timestamp: Date.now() });
       
-      // If we were already active, stay in a latent 'syncing' state
       if (status === 'active' || status === 'initializing') {
-        setStatus('active'); // Keep the pulse alive
+        setStatus('active'); // Keep the pulse alive in the UI
       }
       return;
     }
     
-    setLastActivity(Date.now()); // Update activity timestamp
+    setLastActivity(Date.now());
     
-    // Check for multiple faces if the model supports it
     if (features.num_faces > 1 && onViolation && mode === 'proctoring') {
        onViolation({ type: 'multiple_faces', timestamp: Date.now() });
        trackEvent('integrity_violation', { type: 'multiple_faces', lecture_id: lectureId });
     }
     
     if (status !== 'active') {
-      console.log("Neural Sync: Active signal received from MediaPipe.");
       setStatus('active');
     }
+
+    // DATA CAPTURE GUARD: Only collect features and submit if the video is actually playing
+    if (!playing) return;
     
-    // Add additional behavioral context
     const idleSeconds = Math.floor((Date.now() - lastActivity) / 1000);
     const enrichedFeatures = {
       ...features,
@@ -114,8 +109,8 @@ export default function AutoEngagementCapture({
 
     featureBuffer.current.push(enrichedFeatures);
 
-    // Submit batch every 150 frames (~5-7 seconds) to reduce network overhead
-    if (featureBuffer.current.length >= 150) {
+    // Reduced batch size: 90 frames (~3 seconds at 30fps) for more responsive graphs
+    if (featureBuffer.current.length >= 90) {
       submitBatch();
     }
   }, [playing, status, onViolation, mode, lectureId, sessionId, lastActivity, trackEvent]);

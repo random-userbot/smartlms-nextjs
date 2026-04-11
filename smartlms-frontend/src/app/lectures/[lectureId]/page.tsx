@@ -63,6 +63,7 @@ export default function LecturePage() {
   const [camEnabled, setCamEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [sessionResults, setSessionResults] = useState<any>(null);
+  const [nextLectureId, setNextLectureId] = useState<string | null>(null);
   const fullWaveformRef = useRef<any[]>([]);
   const sessionId = useRef(Math.random().toString(36).substring(7));
   const [messages, setMessages] = useState<any[]>([
@@ -80,6 +81,11 @@ export default function LecturePage() {
   const [volume, setVolume] = useState(0.7);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  // Duration Tracking
+  const [watchDuration, setWatchDuration] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(0);
+  const watchTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const playerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -133,25 +139,57 @@ export default function LecturePage() {
     }
   }, [lectureId]);
 
+  // Handle Watch Duration Timer
+  useEffect(() => {
+    if (playing && phase === 'lecture') {
+      watchTimerRef.current = setInterval(() => {
+        setWatchDuration(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (watchTimerRef.current) clearInterval(watchTimerRef.current);
+    }
+    return () => {
+      if (watchTimerRef.current) clearInterval(watchTimerRef.current);
+    };
+  }, [playing, phase]);
+
   // Session-End Persistence Hook
   const handleFinishLesson = async () => {
     setLoading(true);
     trackEvent('lecture_finished', { lecture_id: lectureId });
+    setPlaying(false);
     
     // 1. Mark session as permanent and finalize datasets
     try {
       await engagementAPI.finalizeSession({
         session_id: sessionId.current,
         lecture_id: lectureId,
-        waveform: fullWaveformRef.current
+        waveform: fullWaveformRef.current,
+        watch_duration: watchDuration,
+        total_duration: totalDuration || 300 // Fallback to 5 mins if meta fails
       });
     } catch (err) {
       console.error("Failed to finalize session:", err);
     }
 
-    // 2. Determine next phase (Quiz or Feedback)
+    // 2. Fetch Course Context for Redirection
+    let nextId = null;
     try {
-      // Use quizzesAPI instead of lecturesAPI for quiz logic
+      if (lecture?.course_id) {
+        const courseRes = await lecturesAPI.getByCourse(lecture.course_id);
+        const lectures = Array.isArray(courseRes.data) ? courseRes.data : [];
+        const currentIndex = lectures.findIndex((l: any) => l.id === lectureId);
+        if (currentIndex !== -1 && currentIndex < lectures.length - 1) {
+          nextId = lectures[currentIndex + 1].id;
+          setNextLectureId(nextId);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch course lectures for navigation:", err);
+    }
+
+    // 3. Determine next phase (Quiz or Feedback)
+    try {
       const quizRes = await quizzesAPI.getByLecture(lectureId);
       const quizzes = quizRes.data;
 
@@ -169,6 +207,7 @@ export default function LecturePage() {
     } catch (err) {
       setPhase('feedback');
     } finally {
+      // Pass the next lecture hint to session summary eventually or direct use
       setLoading(false);
     }
   };
@@ -367,9 +406,15 @@ export default function LecturePage() {
                                 rel: 0,
                               },
                             }}
+                            onReady={(event) => {
+                              setTotalDuration(Math.floor(event.target.getDuration()));
+                            }}
                             onPlay={() => setPlaying(true)}
                             onPause={() => setPlaying(false)}
-                            onEnd={() => setPlaying(false)}
+                            onEnd={() => {
+                              setPlaying(false);
+                              handleFinishLesson();
+                            }}
                             onStateChange={(event) => {
                               // 1 is Playing, 2 is Paused
                               if (event.data === 1) setPlaying(true);
@@ -497,7 +542,7 @@ export default function LecturePage() {
               
               {phase === 'quiz' && <QuizPhase lectureId={lectureId} onComplete={(res) => {setSessionResults(res); setPhase('feedback');}} />}
               {phase === 'feedback' && <FeedbackPhase lectureId={lectureId} courseId={lecture?.course_id} onComplete={() => setPhase('summary')} />}
-              {phase === 'summary' && <SessionSummary data={sessionResults} lectureId={lectureId} />}
+              {phase === 'summary' && <SessionSummary data={sessionResults} lectureId={lectureId} nextLectureId={nextLectureId} />}
             </div>
           </div>
         </div>

@@ -121,6 +121,7 @@ async def process_message(feature_payload):
             engagement_log.boredom_score = output.get("boredom")
             engagement_log.confusion_score = output.get("confusion")
             engagement_log.frustration_score = output.get("frustration")
+            engagement_log.forecast_score = output.get("forecast")
             
             # Store raw dimensions as JSON
             engagement_log.scores_timeline = json.dumps(output.get("dimensions", {}))

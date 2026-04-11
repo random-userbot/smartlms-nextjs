@@ -671,11 +671,13 @@ async def finalize_session(
 ):
     """
     Mark the session as permanent and finalize datasets.
-    This fulfills the requirement to only store permanent data upon completion.
+    Ensures durations are correctly persisted for progress tracking.
     """
     session_id = request.get("session_id")
     lecture_id = request.get("lecture_id")
     waveform = request.get("waveform", [])
+    watch_duration = request.get("watch_duration", 0)
+    total_duration = request.get("total_duration", 0)
     
     if not session_id or not lecture_id:
         raise HTTPException(status_code=400, detail="Missing session_id or lecture_id")
@@ -690,6 +692,8 @@ async def finalize_session(
         .values(
             is_finalized=True, 
             scores_timeline=waveform, 
+            watch_duration=watch_duration,
+            total_duration=total_duration,
             ended_at=datetime.utcnow(),
             status=EngagementStatus.COMPLETED
         )

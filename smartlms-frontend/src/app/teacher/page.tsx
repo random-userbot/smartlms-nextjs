@@ -16,7 +16,8 @@ import {
   X,
   ChevronRight,
   Info,
-  Zap
+  Zap,
+  TrendingUp
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Link from 'next/link';
@@ -74,6 +75,7 @@ export default function TeacherDashboard() {
           student_id: s.id,
           full_name: s.full_name || s.username || 'Unknown Student',
           engagement_score: stats.engagement_score || 0,
+          forecast_score: stats.forecast_score || stats.engagement_score || 0,
           visibility_score: stats.visibility_score || 100,
           tab_switches: stats.tab_switches || 0,
           sessions: stats.sessions || 0,
@@ -268,12 +270,17 @@ export default function TeacherDashboard() {
                       <div className="text-sm font-black text-foreground truncate">{ls.student_name}</div>
                       <div className="text-[9px] font-black text-text-muted uppercase tracking-widest truncate">{ls.lecture_title}</div>
                     </div>
-                    <div className="flex flex-col items-end">
-                       <div className={`text-sm font-black ${ls.engagement > 70 ? 'text-success' : ls.engagement > 40 ? 'text-warning' : 'text-primary'}`}>
-                          {(ls.engagement || 0).toFixed(0)}%
+                       <div className="flex flex-col items-end">
+                          <div className={`text-sm font-black ${ls.engagement > 70 ? 'text-success' : ls.engagement > 40 ? 'text-warning' : 'text-primary'}`}>
+                             {(ls.engagement || 0).toFixed(0)}%
+                          </div>
+                          <div className="flex items-center gap-1">
+                             <TrendingUp size={8} className={ls.forecast > ls.engagement ? 'text-success' : 'text-primary'} />
+                             <div className="text-[7px] font-black text-text-muted uppercase tracking-widest">
+                               PROJ: {(ls.forecast || ls.engagement || 0).toFixed(0)}%
+                             </div>
+                          </div>
                        </div>
-                       <div className="text-[7px] font-black text-text-muted uppercase tracking-widest">FOCUS</div>
-                    </div>
                   </div>
 
                   {/* Mini-Wave for each student */}
@@ -450,7 +457,12 @@ export default function TeacherDashboard() {
                       <div className={`text-sm font-black ${(r.engagement_score || 0) < 40 ? 'text-primary' : (r.engagement_score || 0) < 70 ? 'text-warning' : 'text-success'}`}>
                         {(r.engagement_score || 0) < 40 ? 'Needs Help' : (r.engagement_score || 0) < 70 ? 'Doing Okay' : 'Great Job'}
                       </div>
-                      <div className="text-[10px] font-bold text-text-muted">{(r.engagement_score || 0).toFixed(0)}% focus</div>
+                      <div className="flex flex-col items-end">
+                        <div className="text-[10px] font-bold text-text-muted">{(r.engagement_score || 0).toFixed(0)}% focus</div>
+                        <div className={`text-[8px] font-black uppercase tracking-tighter ${r.forecast_score < r.engagement_score ? 'text-primary' : 'text-success'}`}>
+                          Projected: {(r.forecast_score || 0).toFixed(0)}%
+                        </div>
+                      </div>
                     </div>
                   </Link>
                 )) : (

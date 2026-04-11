@@ -116,6 +116,13 @@ async def infer(request: InferenceRequest):
         registry = get_export_model_registry()
         features_dicts = [f.model_dump() for f in request.features]
         result = registry.infer(model_id=request.model_id, features=features_dicts)
+        
+        # Add forecast for built-in model
+        if request.model_id == "builtin::xgboost":
+            model = get_engagement_model()
+            current_score = result.get("output", {}).get("overall", 50.0)
+            result["output"]["forecast"] = model.forecast_next(features_dicts, current_score)
+            
         return result
     except Exception as e:
         logger.error(f"Inference error for {request.model_id}: {e}")
@@ -189,6 +196,10 @@ async def ensemble(request: EnsembleRequest):
         # Weighted average for overall score (Engagement weight is higher)
         # engagement - boredom + 100 / 2
         final_scores["overall"] = float((final_scores["engagement"] + (100 - final_scores["boredom"])) / 2.0)
+        
+        # Add forecast
+        model = get_engagement_model()
+        final_scores["forecast"] = model.forecast_next(features_dicts, final_scores["overall"])
         
         print(f"║ FINAL ENSEMBLE SCORE: {final_scores['overall']:.1f}% ({len(all_results)} Models Syncing) ║\n", flush=True)
         return final_scores

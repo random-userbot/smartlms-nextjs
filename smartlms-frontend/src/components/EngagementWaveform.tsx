@@ -15,17 +15,23 @@ interface EngagementWaveformProps {
 }
 
 const getSmoothPath = (points: [number, number][]) => {
-  if (points.length < 2) return '';
+  if (!points || points.length < 2) return '';
+  
+  // Use a simple cubic Bézier curve approach for smoother lines
   let d = `M ${points[0][0]},${points[0][1]}`;
+  
   for (let i = 0; i < points.length - 1; i++) {
-    const curr = points[i];
-    const next = points[i + 1];
-    const midX = (curr[0] + next[0]) / 2;
-    const midY = (curr[1] + next[1]) / 2;
-    d += ` Q ${curr[0]},${curr[1]} ${midX},${midY}`;
+    const p0 = points[i];
+    const p1 = points[i + 1];
+    
+    // Control points for a smooth curve
+    const cp1x = p0[0] + (p1[0] - p0[0]) / 2;
+    const cp1y = p0[1];
+    const cp2x = p0[0] + (p1[0] - p0[0]) / 2;
+    const cp2y = p1[1];
+    
+    d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p1[0]},${p1[1]}`;
   }
-  const last = points[points.length - 1];
-  d += ` L ${last[0]},${last[1]}`;
   return d;
 };
 
@@ -35,35 +41,43 @@ export default function EngagementWaveform({
   isLive = true
 }: EngagementWaveformProps) {
   
-  const { lineData, latestY } = useMemo(() => {
-    if (!data || !Array.isArray(data) || data.length === 0) return { lineData: '', latestY: 100 };
+  const { lineData, latestY, currentScore } = useMemo(() => {
+    // Ensure data is a valid array
+    const validData = Array.isArray(data) ? data : [];
+    
+    if (validData.length === 0) {
+      return { lineData: '', latestY: 50, currentScore: 0 };
+    }
 
-    const engagementValues = data.map(d => d.engagement).filter(v => typeof v === 'number' && !isNaN(v));
-    if (engagementValues.length === 0) return { lineData: '', latestY: 100 };
+    const engagementValues = validData.map(d => {
+      const v = typeof d?.engagement === 'number' ? d.engagement : parseFloat(d?.engagement as any);
+      return isNaN(v) ? 50 : v;
+    });
     
     const minVal = Math.min(...engagementValues);
     const maxVal = Math.max(...engagementValues);
     
-    const padding = 15;
-    const range = Math.max(25, maxVal - minVal);
-    const center = (maxVal + minVal) / 2;
-    const yMin = Math.max(0, center - (range / 2) - padding);
-    const yMax = Math.min(100, center + (range / 2) + padding);
+    // Use a fixed or dynamic range based on data spread
+    const padding = 10;
+    const dataRange = maxVal - minVal;
+    const range = Math.max(30, dataRange + padding * 2);
+    const center = dataRange > 0 ? (maxVal + minVal) / 2 : engagementValues[0];
+    
+    const yMin = Math.max(0, center - range / 2);
+    const yMax = Math.min(100, center + range / 2);
     const dynamicRange = Math.max(1, yMax - yMin);
 
-    const coords: [number, number][] = data.map((pt, i) => {
-      const x = (i / Math.max(1, data.length - 1)) * 100;
-      let val = typeof pt.engagement === 'number' && !isNaN(pt.engagement) ? pt.engagement : 50;
-      const relativePos = dynamicRange > 0 ? (val - yMin) / dynamicRange : 0.5;
+    const coords: [number, number][] = engagementValues.map((val, i) => {
+      const x = (i / Math.max(1, engagementValues.length - 1)) * 100;
+      const relativePos = (val - yMin) / dynamicRange;
       const y = 100 - (relativePos * 100);
-      return [x, isNaN(y) ? 50 : y];
+      return [x, Math.max(0, Math.min(100, y))];
     });
 
-    const smoothLine = getSmoothPath(coords);
-
     return { 
-      lineData: smoothLine, 
-      latestY: coords[coords.length - 1][1]
+      lineData: getSmoothPath(coords), 
+      latestY: coords[coords.length - 1][1],
+      currentScore: engagementValues[engagementValues.length - 1]
     };
   }, [data]);
 

@@ -11,16 +11,18 @@ import {
   Compass, 
   LayoutDashboard,
   CheckCircle2,
-  ChevronRight
+  ChevronRight,
+  ArrowRight
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface SessionSummaryProps {
   data: any;
   lectureId: string;
+  nextLectureId?: string | null;
 }
 
-export default function SessionSummary({ data, lectureId }: SessionSummaryProps) {
+export default function SessionSummary({ data, lectureId, nextLectureId }: SessionSummaryProps) {
   const router = useRouter();
   
   const score = data?.overall_score ?? data?.engagement_score ?? 0;
@@ -109,7 +111,7 @@ export default function SessionSummary({ data, lectureId }: SessionSummaryProps)
       </div>
 
       {/* Next Steps & Gamification */}
-      <div className="grid grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="glass-card p-8 bg-primary/5 border-primary/20 flex flex-col gap-4">
            <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary">
              <Zap size={24} />
@@ -120,21 +122,41 @@ export default function SessionSummary({ data, lectureId }: SessionSummaryProps)
            </div>
         </div>
         
-        <button 
-          onClick={() => router.push('/dashboard')}
-          className="col-span-2 glass-card p-8 flex items-center justify-between group hover:bg-white/5"
-        >
-          <div className="flex items-center gap-6">
-            <div className="w-16 h-16 bg-surface rounded-3xl flex items-center justify-center text-white border border-white/10 group-hover:crimson-glow transition-all">
-              <LayoutDashboard size={32} />
+        {nextLectureId ? (
+          <button 
+            onClick={() => router.push(`/lectures/${nextLectureId}`)}
+            className="lg:col-span-2 bg-gradient-to-r from-primary to-primary-dark p-8 rounded-[2.5rem] flex items-center justify-between group relative overflow-hidden shadow-2xl hover:scale-[1.02] transition-all"
+          >
+            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex items-center gap-6 relative z-10">
+              <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center text-white border border-white/20 shadow-inner">
+                <Compass size={40} className="animate-spin-slow" />
+              </div>
+              <div className="text-left">
+                <span className="text-[10px] font-black text-white/60 uppercase tracking-[0.4em] mb-1 block">Sequence Protocol</span>
+                <h4 className="text-3xl font-black text-white tracking-tighter leading-none mb-2">Proceed to Next Module</h4>
+                <p className="text-xs font-bold text-white/70">Continuous learning flow initialized. Resume synchronization.</p>
+              </div>
             </div>
-            <div className="text-left">
-              <h4 className="text-2xl font-black text-white tracking-tight">Return to Command Dash</h4>
-              <p className="text-xs font-bold text-text-muted">Review your global learning trajectory and goals.</p>
+            <ArrowRight size={40} className="text-white group-hover:translate-x-4 transition-transform relative z-10" />
+          </button>
+        ) : (
+          <button 
+            onClick={() => router.push('/dashboard')}
+            className="lg:col-span-2 glass-card p-8 flex items-center justify-between group hover:bg-white/5"
+          >
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-surface rounded-3xl flex items-center justify-center text-white border border-white/10 group-hover:crimson-glow transition-all">
+                <LayoutDashboard size={32} />
+              </div>
+              <div className="text-left">
+                <h4 className="text-2xl font-black text-white tracking-tight">Return to Command Dash</h4>
+                <p className="text-xs font-bold text-text-muted">Review your global learning trajectory and goals.</p>
+              </div>
             </div>
-          </div>
-          <ChevronRight size={32} className="text-primary group-hover:translate-x-4 transition-transform" />
-        </button>
+            <ChevronRight size={32} className="text-primary group-hover:translate-x-4 transition-transform" />
+          </button>
+        )}
       </div>
 
       {/* Aika Closing Note */}
