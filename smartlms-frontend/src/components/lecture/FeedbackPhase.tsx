@@ -7,10 +7,11 @@ import { useActivity } from '@/context/ActivityTracker';
 
 interface FeedbackPhaseProps {
   lectureId: string;
+  courseId: string;
   onComplete: () => void;
 }
 
-export default function FeedbackPhase({ lectureId, onComplete }: FeedbackPhaseProps) {
+export default function FeedbackPhase({ lectureId, courseId, onComplete }: FeedbackPhaseProps) {
   const [ratings, setRatings] = useState<Record<string, number>>({
     clarity: 0,
     quality: 0,
@@ -31,13 +32,17 @@ export default function FeedbackPhase({ lectureId, onComplete }: FeedbackPhasePr
     trackEvent('feedback_submitted', { lecture_id: lectureId });
 
     try {
+      const subRatings = [ratings.clarity, ratings.quality, ratings.difficulty, ratings.pacing].filter(v => v > 0);
+      const overall = subRatings.length > 0 ? Math.round(subRatings.reduce((a,b) => a+b, 0) / subRatings.length) : 5;
+
       await feedbackAPI.submit({
         lecture_id: lectureId,
-        clarity: ratings.clarity,
+        course_id: courseId,
+        overall_rating: overall,
+        teaching_clarity: ratings.clarity,
         content_quality: ratings.quality,
-        difficulty: ratings.difficulty,
-        pacing: ratings.pacing,
-        comments
+        difficulty_level: ratings.difficulty,
+        text: comments
       });
       
       setAnalyzing(false);

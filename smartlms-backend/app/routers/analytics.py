@@ -514,7 +514,23 @@ async def get_live_sessions(
         
         result = await db.execute(stmt)
         sessions = []
+        seen_students = set()
+        
         for log, student_name, lecture_title, avatar_url in result.all():
+            if log.student_id in seen_students:
+                continue
+            seen_students.add(log.student_id)
+            
+            timeline = log.scores_timeline or []
+            if isinstance(timeline, str):
+                import json
+                try:
+                    timeline = json.loads(timeline)
+                except:
+                    timeline = []
+            if isinstance(timeline, dict):
+                timeline = [timeline]
+            
             sessions.append({
                 "session_id": log.session_id,
                 "student_id": str(log.student_id),
@@ -524,7 +540,7 @@ async def get_live_sessions(
                 "engagement": round(log.overall_score or 0, 1),
                 "status": log.icap_classification.value if hasattr(log.icap_classification, 'value') else str(log.icap_classification),
                 "last_active": log.updated_at.isoformat(),
-                "waveform": (log.scores_timeline if log.scores_timeline else [])[-20:] # Last 20 points for mini-wave
+                "waveform": timeline[-20:] # Last 20 points for mini-wave
             })
         
         return sessions
@@ -635,24 +651,51 @@ async def get_course_engagement(
     current_user: User = Depends(require_teacher_or_admin),
 ):
     """
-    Alias for course-dashboard logic to match frontend requirement.
-    Ensures that empty states return 200 OK to prevent CORS blocks.
+    Returns an array of student engagement metrics for the given course.
+    Used by the Teacher Dashboard class monitor and risk matrices.
     """
-    # 1. Verify course
-    course_res = await db.execute(select(Course).where(Course.id == course_id))
-    course = course_res.scalar_one_or_none()
-    if not course:
-        # We return a 200 OK with empty data to prevent CORS issues on 404s in some environments
-        return {
-            "course_id": course_id,
-            "status": "not_found",
-            "engagement": {"total_sessions": 0, "avg_score": 0, "avg_boredom": 0, "avg_confusion": 0, "total_tab_switches": 0},
-            "icap_distribution": {}
-        }
-
-    # Reuse dashboard logic
-    dashboard = await get_course_dashboard(course_id, db, current_user)
-    return dashboard
+    eng_res = await db.execute(
+        select(
+            EngagementLog.student_id,
+            User.full_name,
+            User.email,
+            User.avatar_url.label("student_avatar"),
+            func.avg(EngagementLog.engagement_score).label("engagement_score"),
+            func.sum(EngagementLog.attention_lapse_duration).label("total_lapse"),
+            func.sum(EngagementLog.watch_duration).label("total_watch"),
+            func.sum(EngagementLog.tab_switches).label("tab_switches"),
+            func.count(EngagementLog.id).label("sessions"),
+        )
+        .join(User, User.id == EngagementLog.student_id)
+        .where(
+            EngagementLog.lecture_id.in_(
+                select(Lecture.id).where(Lecture.course_id == course_id)
+            ),
+            EngagementLog.is_finalized == True
+        )
+        .group_by(EngagementLog.student_id, User.full_name, User.email, User.avatar_url)
+    )
+    
+    students = []
+    for row in eng_res.all():
+        total_watch = float(row.total_watch or 0)
+        total_lapse = float(row.total_lapse or 0)
+        visibility_score = 100.0
+        if total_watch > 0:
+            visibility_score = max(0, min(100, ((total_watch - total_lapse) / total_watch) * 100))
+        
+        students.append({
+            "student_id": row.student_id,
+            "full_name": row.full_name,
+            "email": row.email,
+            "student_avatar": row.student_avatar,
+            "engagement_score": round(float(row.engagement_score or 0), 1),
+            "visibility_score": round(visibility_score, 1),
+            "tab_switches": int(row.tab_switches or 0),
+            "sessions": int(row.sessions or 0),
+        })
+    
+    return students
 
 # Keep remaining standard analytical endpoints...
 @router.get("/student-dashboard")
@@ -944,6 +987,8 @@ async def get_icap_performance_correlation(
         scores = performance_by_icap[level]["scores"]
         performance_by_icap[level]["avg"] = round(sum(scores) / len(scores), 1) if scores else 0.0
         del performance_by_icap[level]["scores"]
+        
+    return performance_by_icap
 
 @router.get("/lecture-waves/{lecture_id}")
 async def get_lecture_engagement_waves(
@@ -987,8 +1032,23 @@ async def get_lecture_engagement_waves(
             }
         
         timeline = log.scores_timeline or []
+        
+        if isinstance(timeline, str):
+            import json
+            try:
+                timeline = json.loads(timeline)
+            except:
+                timeline = []
+        if isinstance(timeline, dict):
+            timeline = [timeline]
+
         for entry in timeline:
-            ts = entry.get("timestamp", 0)
+            if not isinstance(entry, dict):
+                continue
+            try:
+                ts = float(entry.get("timestamp", 0))
+            except:
+                ts = 0.0
             minute = int(ts // 60)
             if 0 <= minute < max_minutes:
                 student_data[student.id]["bins"][minute].append(entry)
@@ -1231,9 +1291,24 @@ async def get_student_session_diagnostics(
     # Aggregate timeline
     full_timeline = []
     base_ts = 0
+    import json
     for log in logs:
-        for p in (log.scores_timeline or []):
-            full_timeline.append({**p, "timestamp": base_ts + p.get("timestamp", 0)})
+        timeline = log.scores_timeline or []
+        if isinstance(timeline, str):
+            try:
+                timeline = json.loads(timeline)
+            except:
+                timeline = []
+        if isinstance(timeline, dict):
+            timeline = [timeline]
+            
+        for p in timeline:
+            if isinstance(p, dict):
+                try:
+                    ts = float(p.get("timestamp", 0))
+                except:
+                    ts = 0.0
+                full_timeline.append({**p, "timestamp": base_ts + ts})
         base_ts += log.watch_duration
         
     # Extract Aura (SHAP features from the latest mirroring)

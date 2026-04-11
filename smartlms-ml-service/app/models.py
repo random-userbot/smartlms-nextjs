@@ -23,7 +23,7 @@ class EngagementLog(Base):
     session_id = Column(String)
     
     # Status
-    status = Column(SQLEnum(EngagementStatus), default=EngagementStatus.PROCESSING)
+    status = Column(SQLEnum(EngagementStatus, native_enum=False, length=50), default=EngagementStatus.PROCESSING)
     error_message = Column(Text, nullable=True)
 
     # Scores
@@ -43,7 +43,7 @@ class EngagementLog(Base):
     actual_vs_forecast_error = Column(Float, nullable=True)
 
     # ICAP
-    icap_classification = Column(SQLEnum(ICAPLevel), nullable=True)
+    icap_classification = Column(SQLEnum(ICAPLevel, native_enum=False, length=50), nullable=True)
     icap_evidence = Column(JSON, nullable=True)
 
     # Metadata

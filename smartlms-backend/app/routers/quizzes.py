@@ -429,6 +429,41 @@ async def get_my_quizzes(
     return response
 
 
+@router.get("/student/{student_id}/course/all")
+async def get_student_all_quizzes(
+    student_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+):
+    """
+    Get all quiz attempts for a specific student across all courses.
+    """
+    query = (
+        select(QuizAttempt, Quiz.title.label("quiz_title"), Course.title.label("course_title"))
+        .join(Quiz, Quiz.id == QuizAttempt.quiz_id)
+        .join(Lecture, Lecture.id == Quiz.lecture_id)
+        .join(Course, Course.id == Lecture.course_id)
+        .where(QuizAttempt.student_id == student_id)
+        .order_by(desc(QuizAttempt.completed_at))
+    )
+    
+    result = await db.execute(query)
+    attempts = result.all()
+    
+    return [
+        {
+            "id": r[0].id,
+            "quiz_title": r.quiz_title,
+            "course_title": r.course_title,
+            "score": r[0].score,
+            "max_score": r[0].max_score,
+            "percentage": round((r[0].score / max(r[0].max_score, 1)) * 100, 1),
+            "completed_at": r[0].completed_at.isoformat()
+        }
+        for r in attempts
+    ]
+
+
 @router.get("/student/{student_id}/course/{course_id}")
 async def get_student_course_quizzes(
     student_id: str,
@@ -472,42 +507,6 @@ async def get_student_course_quizzes(
         })
         
     return response
-
-
-@router.get("/student/{student_id}/course/all")
-async def get_student_all_quizzes(
-    student_id: str,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
-):
-    """
-    Get all quiz attempts for a specific student across all courses.
-    """
-    query = (
-        select(QuizAttempt, Quiz.title.label("quiz_title"), Course.title.label("course_title"))
-        .join(Quiz, Quiz.id == QuizAttempt.quiz_id)
-        .join(Lecture, Lecture.id == Quiz.lecture_id)
-        .join(Course, Course.id == Lecture.course_id)
-        .where(QuizAttempt.student_id == student_id)
-        .order_by(desc(QuizAttempt.completed_at))
-    )
-    
-    result = await db.execute(query)
-    attempts = result.all()
-    
-    return [
-        {
-            "id": r[0].id,
-            "quiz_title": r.quiz_title,
-            "course_title": r.course_title,
-            "score": r[0].score,
-            "max_score": r[0].max_score,
-            "percentage": round((r[0].score / max(r[0].max_score, 1)) * 100, 1),
-            "completed_at": r[0].completed_at.isoformat()
-        }
-        for r in attempts
-    ]
-
 
 @router.post("", response_model=QuizResponse, status_code=201)
 async def create_quiz(

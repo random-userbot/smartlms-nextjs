@@ -42,46 +42,74 @@ class YouTubeService:
             self._WhisperModel = None
             self.local_whisper_available = False
 
-        self.ydl_opts = {
-            "quiet": True,
-            "no_warnings": True,
-            "extract_flat": True,
-            "skip_download": True,
-            "nocheckcertificate": True,
-            "ignoreerrors": True,
-            "no_color": True,
-            "geo_bypass": True,
-        }
         self._groq_cooldown_until = 0.0
         self._cookie_path = None
         # Lazy resilience setup happens on first use to ensure environment is loaded
 
-    def _setup_resilience(self):
-        """Configure cookies and proxies from settings."""
-        if self._cookie_path: # Already setup
-            return
+    def _get_ydl_opts(self, extra_opts: Optional[Dict] = None, use_cookies: bool = True) -> Dict:
+        """Centralized yt-dlp configuration with dynamic safety injection."""
+        # Base options optimized for AWS Fargate stability
+        opts = {
+            "format": "bestaudio/best",
+            "noplaylist": True,
+            "quiet": True,
+            "no_warnings": True,
+            "extract_audio": True,
+            "audio_format": "mp3",
+            "outtmpl": os.path.join(tempfile.gettempdir(), "%(id)s.%(ext)s"),
+            "nocheckcertificate": True,
+            "ignoreerrors": False,
+            "logtostderr": False,
+        }
 
-        print(f"[YOUTUBE] CONFIG CHECK: Cookies present: {bool(settings.YOUTUBE_COOKIES)} | API Key present: {bool(settings.YOUTUBE_API_KEY)} | UA present: {bool(settings.YOUTUBE_USER_AGENT)}", flush=True)
-
-        if settings.YOUTUBE_PROXY:
-            self.ydl_opts["proxy"] = settings.YOUTUBE_PROXY
-
-        if settings.YOUTUBE_USER_AGENT:
-            self.ydl_opts["user_agent"] = settings.YOUTUBE_USER_AGENT
-            self.ydl_opts["http_headers"] = {
-                "User-Agent": settings.YOUTUBE_USER_AGENT,
+        # 1. User-Agent and Headers
+        ua = settings.YOUTUBE_USER_AGENT
+        if ua:
+            opts["user_agent"] = ua
+            opts["http_headers"] = {
+                "User-Agent": ua,
                 "Referer": "https://www.youtube.com/",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,webp,image/apng,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.9",
             }
-            print(f"[YOUTUBE] Matching User-Agent and Headers applied.", flush=True)
+
+        # 2. Proxy support
+        if settings.YOUTUBE_PROXY:
+            opts["proxy"] = settings.YOUTUBE_PROXY
+
+        # Merge with extra_opts if provided
+        if extra_opts:
+            opts.update(extra_opts)
+
+        # 3. Inject Cookies if available and requested
+        if use_cookies and self._cookie_path:
+            opts["cookiefile"] = self._cookie_path
+        elif not use_cookies:
+            # Explicitly remove cookiefile if we are trying a fallback
+            opts.pop("cookiefile", None)
+
+        # 4. Inject PO Token & Visitor Data for bot bypassing
+        if settings.YOUTUBE_PO_TOKEN and settings.YOUTUBE_VISITOR_DATA:
+            token_str = f"{settings.YOUTUBE_PO_TOKEN}:{settings.YOUTUBE_VISITOR_DATA}"
+            # Ensure postprocessor_args doesn't clash
+            if "postprocessor_args" not in opts:
+                opts["postprocessor_args"] = []
+            opts["postprocessor_args"].extend(["--param", f"youtube:token={token_str}"])
+
+        return opts
+
+    def _setup_resilience(self):
+        """Configure cookies and file paths from settings."""
+        if self._cookie_path: # Already setup
+            return
+
+        print(f"[YOUTUBE] CONFIG CHECK: Cookies present: {bool(settings.YOUTUBE_COOKIES)} | API Key present: {bool(settings.YOUTUBE_API_KEY)} | UA present: {bool(settings.YOUTUBE_USER_AGENT)}", flush=True)
 
         if settings.YOUTUBE_COOKIES:
             try:
                 # Try to write cookies to a temp file
                 self._cookie_path = self._get_cookie_file(settings.YOUTUBE_COOKIES)
                 if self._cookie_path:
-                    self.ydl_opts["cookiefile"] = self._cookie_path
                     print(f"[YOUTUBE] Authentication cookies loaded from environment.", flush=True)
                 else:
                     print(f"[YOUTUBE] [WARNING] Cookies provided but failed to write to temp file.", flush=True)
@@ -93,8 +121,12 @@ class YouTubeService:
         if not cookie_str:
             return None
 
+        # Clean input: strip quotes and whitespace that might be added by cloud envs
+        cookie_str = cookie_str.strip().strip('"').strip("'").strip()
+
         # Detect if it's already a full file path
         if os.path.isfile(cookie_str):
+            print(f"[YOUTUBE] Loading cookies from file path: {cookie_str}", flush=True)
             return cookie_str
 
         try:
@@ -102,32 +134,48 @@ class YouTubeService:
             # Support base64 prefix
             if cookie_str.startswith('base64:'):
                 try:
-                    content = base64.b64decode(cookie_str[7:]).decode('utf-8')
-                except:
+                    # Strip prefix and any internal whitespace
+                    b64_data = cookie_str[7:].replace(" ", "").replace("\n", "").replace("\r", "")
+                    raw_bytes = base64.b64decode(b64_data)
+                    try:
+                        content = raw_bytes.decode('utf-8')
+                    except UnicodeDecodeError:
+                        content = raw_bytes.decode('latin-1')
+                    print("[YOUTUBE] Successfully decoded Base64 cookie string.", flush=True)
+                except Exception as b64e:
+                    print(f"[YOUTUBE] [ERROR] Base64 decoding failed: {b64e}", flush=True)
                     content = cookie_str
             else:
                 # Direct check for Netscape header or standard cookie string
                 try:
-                    # Try to decode from base64 if it looks like it
-                    is_probably_base64 = re.match(r'^[A-Za-z0-9+/=]+$', cookie_str.strip().replace('\n', '').replace('\r', ''))
-                    if is_probably_base64:
-                        content = base64.b64decode(cookie_str).decode('utf-8')
+                    # Clean potential base64 if no prefix
+                    clean_str = cookie_str.replace('\n', '').replace('\r', '').replace(' ', '')
+                    if re.match(r'^[A-Za-z0-9+/=]+$', clean_str):
+                        content = base64.b64decode(clean_str).decode('utf-8')
+                        print("[YOUTUBE] Decoded probable Base64 string (no prefix).", flush=True)
                     else:
                         content = cookie_str
                 except:
                     content = cookie_str
 
             # Validation: If it doesn't look like a cookie file, try to wrap it
-            if "# Netscape" not in content and "# HTTP Cookie File" not in content:
+            if content and "# Netscape" not in content and "# HTTP Cookie File" not in content:
+                print("[YOUTUBE] Content detected as raw key=value string. Wrapping in Netscape header.", flush=True)
                 if ";" in content and "=" in content:
-                    netscape_lines = ["# Netscape HTTP Cookie File", ""]
+                    netscape_lines = ["# Netscape HTTP Cookie File", "# This was auto-generated by SmartLMS", ""]
                     for part in content.split(";"):
                         if "=" in part:
-                            k, v = part.strip().split("=", 1)
-                            netscape_lines.append(f".youtube.com\tTRUE\t/\tTRUE\t0\t{k}\t{v}")
+                            try:
+                                k_v = part.strip().split("=", 1)
+                                if len(k_v) == 2:
+                                    k, v = k_v
+                                    netscape_lines.append(f".youtube.com\tTRUE\t/\tTRUE\t0\t{k}\t{v}")
+                            except:
+                                continue
                     content = "\n".join(netscape_lines)
 
             if not content or ("# Netscape" not in content and "youtube.com" not in content):
+                print(f"[YOUTUBE] [ERROR] Cookie string does not contain valid Netscape headers or youtube domain. (Length: {len(content) if content else 0})", flush=True)
                 return None
 
             # Persistent temp file in the scratch or temp directory
@@ -135,9 +183,11 @@ class YouTubeService:
             with open(path, "w", encoding='utf-8') as f:
                 f.write(content)
             
+            print(f"[YOUTUBE] Successfully wrote cookie file to: {path} ({len(content)} bytes)", flush=True)
             return path
         except Exception as e:
-            print(f"[YOUTUBE] [ERROR] Error creating temp cookie file: {e}", flush=True)
+            print(f"[YOUTUBE] [ERROR] Critical error creating temp cookie file: {e}", flush=True)
+            return None
             return None
 
     def _create_authenticated_session(self) -> requests.Session:
@@ -424,12 +474,7 @@ class YouTubeService:
             ydl_opts = self._get_ydl_opts({
                 'format': '139/249/bestaudio[abr<=64]/bestaudio/best',
                 'outtmpl': output_path,
-                'quiet': True,
-                'no_warnings': True,
-                'nocheckcertificate': True,
                 'ignoreerrors': True,
-                'user_agent': settings.YOUTUBE_USER_AGENT or self.ydl_opts.get('user_agent'),
-                'cookiefile': self._cookie_path
             })
         else:
             # For direct URLs, we just download the file
@@ -440,21 +485,39 @@ class YouTubeService:
                 'no_warnings': True,
             })
 
-        def _download():
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        def _download(current_opts):
+            with yt_dlp.YoutubeDL(current_opts) as ydl:
                 ydl.download([url])
 
         try:
-            await asyncio.get_event_loop().run_in_executor(None, _download)
-            files = glob.glob(os.path.join(temp_dir, f"{identifier}.*"))
-            if not files:
+            # Attempt 1: Standard (with cookies if available)
+            await asyncio.get_event_loop().run_in_executor(None, _download, ydl_opts)
+        except Exception as e:
+            if self._cookie_path:
+                print(f"[YOUTUBE] Authenticated download failed, trying WITHOUT cookies as fallback: {e}")
+                # Attempt 2: Fallback (explicitly without cookies)
+                try:
+                    fallback_opts = self._get_ydl_opts({
+                        'format': '139/249/bestaudio[abr<=64]/bestaudio/best',
+                        'outtmpl': output_path,
+                        'quiet': True,
+                    }, use_cookies=False)
+                    await asyncio.get_event_loop().run_in_executor(None, _download, fallback_opts)
+                except Exception as e2:
+                    print(f"[YOUTUBE] Final download fallback failed: {e2}")
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+                    return None
+            else:
+                print(f"Download failed: {e}")
                 shutil.rmtree(temp_dir, ignore_errors=True)
                 return None
-            return files[0]
-        except Exception as e:
-            print(f"Download failed: {e}")
+
+        # Check for results
+        files = glob.glob(os.path.join(temp_dir, f"{identifier}.*"))
+        if not files:
             shutil.rmtree(temp_dir, ignore_errors=True)
             return None
+        return files[0]
 
     async def _fetch_media_transcription(self, url: str, is_youtube: bool = True, use_groq: bool = True) -> str:
         """Consolidated handler for both Groq and Local Whisper transcription."""
@@ -502,22 +565,34 @@ class YouTubeService:
             'writeautomaticsub': True,
             'subtitleslangs': ['en.*', 'en'], # Match any English variant
             'outtmpl': os.path.join(temp_dir, 'subs.%(ext)s'),
-            'quiet': True,
-            'no_warnings': True,
-            'cookiefile': self._cookie_path
         })
 
-        def _download():
+        def _download(current_opts):
             try:
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                with yt_dlp.YoutubeDL(current_opts) as ydl:
                     ydl.download([video_url])
                 return True
             except Exception as e:
-                print(f"[YOUTUBE] yt-dlp subtitle download error: {e}")
+                print(f"[YOUTUBE] yt-dlp subtitle download attempt failed: {e}")
                 return False
 
         try:
-            success = await asyncio.get_event_loop().run_in_executor(None, _download)
+            # Attempt 1: Authenticated
+            success = await asyncio.get_event_loop().run_in_executor(None, _download, ydl_opts)
+            
+            # Attempt 2: Fallback (unauthenticated) if attempt 1 failed and cookies were present
+            if not success and self._cookie_path:
+                print("[YOUTUBE] Retrying subtitle fetch WITHOUT cookies...")
+                fallback_opts = self._get_ydl_opts({
+                    'skip_download': True,
+                    'writesubtitles': True,
+                    'writeautomaticsub': True,
+                    'subtitleslangs': ['en.*', 'en'],
+                    'outtmpl': os.path.join(temp_dir, 'subs.%(ext)s'),
+                    'quiet': True,
+                }, use_cookies=False)
+                success = await asyncio.get_event_loop().run_in_executor(None, _download, fallback_opts)
+
             if not success:
                 return None
 

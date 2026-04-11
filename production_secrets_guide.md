@@ -45,7 +45,7 @@ Required during the `npm run build` phase.
 
 | Variable | Description | Example / Note |
 | :--- | :--- | :--- |
-| `NEXT_PUBLIC_API_URL` | Production Backend URL | `https://smartlms.online/api` |
+| `NEXT_PUBLIC_API_URL` | Production Backend URL | `https://smartlms.online` (No `/api` at end) |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | OAuth 2.0 Client ID | Must match the Backend's Google ID |
 | `NEXT_PUBLIC_APP_NAME` | Website Title | `SmartLMS` |
 

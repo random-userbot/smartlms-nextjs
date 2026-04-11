@@ -496,7 +496,7 @@ export default function LecturePage() {
               )}
               
               {phase === 'quiz' && <QuizPhase lectureId={lectureId} onComplete={(res) => {setSessionResults(res); setPhase('feedback');}} />}
-              {phase === 'feedback' && <FeedbackPhase lectureId={lectureId} onComplete={() => setPhase('summary')} />}
+              {phase === 'feedback' && <FeedbackPhase lectureId={lectureId} courseId={lecture?.course_id} onComplete={() => setPhase('summary')} />}
               {phase === 'summary' && <SessionSummary data={sessionResults} lectureId={lectureId} />}
             </div>
           </div>
