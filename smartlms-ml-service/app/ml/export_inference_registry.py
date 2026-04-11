@@ -366,15 +366,19 @@ class ExportModelRegistry:
             raise ValueError("Model has unknown input shape")
 
         # Normalize shape like (None, 30, 768)
-        shape = list(input_shape)
-        if len(shape) == 0:
-            raise ValueError("Invalid input shape")
+        # Handle symbolic names like 'unk__1192' by defaulting to 1 for non-fixed dims
+        def _to_int(dim, default=1):
+            if dim is None or isinstance(dim, str):
+                return default
+            try:
+                return int(dim)
+            except (ValueError, TypeError):
+                return default
 
-        # batch dimension
-        if shape[0] is None:
-            shape[0] = 1
-        if int(shape[0]) != 1:
-            shape[0] = 1
+        shape = [_to_int(d, default=1) for d in list(input_shape)]
+        
+        # Batch dimension must be 1 for our current worker setup
+        shape[0] = 1
 
         seq_vectors = [self._feature_to_legacy_vector(f) for f in features] or [np.zeros(len(FEATURE_NAMES), dtype=np.float32)]
         pool = self._make_signal_pool(features)
@@ -389,7 +393,7 @@ class ExportModelRegistry:
                     continue
 
         if len(shape) == 2:
-            feat_dim = int(shape[1] or len(FEATURE_NAMES))
+            feat_dim = shape[1] if shape[1] > 1 else len(FEATURE_NAMES)
             if visual_vectors and feat_dim >= 128:
                 row = visual_vectors[-1]
                 if row.size > feat_dim:
@@ -401,8 +405,8 @@ class ExportModelRegistry:
             return row.reshape(1, feat_dim).astype(np.float32)
 
         if len(shape) == 3:
-            seq_len = int(shape[1] or max(len(seq_vectors), 1))
-            feat_dim = int(shape[2] or len(FEATURE_NAMES))
+            seq_len = shape[1] if shape[1] > 1 else max(len(seq_vectors), 1)
+            feat_dim = shape[2] if shape[2] > 1 else len(FEATURE_NAMES)
 
             # Prefer real visual embeddings for high-dimensional model inputs.
             if visual_vectors and feat_dim in (256, 768):
@@ -436,7 +440,7 @@ class ExportModelRegistry:
         flat_size = 1
         dynamic_shape = [1]
         for dim in shape[1:]:
-            d = int(dim or max(len(features), 1))
+            d = dim if dim > 1 else max(len(features), 1)
             dynamic_shape.append(d)
             flat_size *= d
 

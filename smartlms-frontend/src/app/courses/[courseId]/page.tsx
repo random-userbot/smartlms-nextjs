@@ -28,17 +28,22 @@ export default function CoursePortal() {
   const [lectures, setLectures] = useState<any[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any>({ total_learning_time_sec: 0, avg_engagement: 0 });
 
   useEffect(() => {
     if (courseId) {
       Promise.all([
         coursesAPI.get(courseId),
         lecturesAPI.getByCourse(courseId),
-        coursesAPI.getProgress(courseId).then((res: any) => res.data.completed_lecture_ids).catch(() => [])
-      ]).then(([courseRes, lecturesRes, progressIds]) => {
+        coursesAPI.getProgress(courseId).then((res: any) => res.data).catch(() => ({}))
+      ]).then(([courseRes, lecturesRes, progressData]) => {
         setCourse(courseRes.data);
         setLectures(lecturesRes.data || []);
-        setCompletedIds(progressIds || []);
+        setCompletedIds(progressData.completed_lecture_ids || []);
+        setStats({
+          total_learning_time_sec: progressData.total_learning_time_sec || 0,
+          avg_engagement: progressData.avg_engagement || 0
+        });
       }).finally(() => setLoading(false));
     }
   }, [courseId]);
@@ -153,12 +158,16 @@ export default function CoursePortal() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
                        <Clock className="text-primary mb-2" size={16} />
-                       <div className="text-lg font-black text-white">12h 45m</div>
+                       <div className="text-lg font-black text-white">
+                         {Math.floor(stats.total_learning_time_sec / 3600)}h {Math.floor((stats.total_learning_time_sec % 3600) / 60)}m
+                       </div>
                        <div className="text-[9px] font-black text-text-muted uppercase">Total Learning</div>
                     </div>
                     <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
                        <Activity className="text-success mb-2" size={16} />
-                       <div className="text-lg font-black text-white">High</div>
+                       <div className="text-lg font-black text-white">
+                         {stats.avg_engagement > 70 ? 'High' : stats.avg_engagement > 40 ? 'Med' : 'Low'}
+                       </div>
                        <div className="text-[9px] font-black text-text-muted uppercase">Avg Engagement</div>
                     </div>
                   </div>

@@ -131,6 +131,7 @@ class EngagementScoreResponse(BaseModel):
     engagement: float
     confusion: float
     frustration: float
+    effort_score: float
     icap_classification: str
     icap_confidence: float = 0.0
     shap_explanations: Dict[str, Any] = {}
@@ -552,12 +553,42 @@ async def submit_engagement_data(
         )
         db.add(icap_log)
 
+    # ─── [PRO-FIX] Attendance Sync ───
+    # Update or create attendance record for this student/lecture pair
+    attendance_stmt = select(Attendance).where(
+        Attendance.student_id == current_user.id,
+        Attendance.lecture_id == request.lecture_id
+    )
+    att_res = await db.execute(attendance_stmt)
+    attendance = att_res.scalar_one_or_none()
+    
+    # Calculate metrics
+    presence_score = min(100.0, (request.watch_duration / max(request.total_duration, 1)) * 100.0)
+    face_pct = 100.0 - (request.no_face_detected_count / max(len(request.features), 1) * 100.0) if request.features else 0.0
+
+    if attendance:
+        # Update existing record
+        attendance.presence_score = max(attendance.presence_score, presence_score)
+        attendance.face_detected_pct = (attendance.face_detected_pct + face_pct) / 2.0
+        attendance.left_at = datetime.utcnow()
+    else:
+        # Create new record
+        attendance = Attendance(
+            student_id=current_user.id,
+            lecture_id=request.lecture_id,
+            presence_score=presence_score,
+            face_detected_pct=face_pct,
+            joined_at=datetime.utcnow(),
+            left_at=datetime.utcnow()
+        )
+        db.add(attendance)
+
     await db.commit()
     await db.refresh(log)
 
     # Log the state transition
     state_type = "STATE_MERGE" if is_stable else "STATE_NEW"
-    state_desc = "Combined into stable block" if is_stable else "Created new diagnostic state"
+    state_desc = "Syncing stable state + Attendance" if is_stable else "New state + Attendance"
     print(f"║ [{state_type}] {state_desc} (ID: {log.id[:8] if log.id else 'N/A'}) ║", flush=True)
 
     # 6. [PRO-FIX] Push to SQS for Asynchronous Inference

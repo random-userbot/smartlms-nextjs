@@ -481,15 +481,15 @@ export default function LecturePage() {
                              <div className="h-full bg-primary crimson-glow transition-all duration-1000" style={{ width: `${engagementScore?.engagement ?? 0}%` }} />
                           </div>
                        </div>
-                       <div className="glass-card p-8 border-white/5">
-                          <div className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 flex items-center gap-2">
-                             <Brain size={10} className="text-blue-400" /> Study Effort
-                          </div>
-                          <div className="text-4xl font-black text-foreground italic">{(engagementScore?.confusion ?? 0).toFixed(1)}%</div>
-                          <div className="h-1.5 w-full bg-white/5 rounded-full mt-4 overflow-hidden">
-                             <div className="h-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)] transition-all duration-1000" style={{ width: `${engagementScore?.confusion ?? 0}%` }} />
-                          </div>
-                       </div>
+                        <div className="glass-card p-8 border-white/5">
+                           <div className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 flex items-center gap-2">
+                              <Brain size={10} className="text-blue-400" /> Study Effort
+                           </div>
+                           <div className="text-4xl font-black text-foreground italic">{(engagementScore?.effort_score ?? 0).toFixed(1)}%</div>
+                           <div className="h-1.5 w-full bg-white/5 rounded-full mt-4 overflow-hidden">
+                              <div className="h-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)] transition-all duration-1000" style={{ width: `${engagementScore?.effort_score ?? 0}%` }} />
+                           </div>
+                        </div>
                     </div>
                   </div>
                 </div>

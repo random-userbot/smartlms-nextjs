@@ -38,7 +38,9 @@ export default function EngagementWaveform({
   const { lineData, latestY } = useMemo(() => {
     if (!data || !Array.isArray(data) || data.length === 0) return { lineData: '', latestY: 100 };
 
-    const engagementValues = data.map(d => d.engagement || 0);
+    const engagementValues = data.map(d => d.engagement).filter(v => typeof v === 'number' && !isNaN(v));
+    if (engagementValues.length === 0) return { lineData: '', latestY: 100 };
+    
     const minVal = Math.min(...engagementValues);
     const maxVal = Math.max(...engagementValues);
     
@@ -51,9 +53,10 @@ export default function EngagementWaveform({
 
     const coords: [number, number][] = data.map((pt, i) => {
       const x = (i / Math.max(1, data.length - 1)) * 100;
-      const val = isNaN(pt.engagement) ? 50 : pt.engagement;
-      const relativePos = (val - yMin) / dynamicRange;
-      return [x, 100 - (relativePos * 100)];
+      let val = typeof pt.engagement === 'number' && !isNaN(pt.engagement) ? pt.engagement : 50;
+      const relativePos = dynamicRange > 0 ? (val - yMin) / dynamicRange : 0.5;
+      const y = 100 - (relativePos * 100);
+      return [x, isNaN(y) ? 50 : y];
     });
 
     const smoothLine = getSmoothPath(coords);

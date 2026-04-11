@@ -76,13 +76,15 @@ export default function AutoEngagementCapture({
       if (status === 'active' && onViolation && mode === 'proctoring') {
          onViolation({ type: 'face_not_found', timestamp: Date.now() });
       }
-      // Don't revert to initializing, stay in active but with 'no face' state if we've already started
-      if (status === 'initializing') {
-        // Still waiting for first real detection
-      } else {
-        setStatus('active'); // Keep active status but with face_detected: false logic
-      }
+      
+      // PERSISTENCE GUARD: Don't drop 'active' status immediately if face is lost
+      // Show 'Syncing' instead of 'Idle' to reassure the user that models are alive
       trackEvent('user_face_lost', { lecture_id: lectureId, timestamp: Date.now() });
+      
+      // If we were already active, stay in a latent 'syncing' state
+      if (status === 'active' || status === 'initializing') {
+        setStatus('active'); // Keep the pulse alive
+      }
       return;
     }
     
@@ -231,9 +233,9 @@ export default function AutoEngagementCapture({
       <div className="flex items-center justify-between mb-3">
         {!minimized && (
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${status === 'active' ? 'bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]' : 'bg-slate-600'}`} />
+            <div className={`w-2 h-2 rounded-full ${(status === 'active' || status === 'initializing') ? 'bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]' : 'bg-slate-600'}`} />
             <span className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
-              {status === 'active' ? 'Neural Sync Active' : 'Initializing...'}
+              {status === 'active' ? (lastActivity > Date.now() - 3000 ? 'Neural Sync Active' : 'Syncing behavioral nodes...') : 'Initializing...'}
               <span className="px-1.5 py-0.5 bg-blue-500/20 border border-blue-500/40 rounded text-[7px] text-blue-300">PiP</span>
             </span>
           </div>

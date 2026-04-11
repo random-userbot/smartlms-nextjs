@@ -87,11 +87,13 @@ async def process_message(feature_payload):
                                         return float(sum(p * (idx / 3.0 * 100.0) for idx, p in enumerate(probs)))
                                     return float(d.get("class_index", 0) * 33.3)
                                 all_results.append({
+                                    "model_id": mid,
                                     "engagement": _w("engagement"),
                                     "boredom": _w("boredom"),
                                     "confusion": _w("confusion"),
                                     "frustration": _w("frustration")
                                 })
+                                logger.info(f"[ENSEMBLE] Stream {mid}: E:{all_results[-1]['engagement']:.1f}% B:{all_results[-1]['boredom']:.1f}%")
                         except Exception:
                             continue
                     

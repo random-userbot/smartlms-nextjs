@@ -473,7 +473,25 @@ async def get_course_progress(
         .distinct()
     )
     completed_ids = [row[0] for row in result.all()]
-    return {"course_id": course_id, "completed_lecture_ids": completed_ids, "count": len(completed_ids)}
+    
+    # Calculate stats
+    stats_stmt = select(
+        func.sum(EngagementLog.watch_duration),
+        func.avg(EngagementLog.engagement_score)
+    ).join(Lecture, EngagementLog.lecture_id == Lecture.id).where(
+        Lecture.course_id == course_id,
+        EngagementLog.student_id == current_user.id
+    )
+    stats_res = await db.execute(stats_stmt)
+    total_sec, avg_eng = stats_res.first()
+    
+    return {
+        "course_id": course_id, 
+        "completed_lecture_ids": completed_ids, 
+        "count": len(completed_ids),
+        "total_learning_time_sec": total_sec or 0,
+        "avg_engagement": round(avg_eng or 0, 1)
+    }
 
 
 @router.get("/{course_id}/students")

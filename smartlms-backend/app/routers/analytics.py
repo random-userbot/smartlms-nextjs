@@ -175,7 +175,7 @@ async def get_teaching_score(
                 EngagementLog.lecture_id.in_(
                     select(Lecture.id).where(Lecture.course_id == course_id)
                 ),
-                (EngagementLog.watch_duration * 1.25 >= EngagementLog.total_duration)
+                (EngagementLog.watch_duration >= 15)  # Relaxed: include all active sessions > 15s
             ).order_by(EngagementLog.started_at)
         )
         engagement_logs = eng_result.scalars().all()
@@ -191,7 +191,7 @@ async def get_teaching_score(
             slope, _ = np.polyfit(x, y, 1)
             trend_score = min(100, max(0, 50 + slope * 50))
         else:
-            trend_score = 0.0
+            trend_score = 50.0  # Baseline: Neutral trend while gathering data
             slope = 0.0
 
         # ── 3. Low Engagement Rate ──
@@ -224,7 +224,7 @@ async def get_teaching_score(
                 ICAPLog.student_id.in_(
                     select(EngagementLog.student_id).where(
                         EngagementLog.lecture_id == ICAPLog.lecture_id,
-                        (EngagementLog.watch_duration * 1.25 >= EngagementLog.total_duration)
+                        (EngagementLog.watch_duration >= 15)
                     )
                 )
             ).group_by(ICAPLog.classification)
@@ -249,12 +249,24 @@ async def get_teaching_score(
         )
         attendance_avg = att_result.scalar() or 0.0
 
-        # ── 7. Feedback Score ──
-        fb_result = await db.execute(
-            select(func.avg(Feedback.overall_rating)).where(Feedback.course_id == course_id)
-        )
-        feedback_avg_raw = fb_result.scalar() or 0.0
+        # ── 7. Feedback Score & Sentiment ──
+        fb_query = select(Feedback).where(Feedback.course_id == course_id)
+        fb_res = await db.execute(fb_query)
+        all_feedbacks = fb_res.scalars().all()
+        
+        feedback_avg_raw = sum(f.overall_rating for f in all_feedbacks) / max(len(all_feedbacks), 1)
         feedback_score = (feedback_avg_raw / 5) * 100
+        
+        pos_count = sum(1 for f in all_feedbacks if f.overall_rating >= 4)
+        neu_count = sum(1 for f in all_feedbacks if f.overall_rating == 3)
+        neg_count = sum(1 for f in all_feedbacks if f.overall_rating <= 2)
+        total_fb = len(all_feedbacks)
+        
+        sentiment_dist = {
+            "positive": round((pos_count / total_fb * 100), 1) if total_fb > 0 else 0,
+            "neutral": round((neu_count / total_fb * 100), 1) if total_fb > 0 else 0,
+            "critical": round((neg_count / total_fb * 100), 1) if total_fb > 0 else 0,
+        }
 
         # ── 8. Completion Rate ──
         total_lectures_res = await db.execute(
@@ -444,12 +456,20 @@ async def get_teaching_score(
         elif log_count > 5: confidence = 88.7
         else: confidence = 75.0
 
+        # 14. Aika Insight
+        aika_msg = "Cognitive resonance is stable. "
+        if engagement_avg < 50: aika_msg = "Focus levels are dipping. Recommend adding more interactive breaks."
+        elif trend_score < 45: aika_msg = "Engagement retention is dropping over time. Review late-module complexity."
+        elif quiz_avg < 60: aika_msg = "Conceptual mastery is low. Students may need additional recap videos."
+        
         return {
             "course_id": course_id,
             "course_title": course.title,
             "overall_score": round(overall, 1),
             "confidence_score": confidence,
             "forensic_logs": forensic_logs,
+            "feedback_sentiment": sentiment_dist,
+            "aika_insight": aika_msg,
             "components": {
                 "engagement": round(engagement_avg, 1),
                 "engagement_trend": round(trend_score, 1),
@@ -722,17 +742,17 @@ async def get_student_dashboard(
         nodes_query = (
             select(Course.title, func.count(Lecture.id), func.count(func.distinct(Attendance.lecture_id)))
             .join(Enrollment, Enrollment.course_id == Course.id)
-            .join(Lecture, Lecture.course_id == Course.id)
+            .outerjoin(Lecture, Lecture.course_id == Course.id)
             .outerjoin(Attendance, (Attendance.lecture_id == Lecture.id) & (Attendance.student_id == current_user.id))
             .where(Enrollment.student_id == current_user.id)
-            .group_by(Course.id)
+            .group_by(Course.id, Course.title)
         )
         nodes_res = await db.execute(nodes_query)
         active_nodes = []
         for title, total_lectures, attended_count in nodes_res.all():
             progress = round((attended_count / max(total_lectures, 1)) * 100, 0)
-            if progress > 0:
-                active_nodes.append({"title": title, "progress": progress})
+            # Include all enrolled nodes, even with 0% progress
+            active_nodes.append({"title": title, "progress": progress})
 
         # 4. Growth Calculation (Current week vs Previous week)
         from datetime import timedelta
