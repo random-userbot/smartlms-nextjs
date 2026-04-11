@@ -96,7 +96,7 @@ class InferenceRequest(BaseModel):
     features: List[EngagementFeature]
 
 class EnsembleRequest(BaseModel):
-    base_scores: Dict[str, float]
+    base_scores: Dict[str, Any]
     features: List[EngagementFeature]
 
 # --- Endpoints ---

@@ -702,8 +702,7 @@ async def get_engagement_history(
     result = await db.execute(
         select(EngagementLog).where(
             EngagementLog.student_id == current_user.id,
-            EngagementLog.lecture_id == lecture_id,
-            EngagementLog.is_finalized == True # EXCLUDE LIVE FLOW BLOCKS
+            EngagementLog.lecture_id == lecture_id
         ).order_by(EngagementLog.started_at.desc())
     )
     logs = result.scalars().all()
@@ -740,8 +739,7 @@ async def get_student_engagement_summary(
 
     result = await db.execute(
         select(EngagementLog).where(
-            EngagementLog.student_id == student_id,
-            EngagementLog.is_finalized == True # DATASET INTEGRITY
+            EngagementLog.student_id == student_id
         )
         .order_by(EngagementLog.started_at.desc())
     )

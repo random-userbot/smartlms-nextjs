@@ -68,31 +68,33 @@ class MLClient:
     async def infer(self, model_id: str, features: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Perform real-time inference via the ML service HTTP endpoint."""
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
                     f"{self.ml_service_url}/infer",
                     json={"model_id": model_id, "features": features}
                 )
                 if response.status_code == 200:
                     return response.json()
+                logger.error(f"ML_CLIENT: /infer returned status {response.status_code}: {response.text}")
                 return {"error": f"ML Service returned {response.status_code}"}
         except Exception as e:
-            logger.warning(f"ML_CLIENT: HTTP Inference fallback failed: {e}")
+            logger.warning(f"ML_CLIENT: HTTP Inference fallback failed: {type(e).__name__} - {e}")
             return {"error": str(e)}
 
     async def ensemble(self, base_scores: Dict[str, float], features: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Perform deep model ensembling via the ML service HTTP endpoint."""
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
+            async with httpx.AsyncClient(timeout=45.0) as client:
                 response = await client.post(
                     f"{self.ml_service_url}/ensemble",
                     json={"base_scores": base_scores, "features": features}
                 )
                 if response.status_code == 200:
                     return response.json()
+                logger.error(f"ML_CLIENT: /ensemble returned status {response.status_code}: {response.text}")
                 return base_scores # Fallback to base scores if ensemble fails
         except Exception as e:
-            logger.warning(f"ML_CLIENT: HTTP Ensemble fallback failed: {e}")
+            logger.warning(f"ML_CLIENT: HTTP Ensemble fallback failed: {type(e).__name__} - {e}")
             return base_scores
 
     def get_cached_result(self, key: str) -> Optional[Dict[str, Any]]:

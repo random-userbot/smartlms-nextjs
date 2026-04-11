@@ -175,8 +175,6 @@ async def get_teaching_score(
                 EngagementLog.lecture_id.in_(
                     select(Lecture.id).where(Lecture.course_id == course_id)
                 ),
-                # Filter: only include finalized sessions
-                EngagementLog.is_finalized == True,
                 (EngagementLog.watch_duration * 1.25 >= EngagementLog.total_duration)
             ).order_by(EngagementLog.started_at)
         )
@@ -568,8 +566,7 @@ async def get_course_dashboard(
             ).where(
                 EngagementLog.lecture_id.in_(
                     select(Lecture.id).where(Lecture.course_id == course_id)
-                ),
-                EngagementLog.is_finalized == True
+                )
             )
         )
         eng_total, eng_avg, boredom_avg, confusion_avg, tab_total = eng_summary_res.one()
@@ -626,8 +623,7 @@ async def get_lectures_engagement_summary(
             ).where(
                 EngagementLog.lecture_id.in_(
                     select(Lecture.id).where(Lecture.course_id == course_id)
-                ),
-                EngagementLog.is_finalized == True
+                )
             ).group_by(EngagementLog.lecture_id)
         )
         rows = eng_res.all()
@@ -670,8 +666,7 @@ async def get_course_engagement(
         .where(
             EngagementLog.lecture_id.in_(
                 select(Lecture.id).where(Lecture.course_id == course_id)
-            ),
-            EngagementLog.is_finalized == True
+            )
         )
         .group_by(EngagementLog.student_id, User.full_name, User.email, User.avatar_url)
     )

@@ -61,10 +61,55 @@ async def process_message(feature_payload):
             registry = get_export_model_registry()
             model_id = feature_payload.get("model_id", settings.MODEL_ID_DEFAULT)
             features = feature_payload.get("features", [])
-            
-            # Actual ML Inference
-            result = registry.infer(model_id=model_id, features=features)
-            output = result.get("output", {})
+            if model_id == "builtin::ensemble_pro":
+                # Compute base scores first
+                base_res = registry.infer("builtin::xgboost", features=features)
+                base_outputs = base_res.get("output", {})
+                
+                # Fetch export models
+                models = registry.list_models()
+                export_models = [m["model_id"] for m in models if m["model_id"].startswith("export::") and m.get("recommended")]
+                
+                if not export_models:
+                    output = base_outputs
+                else:
+                    all_results = []
+                    for mid in export_models[:4]:
+                        try:
+                            res = registry.infer(mid, features)
+                            o = res.get("output", {})
+                            if isinstance(o, dict) and "dimensions" in o:
+                                dims = o["dimensions"]
+                                def _w(dname):
+                                    d = dims.get(dname, {})
+                                    probs = d.get("probabilities", [])
+                                    if len(probs) == 4:
+                                        return float(sum(p * (idx / 3.0 * 100.0) for idx, p in enumerate(probs)))
+                                    return float(d.get("class_index", 0) * 33.3)
+                                all_results.append({
+                                    "engagement": _w("engagement"),
+                                    "boredom": _w("boredom"),
+                                    "confusion": _w("confusion"),
+                                    "frustration": _w("frustration")
+                                })
+                        except Exception:
+                            continue
+                    
+                    if not all_results:
+                        output = base_outputs
+                    else:
+                        import numpy as np
+                        output = {
+                            "engagement": float(np.mean([r["engagement"] for r in all_results] + [base_outputs.get("engagement", 50.0)])),
+                            "boredom": float(np.mean([r["boredom"] for r in all_results] + [base_outputs.get("boredom", 50.0)])),
+                            "confusion": float(np.mean([r["confusion"] for r in all_results] + [base_outputs.get("confusion", 50.0)])),
+                            "frustration": float(np.mean([r["frustration"] for r in all_results] + [base_outputs.get("frustration", 50.0)]))
+                        }
+                        output["overall"] = float((output["engagement"] + (100 - output["boredom"])) / 2.0)
+            else:
+                # Actual ML Inference
+                result = registry.infer(model_id=model_id, features=features)
+                output = result.get("output", {})
             
             # 3. Apply Results (Idempotent Update)
             engagement_log.status = EngagementStatus.COMPLETED
