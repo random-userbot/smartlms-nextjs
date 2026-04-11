@@ -410,6 +410,11 @@ async def submit_engagement_data(
     feature_count = len(request.features or [])
     features_dicts = [f.model_dump() for f in request.features]
     
+    # [FORENSIC LOGGING] Trace incoming data
+    print(f"\n[HEARTBEAT_IN] Recv {feature_count} frames | Session: {request.session_id[:8]} | User: {current_user.username}", flush=True)
+    if feature_count > 0:
+        f = request.features[0]
+        print(f"  Sample: Gaze={f.gaze_score:.2f} | Stab={f.head_pose_stability:.2f} | Tab={f.tab_visible}", flush=True)
     # 1. Compute initial fast scores using ML model (XGBoost + SHAP)
     # This happens synchronously for immediate UX feedback
     scores = await compute_engagement_scores(request.features)
@@ -484,9 +489,12 @@ async def submit_engagement_data(
         # Append to Rich feature timeline for Dataset preparation
         if last_log.feature_timeline is None:
             last_log.feature_timeline = []
+        if last_log.scores_timeline is None:
+            last_log.scores_timeline = []
         
-        # Add new features to the timeline
+        # Add new features and score points to the timeline
         last_log.feature_timeline.extend(features_dicts)
+        last_log.scores_timeline.extend(timeline_points)
         
         # Aggregated stats in the features blob
         if isinstance(last_log.features, dict):

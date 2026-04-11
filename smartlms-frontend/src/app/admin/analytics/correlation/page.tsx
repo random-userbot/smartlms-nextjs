@@ -189,7 +189,7 @@ export default function CorrelationPage() {
                    <div className="flex justify-between items-start mb-4">
                       <div>
                         <h4 className="font-bold text-white group-hover:text-blue-400 transition-colors">{point.student_name}</h4>
-                        <p className="text-xs text-slate-500">ID: {point.student_id.slice(0, 8)}</p>
+                        <p className="text-xs text-slate-500">ID: {point.student_id?.slice(0, 8)}</p>
                       </div>
                       <div className={`p-2 rounded-lg ${Math.abs(point.delta) < 15 ? 'bg-emerald-500/10' : 'bg-amber-500/10'}`}>
                         {Math.abs(point.delta) < 15 ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <AlertCircle className="w-4 h-4 text-amber-500" />}

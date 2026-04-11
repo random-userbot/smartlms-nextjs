@@ -109,13 +109,17 @@ rate_limit_exempt_paths = settings.rate_limit_exempt_paths()
 
 # --- MIDDLEWARE STACK ---
 
-# 1. Request logging middleware
+# 1. Request logging & Security Headers middleware
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
     response = await call_next(request)
     duration_ms = (time.time() - start_time) * 1000
 
+    # Add Security Headers for Google Auth & Resilience
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+    response.headers["Cross-Origin-Embedder-Policy"] = "credentialless" # Optional, but helps with isolation
+    
     # Log to debug logger
     if settings.DEBUG_MODE and not request.url.path.startswith("/docs"):
         debug_logger.log_api(

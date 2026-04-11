@@ -583,7 +583,7 @@ export default function TeacherCourseDetailPage() {
                                   <div className="flex items-center gap-2 px-3 py-1 bg-surface-alt rounded-full">
                                      <Activity size={12} className="text-success" /> Active
                                   </div>
-                                  <span>ID: {student.student_id.slice(0, 8)}</span>
+                                  <span>ID: {student.student_id?.slice(0, 8)}</span>
                                </div>
                             </div>
                          ))}

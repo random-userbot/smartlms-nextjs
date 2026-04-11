@@ -248,7 +248,7 @@ function TeacherQuizzesContent() {
                   <tr key={q.id} className="hover:bg-surface-alt transition-colors group">
                     <td className="px-8 py-6">
                       <div className="font-black text-foreground">{q.title}</div>
-                      <div className="text-[10px] text-text-muted font-bold mt-1">ID: {q.id.slice(0,8)}...</div>
+                      <div className="text-[10px] text-text-muted font-bold mt-1">ID: {q.id?.slice(0,8)}...</div>
                     </td>
                     <td className="px-8 py-6">
                       <div className="text-sm font-bold text-foreground/80">{q.course_title}</div>

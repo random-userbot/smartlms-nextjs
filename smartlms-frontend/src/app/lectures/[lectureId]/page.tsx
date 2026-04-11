@@ -132,7 +132,7 @@ export default function LecturePage() {
       engagementAPI.getHistory(lectureId).then(res => {
         const historyData = Array.isArray(res.data) ? res.data : [];
         const history = historyData.map((h: any) => ({ engagement: h.overall_score }));
-        setEngagementHistory(history.slice(-20)); // Keep last 20 for UI
+        setEngagementHistory((history || []).slice(-20)); // Keep last 20 for UI
       }).catch(() => {});
 
       return () => clearInterval(poll);
@@ -267,7 +267,7 @@ export default function LecturePage() {
     // Add to UI history (sliding window)
     setEngagementHistory(prev => {
       const newHistory = [...prev, { engagement: score.overall_score }];
-      return newHistory.slice(-20);
+      return (newHistory || []).slice(-20);
     });
 
     // 3. Persist to session-long forensic ledger (State for Heatmap)
@@ -279,7 +279,7 @@ export default function LecturePage() {
       frustration: score.frustration
     };
     
-    setFullHistory(prev => [...prev.slice(-300), newPoint]); // Keep last 300 pts (~50 mins of watch time)
+    setFullHistory(prev => [...(prev || []).slice(-300), newPoint]); // Keep last 300 pts (~50 mins of watch time)
     fullWaveformRef.current.push(newPoint);
   };
 

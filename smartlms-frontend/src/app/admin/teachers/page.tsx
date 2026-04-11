@@ -124,7 +124,7 @@ export default function TeachersPage() {
                     <Mail className="w-3 h-3" />
                     {teacher.email}
                   </div>
-                  <p className="text-xs text-slate-600 uppercase tracking-widest font-black">Teacher ID: {teacher.id.slice(0, 8)}</p>
+                  <p className="text-xs text-slate-600 uppercase tracking-widest font-black">Teacher ID: {teacher.id?.slice(0, 8)}</p>
                 </div>
               </div>
 
@@ -189,7 +189,7 @@ export default function TeachersPage() {
             {/* Score Breakdown Sparklines placeholder */}
             {teacher.score_breakdown && (
               <div className="mt-6 pt-6 border-t border-slate-800/50 grid grid-cols-2 lg:grid-cols-4 gap-8">
-                 {Object.entries(teacher.score_breakdown).slice(0, 4).map(([key, value]: any) => (
+                 {Object.entries(teacher.score_breakdown || {}).slice(0, 4).map(([key, value]: any) => (
                    <div key={key}>
                       <div className="flex justify-between text-[10px] uppercase font-black text-slate-600 mb-1">
                         <span>{key.replace(/_/g, ' ')}</span>

@@ -93,7 +93,7 @@ export default function SessionSummary({ data, lectureId, nextLectureId }: Sessi
                <h4 className="text-sm font-black text-white uppercase tracking-widest">Learning Momentum</h4>
              </div>
              <div className="flex-1 flex items-end justify-between h-32 gap-2">
-               {momentum.slice(-7).map((h: number, i: number) => (
+               {(momentum || []).slice(-7).map((h: number, i: number) => (
                  <div key={i} className="flex-1 bg-primary/20 hover:bg-primary transition-all rounded-t-lg relative group" style={{ height: `${Math.max(5, h)}%` }}>
                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-black px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                      {h.toFixed(0)}%

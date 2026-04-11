@@ -183,9 +183,10 @@ async def get_teaching_score(
         engagement_scores = [l.engagement_score or 0.0 for l in engagement_logs]
         engagement_avg = sum(engagement_scores) / max(len(engagement_scores), 1)
         
-        # PRO-FIX: If we have very few logs, use a baseline to prevent 0% "Cold Start" visuals
+        # Check for empty logs
         if len(engagement_logs) == 0:
-            engagement_avg = 50.0 # Neutral baseline
+            print(f"[ANALYTICS] No engagement logs found for course {course_id}. Returning calculated zero.")
+            engagement_avg = 0.0 
 
         # ── 2. Engagement Trend (retention slope) ──
         if len(engagement_scores) >= 3:
@@ -219,9 +220,9 @@ async def get_teaching_score(
         )
         quiz_avg = quiz_result.scalar() or 0.0
         
-        # PRO-FIX: Baseline for Quiz (prevent 0%)
+        # Check for empty quiz attempts
         if quiz_avg == 0:
-            quiz_avg = 50.0 # Placeholder until first attempts
+             print(f"[ANALYTICS] No quiz attempts found for course {course_id}. Returning zero.")
 
         # ── 5. ICAP Distribution ──
         icap_result = await db.execute(
@@ -1046,9 +1047,13 @@ async def get_lecture_engagement_waves(
 
     result = await db.execute(query)
     rows = result.all()
+    
+    # [FORENSIC TRACING]
+    print(f"\n[WAVE_QUERY] Lecture: {lecture_id[:8]} | Logs Found: {len(rows)}", flush=True)
 
     duration = lecture.duration or 3600 # Fallback 1hr
     max_minutes = int(duration // 60) + 1
+    print(f"  Duration: {duration}s | Expected Bins: {max_minutes}", flush=True)
     
     student_data = {}
     

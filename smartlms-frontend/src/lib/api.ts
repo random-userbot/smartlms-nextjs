@@ -40,19 +40,30 @@ if (typeof window !== 'undefined') {
           return obj;
         }
 
+        const idKeys = ['id', 'student_id', 'lecture_id', 'course_id', 'session_id'];
+
         for (const key in obj) {
-          if (arrayKeys.has(key)) {
-            // Strict enforcement: If it's not an array, force it to be one.
-            if (!Array.isArray(obj[key])) {
+          const val = obj[key];
+
+          // Force ID strings
+          if (idKeys.includes(key)) {
+            if (val === null || val === undefined) {
+              obj[key] = "";
+            } else if (typeof val !== 'string') {
+              obj[key] = String(val);
+            }
+          }
+          // Force arrays
+          else if (arrayKeys.has(key)) {
+            if (!Array.isArray(val)) {
               obj[key] = [];
             }
           }
-          // Special case: 'data' is a standard container for lists in this API
-          if (key === 'data' && obj[key] && !Array.isArray(obj[key]) && typeof obj[key] === 'object') {
-             // If data is an object but not an array, it might be a malformed response
-             // We deepFix it as an object, but if components expect [data], we handle it there
+          
+          // Recursive
+          if (val && typeof val === 'object') {
+            deepFix(val);
           }
-          deepFix(obj[key]);
         }
         return obj;
       };
