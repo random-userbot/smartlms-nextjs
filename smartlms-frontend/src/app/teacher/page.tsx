@@ -599,6 +599,29 @@ export default function TeacherDashboard() {
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                    <ScoreCard 
+                        label="Engagement" 
+                        value={score?.components?.engagement ? `${score.components.engagement}%` : "Syncing..."} 
+                        icon={<Activity size={20} className="text-primary" />} 
+                    />
+                    <ScoreCard 
+                        label="Quiz Avg" 
+                        value={score?.components?.quiz_performance ? `${score.components.quiz_performance}%` : "Syncing..."} 
+                        icon={<BarChart3 size={20} className="text-info" />} 
+                    />
+                    <ScoreCard 
+                        label="Responsiveness" 
+                        value={score?.components?.responsiveness ? `${score.components.responsiveness}%` : "Syncing..."} 
+                        icon={<MessageSquare size={20} className="text-success" />} 
+                    />
+                    <ScoreCard 
+                        label="Activity Score" 
+                        value={score?.components?.activity_score ? `${score.components.activity_score}%` : "Syncing..."} 
+                        icon={<Award size={20} className="text-warning" />} 
+                    />
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     {/* Concerns Section */}
                     <div className="space-y-6">
@@ -684,6 +707,20 @@ export default function TeacherDashboard() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ScoreCard({ label, value, icon }: { label: string, value: string, icon: React.ReactNode }) {
+  return (
+    <div className="p-6 bg-surface-alt rounded-[2rem] border border-border space-y-3 group hover:bg-surface hover:shadow-xl transition-all">
+      <div className="p-3 bg-background rounded-2xl w-fit group-hover:scale-110 transition-transform">
+        {icon}
+      </div>
+      <div>
+        <div className="text-2xl font-black text-foreground italic">{value}</div>
+        <div className="text-[10px] font-black text-text-muted uppercase tracking-widest">{label}</div>
+      </div>
     </div>
   );
 }

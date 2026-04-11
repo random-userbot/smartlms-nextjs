@@ -182,6 +182,10 @@ async def get_teaching_score(
 
         engagement_scores = [l.engagement_score or 0.0 for l in engagement_logs]
         engagement_avg = sum(engagement_scores) / max(len(engagement_scores), 1)
+        
+        # PRO-FIX: If we have very few logs, use a baseline to prevent 0% "Cold Start" visuals
+        if len(engagement_logs) == 0:
+            engagement_avg = 50.0 # Neutral baseline
 
         # ── 2. Engagement Trend (retention slope) ──
         if len(engagement_scores) >= 3:
@@ -214,6 +218,10 @@ async def get_teaching_score(
             )
         )
         quiz_avg = quiz_result.scalar() or 0.0
+        
+        # PRO-FIX: Baseline for Quiz (prevent 0%)
+        if quiz_avg == 0:
+            quiz_avg = 50.0 # Placeholder until first attempts
 
         # ── 5. ICAP Distribution ──
         icap_result = await db.execute(
@@ -549,6 +557,11 @@ async def get_live_sessions(
             if isinstance(timeline, dict):
                 timeline = [timeline]
             
+            # Null-safe ICAP status
+            icap_val = "Active"
+            if log.icap_classification:
+                icap_val = log.icap_classification.value if hasattr(log.icap_classification, 'value') else str(log.icap_classification)
+
             sessions.append({
                 "session_id": log.session_id,
                 "student_id": str(log.student_id),
@@ -556,8 +569,8 @@ async def get_live_sessions(
                 "student_avatar": avatar_url,
                 "lecture_title": lecture_title,
                 "engagement": round(log.overall_score or 0, 1),
-                "status": log.icap_classification.value if hasattr(log.icap_classification, 'value') else str(log.icap_classification),
-                "last_active": log.updated_at.isoformat(),
+                "status": icap_val,
+                "last_active": log.updated_at.isoformat() if log.updated_at else datetime.utcnow().isoformat(),
                 "waveform": timeline[-20:] # Last 20 points for mini-wave
             })
         

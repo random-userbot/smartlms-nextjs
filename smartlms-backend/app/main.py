@@ -128,7 +128,24 @@ async def log_requests(request: Request, call_next):
     return response
 
 
-# 2. Root heartbeat for ALB
+# 2. Global Exception Handler for CORS Resilience
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Ensure all exceptions return a valid JSON response so CORSMiddleware can add headers."""
+    print(f"[FATAL] Global Exception: {str(exc)}", flush=True)
+    import traceback
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={
+            "status": "error",
+            "message": "Internal Server Error. Security headers persisted.",
+            "detail": str(exc) if not settings.APP_ENV == "production" else "Check backend logs for details"
+        }
+    )
+
+
+# 3. Root heartbeat for ALB
 @app.get("/")
 async def root_heartbeat():
     """Root heartbeat for AWS ALB default health checks"""
@@ -192,7 +209,7 @@ app.include_router(messaging_router.router)
 # --- FINAL MIDDLEWARE WRAPPER (OUTERMOST) ---
 # We add CORS last so it is the first to handle the request 
 # and the last to handle the response (wrapping all other middlewares).
-allow_origin_regex = None
+allow_origin_regex = "https?://.*\.vercel\.app"
 if settings.APP_ENV != "production" and settings.ALLOW_ALL_CORS_IN_DEV:
     allow_origin_regex = "https?://.*"
 
