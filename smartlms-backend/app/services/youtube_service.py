@@ -116,6 +116,18 @@ class YouTubeService:
             except Exception as e:
                 print(f"[YOUTUBE] [ERROR] Failed to setup cookies: {e}", flush=True)
 
+    def update_cookies(self, cookie_str: str) -> bool:
+        """Dynamically update cookies from an API request."""
+        if not cookie_str:
+            return False
+            
+        path = self._get_cookie_file(cookie_str)
+        if path:
+            self._cookie_path = path
+            print(f"[YOUTUBE] Cookies dynamically updated to {path}", flush=True)
+            return True
+        return False
+
     def _get_cookie_file(self, cookie_str: str) -> Optional[str]:
         """Verify or create temporary Netscape cookie file for yt-dlp."""
         if not cookie_str:
@@ -159,6 +171,26 @@ class YouTubeService:
                     content = cookie_str
 
             # Validation: If it doesn't look like a cookie file, try to wrap it
+            if content.strip().startswith('['):
+                import json
+                try:
+                    cookies = json.loads(content)
+                    netscape_lines = ["# Netscape HTTP Cookie File", "# Auto-generated from JSON", ""]
+                    for cookie in cookies:
+                        domain = cookie.get('domain', '.youtube.com')
+                        c_path = cookie.get('path', '/')
+                        secure = 'TRUE' if cookie.get('secure', False) else 'FALSE'
+                        expires = str(int(cookie.get('expirationDate', 0))) if cookie.get('expirationDate') else '0'
+                        name = cookie.get('name', '')
+                        value = cookie.get('value', '')
+                        if name and value:
+                            include_sub = 'TRUE' if domain.startswith('.') else 'FALSE'
+                            netscape_lines.append(f"{domain}\t{include_sub}\t{c_path}\t{secure}\t{expires}\t{name}\t{value}")
+                    content = "\n".join(netscape_lines)
+                    print("[YOUTUBE] Parsed JSON cookies.", flush=True)
+                except Exception as je:
+                    print(f"[YOUTUBE] Failed to parse JSON cookies: {je}", flush=True)
+
             if content and "# Netscape" not in content and "# HTTP Cookie File" not in content:
                 print("[YOUTUBE] Content detected as raw key=value string. Wrapping in Netscape header.", flush=True)
                 if ";" in content and "=" in content:

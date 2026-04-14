@@ -14,6 +14,9 @@ export default function TeacherCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCookieModal, setShowCookieModal] = useState(false);
+  const [youtubeCookie, setYoutubeCookie] = useState('');
+  const [savingCookie, setSavingCookie] = useState(false);
+  const [cookieStatus, setCookieStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [newCourse, setNewCourse] = useState({ 
     title: '', 
     description: '', 
@@ -37,6 +40,36 @@ export default function TeacherCoursesPage() {
       console.error('Failed to load courses', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveCookie = async () => {
+    if (!youtubeCookie.trim()) return;
+    setSavingCookie(true);
+    setCookieStatus('idle');
+    try {
+      const response = await fetch('http://localhost:8000/api/admin/youtube/cookies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ cookie_data: youtubeCookie })
+      });
+      
+      if (!response.ok) throw new Error('Failed to save cookie');
+      
+      setCookieStatus('success');
+      setTimeout(() => {
+        setCookieStatus('idle');
+        setShowCookieModal(false);
+        setYoutubeCookie('');
+      }, 1500);
+    } catch (error) {
+      console.error(error);
+      setCookieStatus('error');
+    } finally {
+      setSavingCookie(false);
     }
   };
 
@@ -272,11 +305,15 @@ export default function TeacherCoursesPage() {
                   <span className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px]">2</span>
                   Format & Apply in Production
                 </h3>
-                <p className="mb-4">Due to security, the cookies must be securely embedded in the backend Fargate container environment variables:</p>
+                 <p className="mb-4">Paste the exported JSON text array or Netscape string below to dynamically update the backend:</p>
                 
-                <div className="bg-black p-4 rounded-xl font-mono text-[10px] text-green-400 overflow-x-auto whitespace-pre leading-loose border border-white/5">
-YOUTUBE_COOKIES=&quot;# Netscape HTTP Cookie File\n.youtube.com\tTRUE\t/\tTRUE\t0\tSAPISID\t&lt;YOUR_SESSION&gt;\n...&quot;
-                </div>
+                 <textarea
+                  value={youtubeCookie}
+                  onChange={(e) => setYoutubeCookie(e.target.value)}
+                  placeholder='Paste JSON or Netscape string here...'
+                  className="w-full h-32 bg-black/40 border border-white/5 rounded-xl font-mono text-[10px] text-green-400 p-4 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-600 resize-none whitespace-pre"
+                />
+
                 <p className="mt-4 text-[11px] uppercase tracking-widest font-black text-orange-400">Warning: Do not use your personal YouTube account. It will get banned for scraping.</p>
               </div>
             </div>
@@ -286,7 +323,14 @@ YOUTUBE_COOKIES=&quot;# Netscape HTTP Cookie File\n.youtube.com\tTRUE\t/\tTRUE\t
                 onClick={() => setShowCookieModal(false)}
                 className="px-8 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all font-black text-xs uppercase tracking-widest text-text-muted hover:text-white"
               >
-                Understood
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveCookie}
+                disabled={!youtubeCookie.trim() || savingCookie}
+                className="px-8 py-4 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest disabled:opacity-40 disabled:scale-100 hover:scale-[1.02] active:scale-95 transition-all shadow-lg crimson-glow"
+              >
+                {savingCookie ? 'Checking...' : cookieStatus === 'success' ? 'Success ✓' : cookieStatus === 'error' ? 'Invalid Format' : 'Inject Cookie'}
               </button>
             </div>
           </div>

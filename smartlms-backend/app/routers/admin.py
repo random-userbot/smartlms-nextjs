@@ -13,10 +13,28 @@ from app.models.models import (
     User, UserRole, Course, Lecture, Quiz, Enrollment, EngagementLog,
     QuizAttempt, Feedback, TeachingScore, ActivityLog
 )
-from app.middleware.auth import get_current_user, require_admin
+from app.middleware.auth import get_current_user, require_admin, require_role
 from app.services.debug_logger import debug_logger
+from app.services.youtube_service import youtube_service
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
+
+
+class YoutubeCookieUpdate(BaseModel):
+    cookie_data: str
+
+
+@router.post("/youtube/cookies")
+async def update_youtube_cookies(
+    request: YoutubeCookieUpdate,
+    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.TEACHER))
+):
+    """Dynamically update YouTube cookies at runtime."""
+    success = youtube_service.update_cookies(request.cookie_data)
+    if success:
+        return {"success": True, "message": "YouTube cookies updated successfully."}
+    else:
+        raise HTTPException(status_code=400, detail="Invalid cookie format.")
 
 
 @router.get("/teachers")
