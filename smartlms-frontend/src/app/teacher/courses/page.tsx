@@ -100,12 +100,20 @@ export default function TeacherCoursesPage() {
               <h1 className="text-5xl font-black tracking-tight">Course Management</h1>
               <p className="text-text-muted font-medium mt-4">Create, publish, and optimize your educational modules.</p>
             </div>
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-3 px-8 py-4 bg-primary text-white rounded-2xl font-black transition-all crimson-glow hover:scale-[1.02] active:scale-95 shadow-lg"
-            >
-              <Plus size={20} /> Create New Module
-            </button>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setShowCookieModal(true)}
+                className="flex items-center gap-3 px-6 py-4 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-2xl font-black transition-all hover:bg-orange-500/20 active:scale-95 shadow-lg text-sm"
+              >
+                <Play size={18} /> Fix YouTube Bot Sync
+              </button>
+              <button 
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-3 px-8 py-4 bg-primary text-white rounded-2xl font-black transition-all crimson-glow hover:scale-[1.02] active:scale-95 shadow-lg"
+              >
+                <Plus size={20} /> Create New Module
+              </button>
+            </div>
           </div>
 
           {/* Filters & Stats */}
@@ -186,7 +194,7 @@ export default function TeacherCoursesPage() {
                       {course.description || 'No description provided for this module.'}
                     </p>
                     
-                    <div className="grid grid-cols-2 gap-4 mb-8">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
                       <div className="flex items-center gap-2.5 text-xs font-bold text-text-muted uppercase tracking-widest">
                         <Users size={16} className="text-primary" /> {course.student_count || 0} Students
                       </div>
@@ -194,6 +202,13 @@ export default function TeacherCoursesPage() {
                         <Play size={16} className="text-primary" /> {course.lecture_count || 0} Lectures
                       </div>
                     </div>
+
+                    <button 
+                      onClick={() => setShowCookieModal(true)} 
+                      className="mb-8 text-[10px] w-max font-black uppercase tracking-widest text-orange-400 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-lg hover:bg-orange-500/20 transition-all flex items-center gap-2"
+                    >
+                      <Play size={12}/> Fix YouTube Sync
+                    </button>
                     
                     <div className="mt-auto pt-6 border-t border-border flex items-center justify-between">
                       <Link 
