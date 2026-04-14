@@ -209,34 +209,6 @@ class YouTubeService:
         
         return session
 
-    def _get_ydl_opts(self, extra_opts: Optional[Dict] = None) -> Dict:
-        """Get consolidated yt-dlp options with PO_TOKEN support."""
-        opts = self.ydl_opts.copy()
-        
-        # Inject PO_TOKEN if available
-        if settings.YOUTUBE_PO_TOKEN:
-            if 'extractor_args' not in opts:
-                opts['extractor_args'] = {}
-            if 'youtube' not in opts['extractor_args']:
-                opts['extractor_args']['youtube'] = {}
-            
-            opts['extractor_args']['youtube']['po_token'] = [settings.YOUTUBE_PO_TOKEN]
-            
-            if settings.YOUTUBE_VISITOR_DATA:
-                opts['extractor_args']['youtube']['visitor_data'] = [settings.YOUTUBE_VISITOR_DATA]
-
-            # Ensure high-trust context
-            opts['extractor_args']['youtube']['innertube_context'] = {
-                'client': {
-                    'hl': 'en',
-                    'gl': 'US',
-                }
-            }
-
-        if extra_opts:
-            opts.update(extra_opts)
-        return opts
-
     @staticmethod
     def extract_video_id(url: str) -> Optional[str]:
         """Extract the 11-character YouTube video ID using robust regex."""

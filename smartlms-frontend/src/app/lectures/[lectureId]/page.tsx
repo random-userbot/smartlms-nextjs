@@ -42,6 +42,7 @@ import SessionSummary from '@/components/lecture/SessionSummary';
 import MaterialsTab from '@/components/lecture/MaterialsTab';
 import NavigationHeader from '@/components/NavigationHeader';
 import EngagementHeatmap from '@/components/EngagementHeatmap';
+import TranscriptPanel from '@/components/lecture/TranscriptPanel';
 import { useActivity } from '@/context/ActivityTracker';
 import { useAuth } from '@/context/AuthContext';
 
@@ -56,6 +57,7 @@ export default function LecturePage() {
   
   const [lecture, setLecture] = useState<any>(null);
   const [phase, setPhase] = useState<LecturePhase>('lecture');
+  const [youtubePlayer, setYoutubePlayer] = useState<any>(null);
   const [playing, setPlaying] = useState(false);
   const [engagementScore, setEngagementScore] = useState<any>(null);
   const [engagementHistory, setEngagementHistory] = useState<any[]>([]);
@@ -71,7 +73,7 @@ export default function LecturePage() {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chat' | 'materials'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'transcript' | 'materials'>('chat');
   const [tutorMode, setTutorMode] = useState<string>('general');
   const [showAlert, setShowAlert] = useState(false);
   const [attachments, setAttachments] = useState<any[]>([]);
@@ -254,6 +256,16 @@ export default function LecturePage() {
     }
   };
 
+  const handleJumpToTime = (seconds: number) => {
+    if (youtubePlayer) {
+      youtubePlayer.seekTo(seconds, true);
+    }
+    // Fallback for HTML5 video
+    if (videoRef.current) {
+      videoRef.current.currentTime = seconds;
+    }
+  };
+
   useEffect(() => {
     if (videoRef.current) {
       if (playing) videoRef.current.play().catch(() => {});
@@ -408,12 +420,14 @@ export default function LecturePage() {
                             }}
                             onReady={(event) => {
                               setTotalDuration(Math.floor(event.target.getDuration()));
+                              setYoutubePlayer(event.target);
                             }}
                             onPlay={() => setPlaying(true)}
                             onPause={() => setPlaying(false)}
                             onEnd={() => {
                               setPlaying(false);
                               handleFinishLesson();
+                              setYoutubePlayer(null);
                             }}
                             onStateChange={(event) => {
                               // 1 is Playing, 2 is Paused
@@ -481,38 +495,74 @@ export default function LecturePage() {
                   <div className="col-span-12 lg:col-span-4 flex flex-col space-y-8 h-full min-h-0">
                     <div className="flex flex-col glass-card border-white/5 h-[calc(100vh-450px)] min-h-[300px]">
                       <div className="p-8 border-b border-white/5 flex items-center justify-between">
-                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white crimson-glow"><Bot size={24} /></div>
-                            <div><h3 className="text-lg font-black text-foreground uppercase tracking-widest">Aika Hub</h3></div>
+                         <div className="flex gap-4">
+                            <button 
+                              onClick={() => setActiveTab('chat')}
+                              className={`text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'chat' ? 'text-primary' : 'text-text-muted hover:text-white'}`}
+                            >
+                              Aika Chat
+                            </button>
+                            <button 
+                              onClick={() => setActiveTab('transcript')}
+                              className={`text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'transcript' ? 'text-primary' : 'text-text-muted hover:text-white'}`}
+                            >
+                              Transcript
+                            </button>
+                            <button 
+                              onClick={() => setActiveTab('materials')}
+                              className={`text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'materials' ? 'text-primary' : 'text-text-muted hover:text-white'}`}
+                            >
+                              Materials
+                            </button>
                          </div>
-                         <button onClick={() => setMessages([{role: 'assistant', content: 'Context purged.'}])} className="text-white/20 hover:text-red-400"><Trash2 size={20} /></button>
                       </div>
 
-                      <div className="flex-1 overflow-y-auto p-8 space-y-6 no-scrollbar">
-                         {messages.map((m, i) => (
-                           <div key={i} className={`flex flex-col gap-2 ${m.role === 'user' ? 'items-end' : ''}`}>
-                              <div className={`p-5 rounded-[2rem] text-sm font-bold border ${m.role === 'user' ? 'bg-primary/5 border-primary/20 text-white rounded-tr-none' : 'bg-surface border-border text-white/90 rounded-tl-none'}`}>
-                                {m.content}
-                              </div>
+                      <div className="flex-1 overflow-hidden relative">
+                         {activeTab === 'chat' && (
+                           <div className="absolute inset-0 flex flex-col">
+                             <div className="flex-1 overflow-y-auto p-8 space-y-6 no-scrollbar">
+                                {messages.map((m, i) => (
+                                  <div key={i} className={`flex flex-col gap-2 ${m.role === 'user' ? 'items-end' : ''}`}>
+                                     <div className={`p-5 rounded-[2rem] text-sm font-bold border ${m.role === 'user' ? 'bg-primary/5 border-primary/20 text-white rounded-tr-none' : 'bg-surface border-border text-white/90 rounded-tl-none'}`}>
+                                       {m.content}
+                                     </div>
+                                  </div>
+                                ))}
+                                {isTyping && <div className="animate-pulse flex gap-2"><div className="w-2 h-2 bg-primary rounded-full animate-bounce" /></div>}
+                             </div>
+
+                             <div className="p-8 bg-surface/50 border-t border-white/5 space-y-4">
+                                <div className="flex gap-3 px-4 flex-wrap">
+                                   {attachments.map((at, idx) => (
+                                     <div key={idx} className="px-3 py-1 bg-primary/20 border border-primary/40 rounded-lg text-[9px] font-black text-white flex items-center gap-2">
+                                        {at.name} <button onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}><Trash2 size={10} /></button>
+                                     </div>
+                                   ))}
+                                </div>
+                                 <div className="flex gap-3">
+                                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} multiple className="hidden" />
+                                    <button onClick={() => fileInputRef.current?.click()} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/40 hover:text-white"><PlusIcon size={24} /></button>
+                                    <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleChat()} className="flex-1 bg-background/50 border border-white/10 rounded-2xl px-6 text-sm py-3 text-white" placeholder="Ask a question..." />
+                                    <button onClick={handleChat} className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white crimson-glow"><Send size={20} /></button>
+                                 </div>
+                             </div>
                            </div>
-                         ))}
-                         {isTyping && <div className="animate-pulse flex gap-2"><div className="w-2 h-2 bg-primary rounded-full animate-bounce" /></div>}
-                      </div>
+                         )}
 
-                      <div className="p-8 bg-surface/50 border-t border-white/5 space-y-4">
-                         <div className="flex gap-3 px-4 flex-wrap">
-                            {attachments.map((at, idx) => (
-                              <div key={idx} className="px-3 py-1 bg-primary/20 border border-primary/40 rounded-lg text-[9px] font-black text-white flex items-center gap-2">
-                                 {at.name} <button onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}><Trash2 size={10} /></button>
-                              </div>
-                            ))}
-                         </div>
-                          <div className="flex gap-3">
-                             <input type="file" ref={fileInputRef} onChange={handleFileUpload} multiple className="hidden" />
-                             <button onClick={() => fileInputRef.current?.click()} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/40 hover:text-white"><PlusIcon size={24} /></button>
-                             <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleChat()} className="flex-1 bg-background/50 border border-white/10 rounded-2xl px-6 text-sm py-3 text-white" placeholder="Ask a question..." />
-                             <button onClick={handleChat} className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white crimson-glow"><Send size={20} /></button>
-                          </div>
+                         {activeTab === 'transcript' && (
+                            <div className="absolute inset-0">
+                               <TranscriptPanel 
+                                 transcript={lecture?.transcript || ''} 
+                                 onJumpToTime={handleJumpToTime}
+                               />
+                            </div>
+                         )}
+
+                         {activeTab === 'materials' && (
+                            <div className="absolute inset-0">
+                               <MaterialsTab lectureId={lectureId} />
+                            </div>
+                         )}
                       </div>
                     </div>
 

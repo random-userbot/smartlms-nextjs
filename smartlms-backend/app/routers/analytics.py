@@ -17,6 +17,7 @@ from app.models.models import (
     TeachingScore, ICAPLog, ICAPLevel, ActivityLog, Message, Material
 )
 from app.middleware.auth import get_current_user, require_teacher_or_admin
+from app.services.intelligence_service import intelligence_service
 from app.services.debug_logger import debug_logger
 
 router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
@@ -508,8 +509,23 @@ async def get_teaching_score(
             "overall_score": 0,
             "status": "partial_error",
             "components": {"engagement": 0, "quiz": 0, "attendance": 0},
-            "recommendations": ["Data sync in progress. Data is coming online shortly."]
         }
+
+@router.get("/lecture/{lecture_id}/intelligence")
+async def get_lecture_intelligence_endpoint(
+    lecture_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+):
+    """
+    Get deep pedagogical insights for a specific lecture.
+    Identifies friction zones (struggle points) and provides tips.
+    """
+    try:
+        return await intelligence_service.get_lecture_intelligence(db, lecture_id)
+    except Exception as e:
+        debug_logger.log("error", f"Intelligence endpoint failure: {str(e)}")
+        raise HTTPException(status_code=500, detail="Intelligence analysis engine encountered a cognitive drift.")
 
 @router.get("/live-sessions")
 async def get_live_sessions(

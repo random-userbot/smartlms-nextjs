@@ -114,7 +114,7 @@ async def google_login(request: GoogleLoginRequest, db: AsyncSession = Depends(g
         debug_logger.log("activity", "Google Login Initiated", 
                          data={"has_token": bool(request.id_token), "role": request.role})
         
-        idinfo = verify_google_token(request.id_token)
+        idinfo = await verify_google_token(request.id_token)
         if not idinfo:
             debug_logger.log("activity", "Invalid Google Token provided")
             raise HTTPException(

@@ -14,6 +14,7 @@ export default function EngagementCamera({ onFeaturesDetected, enabled, playing 
   const animationRef = useRef<number | null>(null);
   const isProcessing = useRef(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const enabledRef = useRef(enabled);
   const playingRef = useRef(playing);
   const onFeaturesRef = useRef(onFeaturesDetected);
@@ -54,23 +55,34 @@ export default function EngagementCamera({ onFeaturesDetected, enabled, playing 
 
     let isMounted = true;
     const initCamera = async () => {
+      setCameraError(null);
+      let stream: MediaStream | null = null;
+      
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { width: 640, height: 480, frameRate: 15 } 
-        });
+        // Attempt 1: High quality constraints
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: 640, height: 480, frameRate: 15 } 
+          });
+        } catch (e) {
+          console.warn("Neural Eye: Initial constraints failed, trying fallback...", e);
+          // Attempt 2: Basic fallback
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        }
         
         if (!isMounted) {
-          stream.getTracks().forEach(t => t.stop());
+          stream?.getTracks().forEach(t => t.stop());
           return;
         }
 
-        if (videoRef.current) {
+        if (videoRef.current && stream) {
           videoRef.current.srcObject = stream;
         }
 
         const FaceMesh = (window as any).FaceMesh;
         if (!FaceMesh) {
           console.error("Neural Eye Error: MediaPipe FaceMesh library not found in window object.");
+          setCameraError("Engine Missing");
           return;
         }
 
@@ -141,11 +153,19 @@ export default function EngagementCamera({ onFeaturesDetected, enabled, playing 
         processFrame();
       } catch (err: any) {
         console.error('Neural Eye initialization failure:', err);
+        let msg = "Camera Error";
+        
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          alert('Neural Eye Permission Error: Camera access was dismissed. Please enable camera permissions in your browser settings to allow the biometric engagement tracking to function.');
+          msg = "Access Denied";
+          alert('Neural Eye Permission Error: Camera access was dismissed. Please enable camera permissions in your browser settings.');
         } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-          alert('Neural Eye Error: No camera device detected. Engagement tracking will remain offline.');
+          msg = "No Camera Found";
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          msg = "Camera in Use";
+          alert('Neural Eye Conflict: Your camera is currently being used by another application (like Zoom or Teams). Please close other camera apps and refresh.');
         }
+        
+        setCameraError(msg);
       }
     };
 
@@ -188,9 +208,22 @@ export default function EngagementCamera({ onFeaturesDetected, enabled, playing 
            Calibration Offline
         </div>
       )}
-      {enabled && !isLoaded && (
+      {enabled && !isLoaded && !cameraError && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-md">
            <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+        </div>
+      )}
+      {cameraError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 backdrop-blur-lg p-4 text-center">
+           <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center mb-3">
+              <span className="text-primary text-lg font-black">!</span>
+           </div>
+           <div className="text-[10px] font-black text-white uppercase tracking-widest mb-1">
+              {cameraError}
+           </div>
+           <div className="text-[8px] font-medium text-white/40 uppercase tracking-tighter max-w-[120px]">
+              {cameraError === "Camera in Use" ? "Close other apps using camera and refresh" : "Check hardware or permissions"}
+           </div>
         </div>
       )}
     </div>

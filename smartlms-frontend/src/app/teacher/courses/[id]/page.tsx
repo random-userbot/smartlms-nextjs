@@ -31,6 +31,7 @@ import {
 import { coursesAPI, lecturesAPI, quizzesAPI, analyticsAPI, teacherAPI, messagesAPI, engagementAPI } from '@/lib/api';
 import Sidebar from '@/components/Sidebar';
 import CommunicationFab from '@/components/CommunicationFab';
+import CourseQuizOverview from '@/components/teacher/CourseQuizOverview';
 
 export default function TeacherCourseDetailPage() {
   const { id: courseId } = useParams() as { id: string };
@@ -50,7 +51,7 @@ export default function TeacherCourseDetailPage() {
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
   
-  const [activeTab, setActiveTab] = useState<'curriculum' | 'students' | 'resources' | 'settings'>('curriculum');
+  const [activeTab, setActiveTab] = useState<'curriculum' | 'students' | 'quizzes' | 'resources' | 'settings'>('curriculum');
   const [students, setStudents] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
   const [lectureEngagement, setLectureEngagement] = useState<Record<string, any>>({});
@@ -351,6 +352,7 @@ export default function TeacherCourseDetailPage() {
              {[
                { id: 'curriculum', label: 'Curriculum', icon: <Play size={16} /> },
                { id: 'students', label: 'Student Matrix', icon: <Users size={16} /> },
+               { id: 'quizzes', label: 'Quiz Analytics', icon: <Sparkles size={16} /> },
                { id: 'resources', label: 'Repository', icon: <FileText size={16} /> },
                { id: 'settings', label: 'Course Core', icon: <Settings size={16} /> }
              ].map(tab => (

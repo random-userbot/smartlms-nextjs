@@ -429,6 +429,118 @@ async def get_my_quizzes(
     return response
 
 
+@router.get("/course/{course_id}/analytics")
+async def get_course_quiz_analytics(
+    course_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+):
+    """
+    Get class-wide quiz performance for a specific course.
+    Aggregates all attempts to identify struggling areas.
+    """
+    try:
+        # 1. Fetch all quizzes for this course
+        quizzes_stmt = (
+            select(Quiz, Lecture.title)
+            .join(Lecture, Lecture.id == Quiz.lecture_id)
+            .where(Lecture.course_id == course_id)
+        )
+        quizzes_result = await db.execute(quizzes_stmt)
+        quizzes_data = quizzes_result.all()
+        
+        if not quizzes_data:
+            return {"quizzes": [], "difficult_questions": [], "avg_course_score": 0}
+
+        quiz_ids = [q.id for q, _ in quizzes_data]
+        
+        # 2. Fetch all attempts for these quizzes
+        attempts_stmt = select(QuizAttempt).where(QuizAttempt.quiz_id.in_(quiz_ids))
+        attempts_result = await db.execute(attempts_stmt)
+        attempts = attempts_result.scalars().all()
+        
+        # 3. Aggregate stats
+        quiz_stats = {}
+        question_stats = {} # question_text -> {total: int, correct: int}
+        
+        for q, lecture_title in quizzes_data:
+            quiz_stats[q.id] = {
+                "id": q.id,
+                "title": q.title,
+                "lecture_title": lecture_title,
+                "attempts": 0,
+                "total_score": 0,
+                "max_score": 0
+            }
+            # Initialize question stats
+            if q.questions:
+                for quest in q.questions:
+                    q_text = quest.get('question', '')
+                    if q_text not in question_stats:
+                        question_stats[q_text] = {"correct": 0, "total": 0}
+
+        for attempt in attempts:
+            stats = quiz_stats.get(attempt.quiz_id)
+            if stats:
+                stats["attempts"] += 1
+                stats["total_score"] += attempt.score
+                stats["max_score"] += attempt.max_score
+
+            # Track individual question performance
+            current_quiz = next((q for q, _ in quizzes_data if q.id == attempt.quiz_id), None)
+            if current_quiz and current_quiz.questions and attempt.answers:
+                for i, quest in enumerate(current_quiz.questions):
+                    q_text = quest.get('question', '')
+                    correct_idx = quest.get('correct_answer')
+                    
+                    student_ans = attempt.answers[i] if i < len(attempt.answers) else None
+                    
+                    if q_text in question_stats:
+                        question_stats[q_text]["total"] += 1
+                        if student_ans == correct_idx:
+                            question_stats[q_text]["correct"] += 1
+
+        # 4. Finalize response
+        final_quizzes = []
+        total_course_percentage = 0
+        counted_quizzes = 0
+
+        for qid, stats in quiz_stats.items():
+            avg_pct = (stats["total_score"] / stats["max_score"] * 100) if stats["max_score"] > 0 else 0
+            final_quizzes.append({
+                "id": stats["id"],
+                "title": stats["title"],
+                "lecture": stats["lecture_title"],
+                "avg_score": round(avg_pct, 1),
+                "attempt_count": stats["attempts"]
+            })
+            if stats["attempts"] > 0:
+                total_course_percentage += avg_pct
+                counted_quizzes += 1
+
+        difficult_questions = []
+        for q_text, s in question_stats.items():
+            if s["total"] > 0:
+                pct = (s["correct"] / s["total"] * 100)
+                if pct < 65: # Threshold for 'difficult'
+                    difficult_questions.append({
+                        "question": q_text,
+                        "success_rate": round(pct, 1),
+                        "total_attempts": s["total"]
+                    })
+        
+        difficult_questions.sort(key=lambda x: x["success_rate"])
+
+        return {
+            "quizzes": final_quizzes,
+            "difficult_questions": difficult_questions[:5],
+            "avg_course_score": round(total_course_percentage / counted_quizzes, 1) if counted_quizzes > 0 else 0
+        }
+    except Exception as e:
+        debug_logger.log("error", f"Quiz Analytics Failure: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to synthesize quiz data.")
+
+
 @router.get("/student/{student_id}/course/all")
 async def get_student_all_quizzes(
     student_id: str,

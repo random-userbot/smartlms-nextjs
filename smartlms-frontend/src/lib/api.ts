@@ -29,7 +29,7 @@ if (typeof window !== 'undefined') {
         'focus_pulse', 'top_keywords', 'recommendations', 'teachingScore', 
         'history', 'students', 'courses', 'lectures', 'attempts', 'notifications',
         'feedbacks', 'analysis', 'timeline', 'entries', 'points', 'lapses', 'switches',
-        'risk_matrix', 'waveform_data', 'lapse_wave', 'tab_wave'
+        'risk_matrix', 'waveform_data', 'lapse_wave', 'tab_wave', 'friction_zones', 'topic_analysis'
       ]);
 
       const deepFix = (obj: any) => {
@@ -189,6 +189,7 @@ export const analyticsAPI = {
   getFeedbackAnalysis: (courseId: string) => api.get(`/api/analytics/course/${courseId}/feedback-analysis`),
   getTeachingScore: (courseId: string) => api.get(`/api/analytics/teaching-score/${courseId}`),
   getLiveSessions: () => api.get('/api/analytics/live-sessions'),
+  getLectureIntelligence: (lectureId: string) => api.get(`/api/analytics/lecture/${lectureId}/intelligence`),
   deployPatch: (courseId: string) => api.post(`/api/analytics/course/${courseId}/deploy-patch`),
 };
 
@@ -264,6 +265,8 @@ export const quizzesAPI = {
   getAttempts: (quizId: string) => api.get(`/api/quizzes/attempts/${quizId}`),
   getStudentAttempts: (studentId: string, courseId: string) => 
     api.get(`/api/quizzes/student/${studentId}/course/${courseId}`),
+  getCourseAnalytics: (courseId: string) => 
+    api.get(`/api/quizzes/course/${courseId}/analytics`),
 };
 
 export const messagesAPI = {

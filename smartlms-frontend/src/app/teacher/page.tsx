@@ -23,6 +23,7 @@ import Sidebar from '@/components/Sidebar';
 import Link from 'next/link';
 import MultiStudentWaves from '@/components/MultiStudentWaves';
 import EngagementWaveform from '@/components/EngagementWaveform';
+import LectureIntelligence from '@/components/teacher/LectureIntelligence';
 
 export default function TeacherDashboard() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -374,6 +375,21 @@ export default function TeacherDashboard() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Global Friction Monitor & Intelligence */}
+        <div className="space-y-8">
+           <div className="flex items-center gap-4">
+              <div className="h-8 w-1 bg-primary rounded-full" />
+              <div>
+                <h2 className="text-3xl font-black text-foreground tracking-tight uppercase italic">Lecture Intelligence</h2>
+                <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mt-1">Pedagogical Friction & Content Drill-down</p>
+              </div>
+           </div>
+           
+           <div className="glass-card p-10">
+              <LectureIntelligence lectureId={selectedLecture} />
+           </div>
         </div>
 
         {/* Secondary Insights Grid */}

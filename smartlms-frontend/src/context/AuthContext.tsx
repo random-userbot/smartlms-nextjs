@@ -82,13 +82,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const googleLogin = async (id_token: string, role?: string, intent: 'login' | 'register' = 'login') => {
-    const res = await authAPI.googleLogin({ id_token, role, intent });
-    const { access_token, user: userData } = res.data;
-    localStorage.setItem('token', access_token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setToken(access_token);
-    setUser(userData);
-    return userData;
+    setLoading(true);
+    let lastError: any = null;
+    const maxRetries = 2;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const res = await authAPI.googleLogin({ id_token, role, intent });
+        const { access_token, user: userData } = res.data;
+        
+        localStorage.setItem('token', access_token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        setToken(access_token);
+        setUser(userData);
+        setLoading(false);
+        return userData;
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Google login attempt ${attempt + 1} failed:`, err);
+        
+        // Only retry on potential server issues (5xx) or network errors
+        const isRetryable = !err.response || err.response.status >= 500;
+        if (!isRetryable || attempt === maxRetries) {
+          setLoading(false);
+          throw err;
+        }
+        
+        // Wait 1s before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    setLoading(false);
+    throw lastError;
   };
 
   const logout = () => {

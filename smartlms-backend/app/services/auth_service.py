@@ -9,6 +9,7 @@ from jose import JWTError, jwt
 import bcrypt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from app.services.debug_logger import debug_logger
 from app.config import settings
 from app.models.models import User, UserRole
 from google.oauth2 import id_token
@@ -84,16 +85,28 @@ async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
     return result.scalar_one_or_none()
 
 
-def verify_google_token(token: str) -> Optional[dict]:
-    """Verify Google ID token and return member info"""
-    try:
-        idinfo = id_token.verify_oauth2_token(
-            token, requests.Request(), settings.GOOGLE_CLIENT_ID
-        )
-        # Check issuer
-        if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-            return None
-        return idinfo
-    except Exception as e:
-        print(f"Google Token Verification Error: {e}")
-        return None
+async def verify_google_token(token: str) -> Optional[dict]:
+    """Verify Google ID token and return member info with retry logic"""
+    import asyncio
+    max_retries = 3
+    last_error = None
+    
+    for attempt in range(max_retries):
+        try:
+            # Note: requests.Request() is synchronous, but we wrap the verification 
+            # for potential network blips or race conditions.
+            idinfo = id_token.verify_oauth2_token(
+                token, requests.Request(), settings.GOOGLE_CLIENT_ID
+            )
+            # Check issuer
+            if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+                return None
+            return idinfo
+        except Exception as e:
+            last_error = e
+            debug_logger.log("warning", f"Google Token Verification Attempt {attempt+1} failed: {e}")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(1) # Tiny delay before retry
+    
+    debug_logger.log("error", f"Google Token Verification failed after {max_retries} attempts: {last_error}")
+    return None

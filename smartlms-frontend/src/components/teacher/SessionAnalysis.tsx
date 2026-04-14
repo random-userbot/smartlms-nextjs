@@ -87,7 +87,7 @@ export default function SessionAnalysis({ studentId, sessionId }: SessionAnalysi
                       Focus Trends
                     </h3>
                     <div className="text-[10px] font-black text-primary px-3 py-1 bg-primary/10 border border-primary/20 rounded-full uppercase tracking-widest">
-                      ICAP State: {data.icap_final?.toUpperCase()}
+                      Learning Profile: {data.icap_final?.toUpperCase() === 'ACTIVE' ? 'Engaged Processing' : data.icap_final?.toUpperCase() === 'CONSTRUCTIVE' ? 'Knowledge Builder' : data.icap_final?.toUpperCase() === 'INTERACTIVE' ? 'Highly Collaborative' : 'Receptive Observation'}
                     </div>
                 </div>
                 
@@ -96,12 +96,13 @@ export default function SessionAnalysis({ studentId, sessionId }: SessionAnalysi
                 </div>
               </div>
 
-              {/* Contributing Factors (SHAP) */}
+              {/* Pedagogical Drivers */}
               <div className="lg:col-span-7">
                 <div className="glass-card p-8 h-full bg-surface/60 border-primary/10">
                     <EngagementFactorChart 
                         features={data.biometric_features || {}} 
                         shapExplanations={data.shap_explanations}
+                        timeline={data.timeline || []}
                     />
                 </div>
               </div>
@@ -126,7 +127,7 @@ export default function SessionAnalysis({ studentId, sessionId }: SessionAnalysi
                       </div>
                       <div className="p-4 bg-surface rounded-2xl border border-border">
                           <div className="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-1.5">Learning Mode</div>
-                          <div className="text-sm font-bold text-foreground">Consistent with {data.icap_final} learning behavior.</div>
+                          <div className="text-sm font-bold text-foreground">Demonstrating a {data.icap_final?.toLowerCase()} learning rhythm.</div>
                       </div>
                       <div className="p-4 bg-primary/20 crimson-glow rounded-2xl border border-primary/30">
                           <div className="text-[9px] font-bold text-primary uppercase tracking-widest mb-1.5">Analysis Result</div>
