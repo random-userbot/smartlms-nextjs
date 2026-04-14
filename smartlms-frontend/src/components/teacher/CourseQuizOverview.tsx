@@ -57,7 +57,7 @@ export default function CourseQuizOverview({ courseId }: { courseId: string }) {
     );
   }
 
-  if (!data || data.quizzes.length === 0) {
+  if (!data || !data.quizzes || data.quizzes.length === 0) {
     return (
       <div className="w-full p-12 text-center bg-surface/20 rounded-[2.5rem] border border-white/5 space-y-4">
         <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center mx-auto">
@@ -115,7 +115,7 @@ export default function CourseQuizOverview({ courseId }: { courseId: string }) {
             </div>
             
             <div className="space-y-4">
-               {data.difficult_questions.length > 0 ? data.difficult_questions.map((q, i) => (
+               {data.difficult_questions?.length > 0 ? data.difficult_questions.map((q, i) => (
                   <div key={i} className="glass-card p-6 border-red-500/10 hover:border-red-500/30 transition-all flex items-start gap-4">
                      <div className="shrink-0 w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 text-xs font-black">
                         {q.success_rate}%

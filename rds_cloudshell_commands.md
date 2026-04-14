@@ -159,3 +159,20 @@ If your transcripts are still failing, let's see exactly which YouTube URLs are 
 psql "host=smartlms.cz4sm2yc07u6.ap-south-2.rds.amazonaws.com port=5432 dbname=smartlms user=postgres password=Surplexcity sslmode=verify-full sslrootcert=./global-bundle.pem" -c "SELECT id, title, source_url, LENGTH(transcript) as transcript_char_size FROM lectures ORDER BY created_at DESC LIMIT 5;"
 ```
 
+---
+
+### 17. Safely Wipe All Analytics / Course Data (Keep Schema)
+If you want to quickly clear all the generated data (sessions, quizzes, logs) without destroying the tables themselves or losing your Admin user account, `TRUNCATE` the tables. 
+
+```bash
+# Wipe all analytics, courses, and logs but KEEP users intact:
+psql "host=smartlms.cz4sm2yc07u6.ap-south-2.rds.amazonaws.com port=5432 dbname=smartlms user=postgres password=Surplexcity sslmode=verify-full sslrootcert=./global-bundle.pem" -c "TRUNCATE TABLE courses, enrollments, lectures, materials, feedbacks, teaching_scores, messages, notifications, engagement_logs, attendance, quizzes, quiz_attempts, icap_logs, activity_logs, ai_tutor_sessions, ai_tutor_messages, gamification CASCADE;"
+```
+
+### 18. Wipe ABSOLUTELY EVERYTHING (Including Users)
+If you want to wipe the **users** table as well (forcing everyone to re-register), just add `users` to the truncation list:
+
+```bash
+psql "host=smartlms.cz4sm2yc07u6.ap-south-2.rds.amazonaws.com port=5432 dbname=smartlms user=postgres password=Surplexcity sslmode=verify-full sslrootcert=./global-bundle.pem" -c "TRUNCATE TABLE users CASCADE;"
+```
+

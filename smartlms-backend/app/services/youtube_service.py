@@ -235,6 +235,7 @@ class YouTubeService:
 
     async def get_video_info(self, video_url: str) -> Dict:
         """Fetch video metadata using yt-dlp."""
+        self._setup_resilience()
         def _extract():
             opts = self._get_ydl_opts()
             with yt_dlp.YoutubeDL(opts) as ydl:
@@ -253,8 +254,12 @@ class YouTubeService:
 
     async def get_playlist_videos(self, playlist_url: str) -> List[Dict]:
         """Extract all videos from a playlist or a single video URL."""
+        self._setup_resilience()
         def _extract():
             opts = self._get_ydl_opts()
+            opts["extract_flat"] = True # Tell yt-dlp to just list playlist contents, not download
+            opts["noplaylist"] = False  # Overwrite base opts to allow playlist extraction
+            
             with yt_dlp.YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(playlist_url, download=False)
                 videos = []
@@ -387,12 +392,20 @@ class YouTubeService:
                 
                 # 3. Fetch transcript list
                 try:
-                    kwargs = {}
+                    import requests
+                    import http.cookiejar
+                    from youtube_transcript_api import YouTubeTranscriptApi
+                    
+                    session = None
                     if self._cookie_path and os.path.exists(self._cookie_path):
-                        kwargs['cookies'] = self._cookie_path
+                        session = requests.Session()
+                        cookie_jar = http.cookiejar.MozillaCookieJar(self._cookie_path)
+                        cookie_jar.load(ignore_discard=True, ignore_expires=True)
+                        session.cookies = cookie_jar
                         print(f"[YOUTUBE] Using cookies for transcript api: {self._cookie_path}", flush=True)
                         
-                    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, **kwargs)
+                    api_instance = YouTubeTranscriptApi(http_client=session)
+                    transcript_list = api_instance.list(video_id)
                     
                     # 4. English Selection Strategy
                     # Tier 1: Manual or Generated English

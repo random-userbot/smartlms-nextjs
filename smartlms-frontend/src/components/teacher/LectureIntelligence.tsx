@@ -63,7 +63,7 @@ export default function LectureIntelligence({ lectureId }: { lectureId: string }
     );
   }
 
-  if (!data || data.friction_zones.length === 0) {
+  if (!data || !data.friction_zones || data.friction_zones.length === 0) {
     return (
       <div className="w-full p-12 text-center bg-surface/20 rounded-[2.5rem] border border-white/5 space-y-4">
         <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center mx-auto">
