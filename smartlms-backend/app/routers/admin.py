@@ -345,7 +345,7 @@ async def get_admin_student_analytics(
         select(EngagementLog)
         .where(EngagementLog.student_id == student_id)
         .where(EngagementLog.lecture_id.in_(lectures_query))
-        .order_by(EngagementLog.created_at.desc())
+        .order_by(EngagementLog.started_at.desc())
     )
     engagement_logs = eng_res.scalars().all()
     
@@ -411,7 +411,7 @@ async def export_neural_datasets(
         stmt = (
             select(EngagementLog)
             .where(EngagementLog.is_finalized == True)
-            .order_by(EngagementLog.created_at.desc())
+            .order_by(EngagementLog.started_at.desc())
         )
         
         result = await db.execute(stmt)
@@ -425,7 +425,7 @@ async def export_neural_datasets(
                 "overall_score": log.overall_score,
                 "icap_classification": log.icap_classification.value if log.icap_classification else None,
                 "telemetry": log.feature_timeline or [],
-                "created_at": log.created_at.isoformat()
+                "started_at": log.started_at.isoformat() if log.started_at else None
             }
             
             comma = "," if i < len(logs) - 1 else ""
