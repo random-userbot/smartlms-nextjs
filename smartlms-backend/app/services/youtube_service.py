@@ -411,17 +411,16 @@ class YouTubeService:
         """Internal helper for Tier 1 transcript fetching with safety timeout."""
         def _ytt():
             try:
-                # 1. Create authenticated session
-                session = self._create_authenticated_session()
-                
-                # 2. Instantiate API with custom session (bypass library restrictions)
-                api_instance = YouTubeTranscriptApi(http_client=session)
-                
-                print(f"[YOUTUBE] [Tier 1] Fetching via authenticated session...", flush=True)
+                print(f"[YOUTUBE] [Tier 1] Fetching via youtube-transcript-api...", flush=True)
                 
                 # 3. Fetch transcript list
                 try:
-                    transcript_list = api_instance.list(video_id)
+                    kwargs = {}
+                    if self._cookie_path and os.path.exists(self._cookie_path):
+                        kwargs['cookies'] = self._cookie_path
+                        print(f"[YOUTUBE] Using cookies for transcript api: {self._cookie_path}", flush=True)
+                        
+                    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, **kwargs)
                     
                     # 4. English Selection Strategy
                     # Tier 1: Manual or Generated English
@@ -648,7 +647,7 @@ class YouTubeService:
         if not video_id:
             return ""
 
-        temp_audio = await self._download_audio_for_transcription(video_url, video_id)
+        temp_audio = await self._download_media_audio(video_url, is_youtube=True)
         if not temp_audio:
             return ""
 

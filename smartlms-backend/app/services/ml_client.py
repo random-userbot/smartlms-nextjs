@@ -68,7 +68,7 @@ class MLClient:
     async def infer(self, model_id: str, features: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Perform real-time inference via the ML service HTTP endpoint."""
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=300.0) as client:
                 response = await client.post(
                     f"{self.ml_service_url}/infer",
                     json={"model_id": model_id, "features": features}
@@ -84,7 +84,7 @@ class MLClient:
     async def ensemble(self, base_scores: Dict[str, float], features: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Perform deep model ensembling via the ML service HTTP endpoint."""
         try:
-            async with httpx.AsyncClient(timeout=45.0) as client:
+            async with httpx.AsyncClient(timeout=300.0) as client:
                 response = await client.post(
                     f"{self.ml_service_url}/ensemble",
                     json={"base_scores": base_scores, "features": features}
@@ -114,7 +114,7 @@ class MLClient:
     async def get_models(self) -> List[Dict[str, Any]]:
         """Fetch available models from the ML service."""
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
+            async with httpx.AsyncClient(timeout=120.0) as client:
                 response = await client.get(f"{self.ml_service_url}/models")
                 if response.status_code == 200:
                     return response.json()

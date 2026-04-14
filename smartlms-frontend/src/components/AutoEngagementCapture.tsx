@@ -230,7 +230,7 @@ export default function AutoEngagementCapture({
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${(status === 'active' || status === 'initializing') ? 'bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]' : 'bg-slate-600'}`} />
             <span className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
-              {status === 'active' ? (lastActivity > Date.now() - 3000 ? 'Neural Sync Active' : 'Syncing behavioral nodes...') : 'Initializing...'}
+              {status === 'active' ? (lastActivity > Date.now() - 3000 ? 'Tracking Active' : 'Processing...') : 'Initializing...'}
               <span className="px-1.5 py-0.5 bg-blue-500/20 border border-blue-500/40 rounded text-[7px] text-blue-300">PiP</span>
             </span>
           </div>
@@ -257,11 +257,11 @@ export default function AutoEngagementCapture({
           {/* Overlay Stats */}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5">
              <div className="px-2 py-0.5 bg-black/60 backdrop-blur-md rounded text-[8px] font-black text-primary flex items-center gap-1 uppercase">
-               <Camera size={8} /> Gaze Active
+               <Camera size={8} /> Camera Active
              </div>
              {onScoreUpdate && (
                <div className={`px-2 py-0.5 backdrop-blur-md rounded text-[8px] font-black text-white flex items-center gap-1 uppercase ${isPolling ? 'bg-amber-500/40 animate-pulse' : 'bg-blue-500/40'}`}>
-                 {isPolling ? 'Neural Sync: Processing' : 'Neural Sync: Stable'}
+                 {isPolling ? 'Analyzing: Processing' : 'Analyzing: Stable'}
                </div>
              )}
           </div>

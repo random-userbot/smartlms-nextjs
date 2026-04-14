@@ -145,6 +145,10 @@ async def google_login(request: GoogleLoginRequest, db: AsyncSession = Depends(g
 
         # 3. Create new user if not found
         if not user:
+            if request.intent == "login":
+                debug_logger.log("activity", "Google Login Failed: User not registered", data={"email": email})
+                raise HTTPException(status_code=404, detail="Account not found. Please register first.")
+                
             username = email.split('@')[0]
             # Ensure username uniqueness
             from app.services.auth_service import get_user_by_username

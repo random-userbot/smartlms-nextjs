@@ -24,6 +24,7 @@ class LoginRequest(BaseModel):
 class GoogleLoginRequest(BaseModel):
     id_token: str
     role: Optional[str] = "student"
+    intent: Optional[str] = "login" # "login" or "register"
 
 
 class TokenResponse(BaseModel):

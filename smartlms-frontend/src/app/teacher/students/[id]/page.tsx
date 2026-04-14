@@ -26,7 +26,7 @@ import {
   Zap
 } from 'lucide-react';
 import CommunicationFab from '@/components/CommunicationFab';
-import SessionDiagnostics from '@/components/teacher/SessionDiagnostics';
+import SessionAnalysis from '@/components/teacher/SessionAnalysis';
 import { Calendar, ChevronRight, Play } from 'lucide-react';
 
 export default function StudentDetailPage() {
@@ -236,13 +236,13 @@ export default function StudentDetailPage() {
            </section>
         </div>
 
-         {/* Session Diagnostic Hub */}
+         {/* Session Analysis Hub */}
          <section className="space-y-10 pt-10 border-t border-white/5">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                <div className="space-y-1">
-                  <div className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Learning Flow Monitor</div>
-                  <h2 className="text-4xl font-black text-foreground tracking-tighter italic">Session Diagnostic Analysis</h2>
-                  <p className="text-sm font-medium text-text-muted">Analyze high-fidelity behavioral diagnostics for specific learning sessions.</p>
+                  <div className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Learning Progress Monitor</div>
+                  <h2 className="text-4xl font-black text-foreground tracking-tighter italic">Session Analysis</h2>
+                  <p className="text-sm font-medium text-text-muted">Analyze student activity and focus levels for specific learning sessions.</p>
                </div>
                
                {/* Session Selector (Slide-able Cards) */}
@@ -258,11 +258,11 @@ export default function StudentDetailPage() {
                      >
                         <div className="flex items-center justify-between font-black text-[8px] uppercase tracking-widest">
                            <span className="flex items-center gap-1"><Calendar size={10} /> {new Date(session.date).toLocaleDateString()}</span>
-                           <span className="text-foreground">{session.avg_score}% Index</span>
+                           <span className="text-foreground">{session.avg_score}% Focus</span>
                         </div>
                         <div className="text-xs font-black truncate">{session.lecture_title}</div>
                         <div className="flex items-center gap-2 text-[8px] font-bold uppercase opacity-60">
-                           <Play size={8} /> {Math.round(session.duration / 60)}m Activity
+                           <Play size={8} /> {Math.round(session.duration / 60)}m Session
                         </div>
                      </button>
                   ))}
@@ -270,12 +270,12 @@ export default function StudentDetailPage() {
             </div>
 
             {selectedSession ? (
-               <SessionDiagnostics studentId={id as string} sessionId={selectedSession} />
+               <SessionAnalysis studentId={id as string} sessionId={selectedSession} />
             ) : (
                <div className="h-96 glass-card flex flex-col items-center justify-center space-y-4 border-dashed border-white/10 opacity-30">
                   <Activity size={48} className="animate-pulse" />
                   <div className="text-xs font-black uppercase tracking-widest text-center">
-                     Select a past session period<br/>to begin detailed analysis
+                     Select a past session<br/>to begin detailed analysis
                   </div>
                </div>
             )}

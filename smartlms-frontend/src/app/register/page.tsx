@@ -36,7 +36,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!role) {
-      setError('Neural Class mandatory. Select your role to bridge.');
+      setError('Role selection is mandatory. Please select your role.');
       return;
     }
     setLoading(true);
@@ -51,24 +51,25 @@ export default function RegisterPage() {
       });
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Protocol failure. Connection rejected.');
+      setError(err.response?.data?.detail || 'Registration failed. Verify your details.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleSuccess = async (response: any) => {
+    if (loading) return;
     if (!role) {
-      setError('Neural Class mandatory. Select your role before Identity sync.');
+      setError('Role selection is mandatory. Please select your role before using Google Login.');
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      await googleLogin(response.credential, role);
+      await googleLogin(response.credential, role, 'register');
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Identity synchronization failed.');
+      setError(err.response?.data?.detail || 'Google Authentication failed.');
     } finally {
       setLoading(false);
     }
@@ -96,7 +97,7 @@ export default function RegisterPage() {
           </div>
           <div>
             <h1 className="text-3xl font-black text-foreground tracking-tighter">SmartLMS</h1>
-            <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mt-1">Cognitive Synchronization</p>
+            <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mt-1">Learning Management</p>
           </div>
         </div>
 
@@ -108,7 +109,7 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-text-muted uppercase tracking-widest px-1">Domain Handle (Full Name)</label>
+            <label className="text-[10px] font-black text-text-muted uppercase tracking-widest px-1">Full Name</label>
             <div className="relative group">
                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors group-focus-within:text-primary" size={18} />
                <input 
@@ -123,7 +124,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-text-muted uppercase tracking-widest px-1">Neural Address (Email)</label>
+            <label className="text-[10px] font-black text-text-muted uppercase tracking-widest px-1">Email</label>
             <div className="relative group">
                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors group-focus-within:text-primary" size={18} />
                <input 
@@ -138,7 +139,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-text-muted uppercase tracking-widest px-1">Neural Link Key (Password)</label>
+            <label className="text-[10px] font-black text-text-muted uppercase tracking-widest px-1">Password</label>
             <div className="relative group">
                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors group-focus-within:text-primary" size={18} />
                <input 
@@ -160,7 +161,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-text-muted uppercase tracking-widest px-1">Neural Class (Role)</label>
+            <label className="text-[10px] font-black text-text-muted uppercase tracking-widest px-1">Role</label>
             <div className="grid grid-cols-2 gap-4">
               <button 
                 type="button" 
@@ -186,7 +187,7 @@ export default function RegisterPage() {
           >
             {loading ? <Loader2 className="animate-spin" size={20} /> : (
               <>
-                Initiate Grid Protocol 
+                Register
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </>
             )}
@@ -198,24 +199,34 @@ export default function RegisterPage() {
             <div className="w-full border-t border-border/50"></div>
           </div>
           <div className="relative flex justify-center text-[8px] uppercase font-black tracking-[0.4em] text-text-muted">
-            <span className="bg-[#0a0a0b] px-4">Neural Identity Bridge</span>
+            <span className="bg-[#0a0a0b] px-4">Or Register With</span>
           </div>
         </div>
 
-        <div className="flex justify-center">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => setError('Google Identity verification failed.')}
-            useOneTap
-            theme="filled_black"
-            shape="pill"
-            width="100%"
-          />
+        <div className="flex justify-center relative">
+          {!role && (
+             <div 
+               className="absolute inset-0 z-20 cursor-not-allowed group"
+               onClick={() => setError('Role selection is mandatory. Please select your role before using Google Login.')}
+             >
+                {/* Invisible overlay to catch clicks before role selection */}
+             </div>
+          )}
+          <div className={`w-full transition-opacity ${!role ? 'opacity-50 grayscale' : 'opacity-100'}`}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google Identity verification failed.')}
+              useOneTap={!!role}
+              theme="filled_black"
+              shape="pill"
+              width="100%"
+            />
+          </div>
         </div>
 
         <div className="text-center pt-6 border-t border-white/5">
           <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">
-            Already Linked? <Link href="/login" className="text-primary hover:text-white transition-colors ml-2">Authenticate &rarr;</Link>
+            Already have an account? <Link href="/login" className="text-primary hover:text-white transition-colors ml-2">Login &rarr;</Link>
           </p>
         </div>
 

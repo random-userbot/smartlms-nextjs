@@ -523,6 +523,7 @@ async def get_course_students(
     for user, enr in rows:
         students.append({
             "id": user.id,
+            "student_id": user.id,
             "full_name": user.full_name,
             "email": user.email,
             "avatar_url": user.avatar_url,

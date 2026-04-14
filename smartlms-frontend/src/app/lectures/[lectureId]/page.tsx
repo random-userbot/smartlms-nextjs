@@ -67,7 +67,7 @@ export default function LecturePage() {
   const fullWaveformRef = useRef<any[]>([]);
   const sessionId = useRef(Math.random().toString(36).substring(7));
   const [messages, setMessages] = useState<any[]>([
-    { role: 'assistant', content: "I'm monitoring your cognitive resonance. How can I assist with your current synchronization?" }
+    { role: 'assistant', content: "I'm monitoring your focus. How can I assist with your learning today?" }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -303,7 +303,7 @@ export default function LecturePage() {
       trackEvent('ai_tutor_interaction', { lecture_id: lectureId, mode: tutorMode });
     } catch (err) {
       console.error(err);
-      setMessages(prev => [...prev, { role: 'assistant', content: "Neural sync failure. Check your connection." }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Failed to connect to AI tutor. Check your connection." }]);
     } finally {
       setIsTyping(false);
     }

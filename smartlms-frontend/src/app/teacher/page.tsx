@@ -280,6 +280,9 @@ export default function TeacherDashboard() {
                                PROJ: {(ls.forecast || ls.engagement || 0).toFixed(0)}%
                              </div>
                           </div>
+                          <div className="text-[7px] font-black uppercase tracking-widest text-info opacity-70 mt-0.5 border-t border-white/5 pt-0.5">
+                            AVG: {(components.engagement || 0).toFixed(0)}%
+                          </div>
                        </div>
                   </div>
 
@@ -461,6 +464,9 @@ export default function TeacherDashboard() {
                         <div className="text-[10px] font-bold text-text-muted">{(r.engagement_score || 0).toFixed(0)}% focus</div>
                         <div className={`text-[8px] font-black uppercase tracking-tighter ${r.forecast_score < r.engagement_score ? 'text-primary' : 'text-success'}`}>
                           Projected: {(r.forecast_score || 0).toFixed(0)}%
+                        </div>
+                        <div className="text-[8px] font-black uppercase tracking-tighter text-info opacity-70 mt-0.5 border-t border-white/5 pt-0.5">
+                          Class Avg: {(components.engagement || 0).toFixed(0)}%
                         </div>
                       </div>
                     </div>

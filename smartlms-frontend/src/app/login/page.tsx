@@ -38,22 +38,29 @@ export default function LoginPage() {
       await login({ username: email, password });
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Handshake failed. Verify credentials.');
+      setError(err.response?.data?.detail || 'Login failed. Verify credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleSuccess = async (response: any) => {
+    if (loading) return; // Prevent multiple clicks
     setLoading(true);
     setError(null);
     try {
-      await googleLogin(response.credential);
+      await googleLogin(response.credential, undefined, 'login');
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Identity synchronization failed.');
-    } finally {
-      setLoading(false);
+      if (err.response?.status === 404) {
+        setError('Account not found. Please register to continue.');
+        // Don't set loading false so button stays disabled
+        setTimeout(() => router.push('/register'), 2000);
+        return;
+      } else {
+        setError(err.response?.data?.detail || 'Google Authentication failed.');
+        setLoading(false);
+      }
     }
   };
 
@@ -79,7 +86,7 @@ export default function LoginPage() {
           </div>
           <div>
             <h1 className="text-3xl font-black text-foreground tracking-tighter">SmartLMS</h1>
-            <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mt-1">Cognitive Synchronization</p>
+            <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mt-1">Learning Management</p>
           </div>
         </div>
 
@@ -91,7 +98,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-text-muted uppercase tracking-widest px-1">Access Protocol (Email)</label>
+            <label className="text-[10px] font-black text-text-muted uppercase tracking-widest px-1">Email</label>
             <div className="relative group">
                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors group-focus-within:text-primary" size={18} />
                 <input 
@@ -107,8 +114,8 @@ export default function LoginPage() {
 
           <div className="space-y-2">
             <div className="flex justify-between items-center px-1">
-              <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">Neural Link Key (Password)</label>
-              <Link href="#" className="text-[10px] font-black text-primary uppercase tracking-widest hover:text-white transition-colors">Recover</Link>
+              <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">Password</label>
+              <Link href="#" className="text-[10px] font-black text-primary uppercase tracking-widest hover:text-white transition-colors">Forgot?</Link>
             </div>
             <div className="relative group">
                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors group-focus-within:text-primary" size={18} />
@@ -137,7 +144,7 @@ export default function LoginPage() {
           >
             {loading ? <Loader2 className="animate-spin" size={20} /> : (
               <>
-                Initialize Handshake 
+                Login
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </>
             )}
@@ -149,14 +156,14 @@ export default function LoginPage() {
             <div className="w-full border-t border-border/50"></div>
           </div>
           <div className="relative flex justify-center text-[8px] uppercase font-black tracking-[0.4em] text-text-muted">
-            <span className="bg-[#0a0a0b] px-4">Neural Identity Bridge</span>
+            <span className="bg-[#0a0a0b] px-4">Or Login With</span>
           </div>
         </div>
 
         <div className="flex justify-center">
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
-            onError={() => setError('Google Identity verification failed.')}
+            onError={() => setError('Google login failed.')}
             useOneTap
             theme="filled_black"
             shape="pill"
@@ -166,7 +173,7 @@ export default function LoginPage() {
 
         <div className="text-center pt-10 border-t border-white/5">
           <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">
-            New Intelligence? <Link href="/register" className="text-primary hover:text-white transition-colors ml-2">Establish Connection &rarr;</Link>
+            New User? <Link href="/register" className="text-primary hover:text-white transition-colors ml-2">Register &rarr;</Link>
           </p>
         </div>
 

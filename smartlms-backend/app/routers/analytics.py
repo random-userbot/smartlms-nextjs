@@ -570,6 +570,7 @@ async def get_live_sessions(
                 "student_avatar": avatar_url,
                 "lecture_title": lecture_title,
                 "engagement": round(log.overall_score or 0, 1),
+                "forecast": round(log.forecast_score or log.overall_score or 0, 1),
                 "status": icap_val,
                 "last_active": log.updated_at.isoformat() if log.updated_at else datetime.utcnow().isoformat(),
                 "waveform": timeline[-20:] # Last 20 points for mini-wave
@@ -691,6 +692,7 @@ async def get_course_engagement(
             User.email,
             User.avatar_url.label("student_avatar"),
             func.avg(EngagementLog.engagement_score).label("engagement_score"),
+            func.avg(EngagementLog.forecast_score).label("forecast_score"),
             func.sum(EngagementLog.attention_lapse_duration).label("total_lapse"),
             func.sum(EngagementLog.watch_duration).label("total_watch"),
             func.sum(EngagementLog.tab_switches).label("tab_switches"),
@@ -719,6 +721,7 @@ async def get_course_engagement(
             "email": row.email,
             "student_avatar": row.student_avatar,
             "engagement_score": round(float(row.engagement_score or 0), 1),
+            "forecast_score": round(float(row.forecast_score or 0), 1) if row.forecast_score is not None else None,
             "visibility_score": round(visibility_score, 1),
             "tab_switches": int(row.tab_switches or 0),
             "sessions": int(row.sessions or 0),
@@ -1093,15 +1096,19 @@ async def get_lecture_engagement_waves(
         lapse_waves = [] # Binned no-face/inattention counts
         tab_waves = []   # Binned tab-switch counts
         
+        last_valid_score = None
         for minute_idx, entries in enumerate(data["bins"]):
             if not entries:
-                waves.append(None)
+                # If we have a last valid score, carry it forward to prevent 0.0% drops
+                # but only if it's within the lecture timeframe
+                waves.append(last_valid_score if last_valid_score is not None else None)
                 lapse_waves.append(0)
                 tab_waves.append(0)
                 continue
                 
             avg_score = sum(float(e.get("engagement", 50)) for e in entries) / len(entries)
             waves.append(round(avg_score, 1))
+            last_valid_score = round(avg_score, 1)
             
             # Count explicit lapses from new flags
             lapses = sum(1 for e in entries if not e.get("face_detected", True))
@@ -1403,6 +1410,7 @@ async def get_student_session_diagnostics(
         "session_id": session_id,
         "timeline": full_timeline,
         "feature_timeline": [log.feature_timeline for log in logs if log.feature_timeline],
+        "shap_explanations": logs[-1].shap_explanations, # Latest explanation for the session
         "biometric_features": latest_features,
         "icap_final": logs[-1].icap_classification.value if hasattr(logs[-1].icap_classification, 'value') else str(logs[-1].icap_classification),
         "activities": activities,
