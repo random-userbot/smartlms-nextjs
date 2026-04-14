@@ -178,6 +178,26 @@ class YouTubeService:
                 print(f"[YOUTUBE] [ERROR] Cookie string does not contain valid Netscape headers or youtube domain. (Length: {len(content) if content else 0})", flush=True)
                 return None
 
+            # Sanitize cookie file to prevent http.cookiejar crashes with bad format
+            valid_lines = []
+            for line in content.splitlines():
+                if not line.strip() or line.startswith('#'):
+                    valid_lines.append(line)
+                    continue
+                parts = line.split('\t')
+                if len(parts) >= 7:
+                    try:
+                        if parts[4]:
+                            float(parts[4])
+                        valid_lines.append(line)
+                    except ValueError:
+                        parts[4] = '0'
+                        valid_lines.append("\t".join(parts))
+                else:
+                    # Keep if we just want yt-dlp to warn and skip, but it's safe to drop
+                    pass
+            content = "\n".join(valid_lines)
+
             # Persistent temp file in the scratch or temp directory
             path = os.path.join(tempfile.gettempdir(), f"yt_active_session.txt")
             with open(path, "w", encoding='utf-8') as f:

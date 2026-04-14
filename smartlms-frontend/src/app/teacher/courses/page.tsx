@@ -13,6 +13,7 @@ export default function TeacherCoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCookieModal, setShowCookieModal] = useState(false);
   const [newCourse, setNewCourse] = useState({ 
     title: '', 
     description: '', 
@@ -213,6 +214,70 @@ export default function TeacherCoursesPage() {
         </div>
       </main>
 
+      {/* YouTube Cookie Modal */}
+      {showCookieModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[150] flex items-center justify-center p-4">
+          <div className="bg-surface border border-white/10 w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl animate-in fade-in zoom-in slide-in-from-bottom-8 duration-500 max-h-[90vh] overflow-y-auto">
+            <div className="p-10 border-b border-border flex items-center justify-between bg-orange-500/5">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-400 border border-orange-500/20">
+                  <Play size={24} className="animate-pulse" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-black text-foreground uppercase tracking-tight">YouTube Bot Protection</h2>
+                  <p className="text-[11px] font-bold text-orange-400/80 uppercase tracking-widest mt-1.5">Manual Fargate Bypass</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowCookieModal(false)}
+                className="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-white/5 transition-all text-text-muted hover:text-white border border-transparent hover:border-white/10"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-10 text-sm space-y-6 text-foreground/80 leading-relaxed font-medium">
+              <p>YouTube actively blocks our LMS cloud IPs (AWS Fargate) to prevent bot scraping. To fix this, you must authorize a &quot;burner&quot; YouTube session.</p>
+              
+              <div className="bg-surface-alt rounded-3xl p-6 border border-white/10">
+                <h3 className="text-sm font-black text-white mb-4 uppercase tracking-widest flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px]">1</span>
+                  Create a Burner Session
+                </h3>
+                <ol className="list-decimal pl-5 space-y-2 marker:text-primary font-bold text-[13px]">
+                  <li>Open Google Chrome Incognito mode.</li>
+                  <li>Go to YouTube and log into a <b>burner/dummy Google account</b>.</li>
+                  <li>Install a Chrome Extension like <a href="https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpocidlghpihk" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline"><code>Get cookies.txt LOCALLY</code></a>.</li>
+                  <li>Click the extension while on YouTube and export the <code>Netscape</code> formatted cookies.</li>
+                </ol>
+              </div>
+
+              <div className="bg-surface-alt rounded-3xl p-6 border border-white/10">
+                <h3 className="text-sm font-black text-white mb-4 uppercase tracking-widest flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px]">2</span>
+                  Format & Apply in Production
+                </h3>
+                <p className="mb-4">Due to security, the cookies must be securely embedded in the backend Fargate container environment variables:</p>
+                
+                <div className="bg-black p-4 rounded-xl font-mono text-[10px] text-green-400 overflow-x-auto whitespace-pre leading-loose border border-white/5">
+YOUTUBE_COOKIES=&quot;# Netscape HTTP Cookie File\n.youtube.com\tTRUE\t/\tTRUE\t0\tSAPISID\t&lt;YOUR_SESSION&gt;\n...&quot;
+                </div>
+                <p className="mt-4 text-[11px] uppercase tracking-widest font-black text-orange-400">Warning: Do not use your personal YouTube account. It will get banned for scraping.</p>
+              </div>
+            </div>
+
+            <div className="p-8 border-t border-border bg-surface-alt flex justify-end gap-3">
+              <button 
+                onClick={() => setShowCookieModal(false)}
+                className="px-8 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all font-black text-xs uppercase tracking-widest text-text-muted hover:text-white"
+              >
+                Understood
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create Course Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
@@ -291,7 +356,7 @@ export default function TeacherCoursesPage() {
                 </div>
 
                 {newCourse.sync_playlist && (
-                  <div className="pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="pt-4 animate-in fade-in slide-in-from-top-2 duration-300 space-y-3">
                     <input
                       type="text"
                       value={newCourse.playlist_url}
@@ -299,6 +364,14 @@ export default function TeacherCoursesPage() {
                       placeholder="https://www.youtube.com/playlist?list=..."
                       className="w-full px-6 py-4 bg-black/20 border border-white/10 rounded-2xl focus:border-primary outline-none transition-all font-bold text-sm"
                     />
+                    <button 
+                      type="button"
+                      onClick={() => setShowCookieModal(true)}
+                      className="w-full py-3 px-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 font-bold text-[10px] uppercase tracking-widest hover:bg-orange-500/20 transition-all text-left flex justify-between items-center"
+                    >
+                      <span>Fix Bot Protection (Auth Required)</span>
+                      <ArrowUpRight size={14} />
+                    </button>
                   </div>
                 )}
               </div>
@@ -329,3 +402,4 @@ export default function TeacherCoursesPage() {
     </div>
   );
 }
+
