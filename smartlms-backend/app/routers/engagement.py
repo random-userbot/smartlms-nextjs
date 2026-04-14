@@ -187,6 +187,7 @@ async def compute_engagement_scores(features: List[EngagementFeatures]) -> Dict:
             "boredom": round(100 - score, 1),
             "confusion": 10.0,
             "frustration": 10.0,
+            "effort": round(score, 1),
             "model_type": "rule_based_fallback"
         }
     
@@ -489,8 +490,19 @@ async def submit_engagement_data(
         # Append to Rich feature timeline for Dataset preparation
         if last_log.feature_timeline is None:
             last_log.feature_timeline = []
+        elif isinstance(last_log.feature_timeline, str):
+            try:
+                last_log.feature_timeline = json.loads(last_log.feature_timeline)
+            except:
+                last_log.feature_timeline = []
+                
         if last_log.scores_timeline is None:
             last_log.scores_timeline = []
+        elif isinstance(last_log.scores_timeline, str):
+            try:
+                last_log.scores_timeline = json.loads(last_log.scores_timeline)
+            except:
+                last_log.scores_timeline = []
         
         # Add new features and score points to the timeline
         last_log.feature_timeline.extend(features_dicts)
@@ -616,6 +628,7 @@ async def submit_engagement_data(
         engagement=final_scores.get('engagement', 0.0),
         confusion=final_scores.get('confusion', 0.0),
         frustration=final_scores.get('frustration', 0.0),
+        effort_score=final_scores.get('effort', final_scores.get('overall', 0.0)),
         icap_classification=icap_level,
         icap_confidence=icap_confidence,
         fuzzy_rules=fuzzy_rules,
