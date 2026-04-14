@@ -26,7 +26,7 @@ COPY app/ app/
 COPY export/ export/
 
 # RUN THE CONVERSION
-RUN python app/ml/convert_to_onnx.py
+# RUN python app/ml/convert_to_onnx.py
 
 # PRUNE: Delete original heavy models (.h5, .pt) to save space before copying
 RUN find export/ -name "*.h5" -delete && \

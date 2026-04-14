@@ -455,6 +455,64 @@ async def enroll_in_course(
     return enrollment
 
 
+@router.post("/{course_id}/enroll-student", response_model=EnrollmentResponse)
+async def enroll_student_by_email(
+    course_id: str,
+    request: StudentEnrollRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Enroll student by email (Teacher/Admin only)"""
+    if current_user.role not in [UserRole.TEACHER, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized to enroll students")
+
+    student_res = await db.execute(select(User).where(User.email == request.email, User.role == UserRole.STUDENT))
+    student = student_res.scalar_one_or_none()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student with this email not found")
+
+    course_res = await db.execute(select(Course).where(Course.id == course_id))
+    course = course_res.scalar_one_or_none()
+    if not course: raise HTTPException(status_code=404, detail="Course not found")
+    
+    if current_user.role == UserRole.TEACHER and course.teacher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Can only enroll students to your own courses")
+
+    existing_res = await db.execute(
+        select(Enrollment).where(
+            Enrollment.student_id == student.id,
+            Enrollment.course_id == course_id
+        )
+    )
+    enrollment = existing_res.scalar_one_or_none()
+    if not enrollment:
+        enrollment = Enrollment(student_id=student.id, course_id=course_id)
+        db.add(enrollment)
+        
+        notif = Notification(
+            user_id=student.id,
+            sender_id=current_user.id,
+            type=NotificationType.SYSTEM,
+            title="Course Enrolled",
+            message=f"You have been enrolled in {course.title} by your teacher.",
+            extra_data={"course_id": course_id}
+        )
+        db.add(notif)
+        
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            retry = await db.execute(select(Enrollment).where(
+                Enrollment.student_id == student.id, Enrollment.course_id == course_id
+            ))
+            enrollment = retry.scalar_one_or_none()
+            if not enrollment: raise HTTPException(status_code=500, detail="Enrollment failed")
+
+    await db.refresh(enrollment)
+    return enrollment
+
+
 @router.get("/{course_id}/progress")
 async def get_course_progress(
     course_id: str,

@@ -145,7 +145,7 @@ class IntelligenceService:
         """
 
         try:
-            model_chain = settings.groq_chat_models_for_task("tutor_general", "llama-3.3-70b-versatile")
+            model_chain = settings.groq_chat_models_for_task(task="tutor_general", primary_model="llama-3.3-70b-versatile")
             
             response, _ = await chat_completion_with_fallback(
                 self.client,

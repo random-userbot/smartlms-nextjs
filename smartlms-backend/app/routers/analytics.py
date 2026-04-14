@@ -175,8 +175,7 @@ async def get_teaching_score(
             select(EngagementLog).where(
                 EngagementLog.lecture_id.in_(
                     select(Lecture.id).where(Lecture.course_id == course_id)
-                ),
-                (EngagementLog.watch_duration >= 15)  # Relaxed: include all active sessions > 15s
+                )
             ).order_by(EngagementLog.started_at)
         )
         engagement_logs = eng_result.scalars().all()
@@ -233,8 +232,7 @@ async def get_teaching_score(
                 ),
                 ICAPLog.student_id.in_(
                     select(EngagementLog.student_id).where(
-                        EngagementLog.lecture_id == ICAPLog.lecture_id,
-                        (EngagementLog.watch_duration >= 15)
+                        EngagementLog.lecture_id == ICAPLog.lecture_id
                     )
                 )
             ).group_by(ICAPLog.classification)
@@ -630,8 +628,7 @@ async def get_course_dashboard(
                 ),
                 ICAPLog.student_id.in_(
                    select(EngagementLog.student_id).where(
-                       EngagementLog.lecture_id == ICAPLog.lecture_id,
-                       (EngagementLog.watch_duration * 1.25 >= EngagementLog.total_duration)
+                       EngagementLog.lecture_id == ICAPLog.lecture_id
                    )
                 )
             ).group_by(ICAPLog.classification)
@@ -1178,8 +1175,7 @@ async def get_course_student_engagement(
 
     # 3. Get engagement logs for these students and lectures (Filtered for Completion)
     log_query = select(EngagementLog).where(
-        EngagementLog.lecture_id.in_(lecture_ids),
-        (EngagementLog.watch_duration * 1.25 >= EngagementLog.total_duration)
+        EngagementLog.lecture_id.in_(lecture_ids)
     )
     log_res = await db.execute(log_query)
     logs = log_res.scalars().all()
