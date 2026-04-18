@@ -12,7 +12,7 @@ smartlms-backend/app/ml/models/
 .env.local
 .env.production
 .env.development
-
+.env.example
 # Standard Ignores
 node_modules/
 __pycache__/
