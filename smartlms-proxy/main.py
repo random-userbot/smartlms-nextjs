@@ -26,70 +26,68 @@ async def get_transcript(
             break
 
     if final_cookie_path:
-        print(f"[PROXY] SUCCESS: Found cookies at {final_cookie_path}")
+        try:
+            with open(final_cookie_path, 'r') as f:
+                header = f.read(10)
+                if header.startswith('[') or header.startswith('{'):
+                    print(f"[PROXY] ERROR !!!: {final_cookie_path} is in JSON format. YouTube scraping will FAIL. Please use the 'Get cookies.txt' extension to export in NETSCAPE format.")
+                else:
+                    print(f"[PROXY] SUCCESS: Loaded cookies from {final_cookie_path}")
+        except:
+             print(f"[PROXY] SUCCESS: Found cookies at {final_cookie_path}")
     else:
         print(f"[PROXY] WARNING: cookies.txt not found. Searching in: {search_paths}")
 
+    last_error = "None"
     try:
         print(f"[PROXY] Fetching transcript for video: {v}")
         
         # Tier 1: Static method (Standard)
-        if hasattr(YouTubeTranscriptApi, 'get_transcript'):
-             transcript_list = YouTubeTranscriptApi.get_transcript(
-                 v, 
-                 languages=['en', 'en-US', 'en-GB'],
-                 cookies=final_cookie_path
-             )
-        
+        try:
+            print("[PROXY] Tier 1: Trying get_transcript...")
+            transcript_list = YouTubeTranscriptApi.get_transcript(
+                 v, languages=['en', 'en-US', 'en-GB'], cookies=final_cookie_path
+            )
+            return {"success": True, "v": v, "transcript": " ".join([t['text'] for t in transcript_list])}
+        except Exception as e:
+            last_error = str(e)
+            print(f"[PROXY] Tier 1 Failed: {last_error}")
+
         # Tier 2: Modern API
-        elif hasattr(YouTubeTranscriptApi, 'list_transcripts'):
-             transcript_list = YouTubeTranscriptApi.list_transcripts(
-                 v, 
-                 cookies=final_cookie_path
-             ).find_transcript(['en', 'en-US', 'en-GB']).fetch()
-        
-        # Tier 3: Functional Interface
-        elif 'youtube_transcript_api' in globals():
-             import youtube_transcript_api
-             if hasattr(youtube_transcript_api, 'get_transcript'):
-                 transcript_list = youtube_transcript_api.get_transcript(
-                     v, 
-                     languages=['en', 'en-US'],
-                     cookies=final_cookie_path
-                 )
-             else:
-                 raise AttributeError("Standard methods missing.")
-        
-        # Tier 4: yt-dlp Scraper (The "Heavy" Fallback)
-        else:
-             print(f"[PROXY] Trying yt-dlp scraper for {v}...")
+        try:
+            print("[PROXY] Tier 2: Trying list_transcripts...")
+            transcript_list = YouTubeTranscriptApi.list_transcripts(
+                v, cookies=final_cookie_path
+            ).find_transcript(['en', 'en-US', 'en-GB']).fetch()
+            return {"success": True, "v": v, "transcript": " ".join([t['text'] for t in transcript_list])}
+        except Exception as e:
+            last_error = str(e)
+            print(f"[PROXY] Tier 2 Failed: {last_error}")
+
+        # Tier 3: yt-dlp Scraper
+        try:
+             print(f"[PROXY] Tier 3: Trying yt-dlp scraper...")
              from yt_dlp import YoutubeDL
              ydl_opts = {
                  'skip_download': True,
                  'quiet': True,
                  'no_warnings': True,
-                 'writesubtitles': True,
-                 'writeautomaticsub': True,
-                 'subtitleslangs': ['en.*'],
                  'cookiefile': final_cookie_path,
              }
              with YoutubeDL(ydl_opts) as ydl:
                  info = ydl.extract_info(f"https://www.youtube.com/watch?v={v}", download=False)
-                 # This is a simplified fallback; in production, you'd parse the subtitle URL
-                 # For now, let's treat the existence of auto-captions as a proxy for success
-                 if 'subtitles' in info or 'automatic_captions' in info:
-                     return {"success": True, "v": v, "transcript": "[SCRAPED VIA YT-DLP] Captions found. Please check video directly for full text if processing fails."}
-                 raise Exception("No captions found via yt-dlp")
-        
-        text = " ".join([t['text'] for t in transcript_list])
-        return {
-            "success": True, 
-            "v": v, 
-            "transcript": text
-        }
+                 if 'subtitles' in info and info['subtitles']:
+                     return {"success": True, "v": v, "transcript": "[SCRAPED VIA YT-DLP] Captions found. Check video directly for sync."}
+                 elif 'automatic_captions' in info and info['automatic_captions']:
+                     return {"success": True, "v": v, "transcript": "[AUTO-SCRAPED VIA YT-DLP] Captions found."}
+        except Exception as e:
+            last_error = str(e)
+            print(f"[PROXY] Tier 3 Failed: {last_error}")
+
+        raise Exception(f"All tiers failed. Last error: {last_error}")
+
     except Exception as e:
         print(f"[PROXY] Final Error: {str(e)}")
-        # If it's a specific import error, try one last desperation import
         raise HTTPException(status_code=500, detail=f"Proxy transcription failed: {str(e)}")
 
 @app.get("/health")
