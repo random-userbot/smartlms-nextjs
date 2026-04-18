@@ -126,6 +126,9 @@ class Settings(BaseSettings):
                 "http://127.0.0.1:3000",
             ])
 
+        # Allow Chrome Extensions in all environments
+        origins.append("chrome-extension://*")
+        
         # Preserve order while removing duplicates.
         return list(dict.fromkeys(origins))
 

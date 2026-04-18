@@ -239,9 +239,9 @@ app.include_router(messaging_router.router)
 # --- FINAL MIDDLEWARE WRAPPER (OUTERMOST) ---
 # We add CORS last so it is the first to handle the request 
 # and the last to handle the response (wrapping all other middlewares).
-allow_origin_regex = "https?://.*\.vercel\.app"
+allow_origin_regex = "https?://.*\.vercel\.app|chrome-extension://.*"
 if settings.APP_ENV != "production" and settings.ALLOW_ALL_CORS_IN_DEV:
-    allow_origin_regex = "https?://.*"
+    allow_origin_regex = "https?://.*|chrome-extension://.*"
 
 app.add_middleware(
     CORSMiddleware,

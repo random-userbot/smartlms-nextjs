@@ -5,7 +5,7 @@
 
 // --- CONFIGURATION ---
 // Update these to match your actual URLs
-const BACKEND_URL = 'http://localhost:8000'; // Or your Render URL
+const BACKEND_URL = 'https://smartlms-nextjs.onrender.com'; // Or your Render URL
 const FRONTEND_MATCH = '*.vercel.app';      // Pattern to find your dashboard
 
 // --- STATE ---
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateStatus("Detecting Session...");
     await initAuth();
     await checkYouTubePage();
-    
+
     // UI Event Listeners
     document.getElementById('course-select').addEventListener('change', loadLectures);
     document.getElementById('sync-btn').addEventListener('click', handleSync);
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function initAuth() {
     try {
         const tabs = await chrome.tabs.query({ url: [`https://${FRONTEND_MATCH}/*`, `http://localhost:3000/*`] });
-        
+
         if (tabs.length === 0) {
             updateStatus("Dashboard not open", "#ff4d4d");
             showError("Please open your SmartLMS Dashboard in another tab to authenticate.");
@@ -80,7 +80,7 @@ async function loadCourses() {
         });
         const data = await res.json();
         const select = document.getElementById('course-select');
-        
+
         // Populate courses (Filter for teacher's own courses or just show all)
         data.forEach(c => {
             const opt = document.createElement('option');
@@ -109,7 +109,7 @@ async function loadLectures() {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         const data = await res.json();
-        
+
         lectureSelect.innerHTML = '<option value="">Select Lecture</option>';
         data.forEach(l => {
             const opt = document.createElement('option');
