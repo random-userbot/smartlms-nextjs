@@ -27,14 +27,22 @@ async def get_transcript(
 
     if final_cookie_path:
         try:
+            size = os.path.getsize(final_cookie_path)
             with open(final_cookie_path, 'r') as f:
-                header = f.read(10)
-                if header.startswith('[') or header.startswith('{'):
-                    print(f"[PROXY] ERROR !!!: {final_cookie_path} is in JSON format. YouTube scraping will FAIL. Please use the 'Get cookies.txt' extension to export in NETSCAPE format.")
+                content = f.read(100)
+                # Masked preview for security (replaces letters/numbers with *)
+                import re
+                masked = re.sub(r'[a-zA-Z0-9]', '*', content[:50])
+                print(f"[PROXY] COOKIE INSPECTOR: Size={size} bytes, Preview='{masked}...'")
+                
+                if content.startswith('[') or content.startswith('{'):
+                    print(f"[PROXY] ERROR !!!: {final_cookie_path} is in JSON format. YouTube scraping will FAIL.")
+                elif size < 100:
+                    print(f"[PROXY] WARNING: Cookie file is very small ({size} bytes). It might be empty or invalid.")
                 else:
                     print(f"[PROXY] SUCCESS: Loaded cookies from {final_cookie_path}")
-        except:
-             print(f"[PROXY] SUCCESS: Found cookies at {final_cookie_path}")
+        except Exception as file_err:
+             print(f"[PROXY] ERROR reading cookie file: {str(file_err)}")
     else:
         print(f"[PROXY] WARNING: cookies.txt not found. Searching in: {search_paths}")
 
