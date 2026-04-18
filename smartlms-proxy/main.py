@@ -17,29 +17,35 @@ async def get_transcript(
     if PROXY_SECRET and key != PROXY_SECRET:
         raise HTTPException(status_code=403, detail="Invalid access key")
 
-    # Check for local cookies file
-    cookie_path = "cookies.txt"
-    has_cookies = os.path.exists(cookie_path)
-    if has_cookies:
-        print(f"[PROXY] Using local cookies.txt for authentication.")
+    # Robust Cookie Search
+    search_paths = ["cookies.txt", "/app/cookies.txt", "/etc/secrets/cookies.txt"]
+    final_cookie_path = None
+    for p in search_paths:
+        if os.path.exists(p):
+            final_cookie_path = p
+            break
+
+    if final_cookie_path:
+        print(f"[PROXY] SUCCESS: Found cookies at {final_cookie_path}")
+    else:
+        print(f"[PROXY] WARNING: cookies.txt not found. Searching in: {search_paths}")
 
     try:
         print(f"[PROXY] Fetching transcript for video: {v}")
         
         # Tier 1: Static method (Standard)
         if hasattr(YouTubeTranscriptApi, 'get_transcript'):
-             # youtube-transcript-api takes cookies as a file path
              transcript_list = YouTubeTranscriptApi.get_transcript(
                  v, 
                  languages=['en', 'en-US', 'en-GB'],
-                 cookies=cookie_path if has_cookies else None
+                 cookies=final_cookie_path
              )
         
         # Tier 2: Modern API
         elif hasattr(YouTubeTranscriptApi, 'list_transcripts'):
              transcript_list = YouTubeTranscriptApi.list_transcripts(
                  v, 
-                 cookies=cookie_path if has_cookies else None
+                 cookies=final_cookie_path
              ).find_transcript(['en', 'en-US', 'en-GB']).fetch()
         
         # Tier 3: Functional Interface
@@ -49,7 +55,7 @@ async def get_transcript(
                  transcript_list = youtube_transcript_api.get_transcript(
                      v, 
                      languages=['en', 'en-US'],
-                     cookies=cookie_path if has_cookies else None
+                     cookies=final_cookie_path
                  )
              else:
                  raise AttributeError("Standard methods missing.")
@@ -65,7 +71,7 @@ async def get_transcript(
                  'writesubtitles': True,
                  'writeautomaticsub': True,
                  'subtitleslangs': ['en.*'],
-                 'cookiefile': cookie_path if has_cookies else None,
+                 'cookiefile': final_cookie_path,
              }
              with YoutubeDL(ydl_opts) as ydl:
                  info = ydl.extract_info(f"https://www.youtube.com/watch?v={v}", download=False)
