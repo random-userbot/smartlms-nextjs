@@ -20,13 +20,22 @@ async def get_transcript(
     try:
         print(f"[PROXY] Fetching transcript for video: {v}")
         
-        # Method 1: Direct Fetch (Standard)
-        try:
-            transcript_list = YouTubeTranscriptApi.get_transcript(v, languages=['en', 'en-US', 'en-GB'])
-        except AttributeError:
-            # Method 2: Modern API (Fallback if static method is missing)
-            print("[PROXY] Falling back to list_transcripts API...")
-            transcript_list = YouTubeTranscriptApi.list_transcripts(v).find_transcript(['en', 'en-US', 'en-GB']).fetch()
+        # Tier 1: Static method (Standard)
+        if hasattr(YouTubeTranscriptApi, 'get_transcript'):
+             transcript_list = YouTubeTranscriptApi.get_transcript(v, languages=['en', 'en-US', 'en-GB'])
+        
+        # Tier 2: Modern API
+        elif hasattr(YouTubeTranscriptApi, 'list_transcripts'):
+             transcript_list = YouTubeTranscriptApi.list_transcripts(v).find_transcript(['en', 'en-US', 'en-GB']).fetch()
+        
+        # Tier 3: Functional Interface (Last Resort)
+        else:
+             import youtube_transcript_api
+             if hasattr(youtube_transcript_api, 'get_transcript'):
+                 transcript_list = youtube_transcript_api.get_transcript(v, languages=['en', 'en-US'])
+             else:
+                 available = [m for m in dir(YouTubeTranscriptApi) if not m.startswith('_')]
+                 raise AttributeError(f"Could not find fetch method. Available: {available}")
         
         text = " ".join([t['text'] for t in transcript_list])
         return {
@@ -36,7 +45,7 @@ async def get_transcript(
         }
     except Exception as e:
         print(f"[PROXY] Final Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Proxy transcription failed: {str(e)}")
 
 @app.get("/health")
 async def health():
