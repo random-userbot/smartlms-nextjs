@@ -5,7 +5,7 @@
 
 // --- CONFIGURATION ---
 // Update these to match your actual URLs
-const BACKEND_URL = 'https://smartlms-nextjs.onrender.com'; // Or your Render URL
+const BACKEND_URL = 'https://smartlms.online';
 const FRONTEND_MATCH = '*.vercel.app';      // Pattern to find your dashboard
 
 // --- STATE ---

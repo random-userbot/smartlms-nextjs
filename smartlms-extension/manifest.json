@@ -11,6 +11,7 @@
   "host_permissions": [
     "https://*.youtube.com/*",
     "https://*.vercel.app/*",
+    "https://smartlms.online/*",
     "http://localhost:3000/*",
     "http://localhost:8000/*"
   ],
