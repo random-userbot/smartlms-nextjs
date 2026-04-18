@@ -34,6 +34,9 @@ router = APIRouter(prefix="/api/quizzes", tags=["Quizzes"])
 
 # ─── Schemas ─────────────────────────────────────────────
 
+from pydantic import BaseModel, Field, field_validator
+import enum
+
 class QuizQuestion(BaseModel):
     type: str = "mcq"  # mcq, short_answer, true_false, fill_blank
     question: str
@@ -42,6 +45,23 @@ class QuizQuestion(BaseModel):
     points: int = 1
     icap_level: str = "active"  # passive, active, constructive, interactive
     explanation: Optional[str] = None
+
+    @field_validator('points', mode='before')
+    @classmethod
+    def coerce_points_to_int(cls, v):
+        if v is None:
+            return 1
+        try:
+            return int(v)
+        except (ValueError, TypeError):
+            return 1
+
+    @field_validator('icap_level', mode='before')
+    @classmethod
+    def normalize_icap(cls, v):
+        if v is None:
+            return "active"
+        return str(v).lower()
 
 
 class QuizCreate(BaseModel):
