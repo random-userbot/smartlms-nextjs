@@ -52,24 +52,35 @@ async def get_transcript(
     try:
         print(f"[PROXY] Fetching transcript for video: {v}")
         
-        # Tier 1: Static method (Standard)
+        # Tier 1: Flexible API with Auto-Translation
         try:
-            print("[PROXY] Tier 1: Trying get_transcript...")
-            transcript_list = YouTubeTranscriptApi.get_transcript(
-                 v, languages=['en', 'en-US', 'en-GB'], cookies=final_cookie_path
-            )
+            print("[PROXY] Tier 1: Trying get_transcript (with translation fallback)...")
+            try:
+                # Try preferred languages first
+                transcript_list = YouTubeTranscriptApi.get_transcript(
+                     v, languages=['en', 'en-US', 'en-GB'], cookies=final_cookie_path
+                )
+            except:
+                # Fallback: Get the list and translate the first available language to English
+                print("[PROXY] Native English missing. Attempting translation...")
+                transcript_list_obj = YouTubeTranscriptApi.list_transcripts(v, cookies=final_cookie_path)
+                # Try to find any transcript and translate it to English
+                transcript_list = transcript_list_obj.find_transcript(['en', 'en-US', 'en-GB', 'hi', 'es', 'fr', 'de']).translate('en').fetch()
+            
             return {"success": True, "v": v, "transcript": " ".join([t['text'] for t in transcript_list])}
         except Exception as e:
             last_error = str(e)
             print(f"[PROXY] Tier 1 Failed: {last_error}")
 
-        # Tier 2: Modern API
+        # Tier 2: Modern API Fallback
         try:
-            print("[PROXY] Tier 2: Trying list_transcripts...")
-            transcript_list = YouTubeTranscriptApi.list_transcripts(
-                v, cookies=final_cookie_path
-            ).find_transcript(['en', 'en-US', 'en-GB']).fetch()
-            return {"success": True, "v": v, "transcript": " ".join([t['text'] for t in transcript_list])}
+            print("[PROXY] Tier 2: Trying list_transcripts (Manual translation)...")
+            t_obj = YouTubeTranscriptApi.list_transcripts(v, cookies=final_cookie_path)
+            # Desperation: find the first available transcript and translate it
+            first_available = list(t_obj._manually_created_transcripts.values()) + list(t_obj._generated_transcripts.values())
+            if first_available:
+                transcript_list = first_available[0].translate('en').fetch()
+                return {"success": True, "v": v, "transcript": " ".join([t['text'] for t in transcript_list])}
         except Exception as e:
             last_error = str(e)
             print(f"[PROXY] Tier 2 Failed: {last_error}")
@@ -97,9 +108,12 @@ async def get_transcript(
                      if files:
                          with open(files[0], 'r', encoding='utf-8') as sf:
                              raw_text = sf.read()
-                             # Simple VTT/SRT cleanup (removes timestamps/headers)
-                             clean_text = re.sub(r'\d{2}:\d{2}:\d{2}.\d{3} --> \d{2}:\d{2}:\d{2}.\d{3}', '', raw_text)
-                             clean_text = re.sub(r'<.*?>|WEBVTT|Kind:.*|Language:.*', '', clean_text)
+                             # Simple VTT/SRT cleanup (removes timestamps/headers/formatting)
+                             clean_text = raw_text
+                             clean_text = re.sub(r'WEBVTT|Kind:.*|Language:.*|ID:.*', '', clean_text)
+                             clean_text = re.sub(r'\d{2}:\d{2}:\d{2}.\d{3} --> \d{2}:\d{2}:\d{2}.\d{3}', '', clean_text)
+                             clean_text = re.sub(r'<.*?>', '', clean_text)
+                             clean_text = re.sub(r'align:.*?position:.*?\d+%', '', clean_text) # Remove VTT alignment tags
                              clean_text = " ".join(clean_text.split())
                              return {"success": True, "v": v, "transcript": clean_text}
                      

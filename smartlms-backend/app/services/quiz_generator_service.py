@@ -106,19 +106,26 @@ async def generate_quiz_questions(
             content = re.sub(r"```(json)?", "", content).split("```")[0].strip()
         
         questions = json.loads(content)
+        if not isinstance(questions, list):
+            # Try to find a list inside if the model wrapped it
+            if isinstance(questions, dict) and "questions" in questions:
+                questions = questions["questions"]
+            else:
+                raise ValueError("AI did not return a list of questions.")
 
         # Post-process and ensure integrity
         valid_questions = []
         for q in questions:
             if "question" in q and "correct_answer" in q:
+                # Type coercion to prevent 422 validation errors
                 valid_questions.append({
-                    "type": q.get("type", "mcq"),
-                    "question": q["question"],
-                    "options": q.get("options", []),
-                    "correct_answer": q["correct_answer"],
-                    "points": q.get("points", 1),
-                    "icap_level": q.get("icap_level", "active"),
-                    "explanation": q.get("explanation", ""),
+                    "type": str(q.get("type", "mcq")).lower(),
+                    "question": str(q["question"]),
+                    "options": [str(o) for o in q.get("options", [])] if q.get("options") else [],
+                    "correct_answer": str(q["correct_answer"]),
+                    "points": int(q.get("points", 1)),
+                    "icap_level": str(q.get("icap_level", "active")).lower(),
+                    "explanation": str(q.get("explanation", "")),
                 })
 
         return valid_questions
@@ -147,6 +154,7 @@ Current Questions: {json.dumps(current_questions, indent=2)}
 Source: {transcript[:4000]}
 
 Modify or add new questions as requested. Maintain the same JSON format.
+Output MUST be a JSON array of questions.
 """
 
         model_chain = settings.groq_chat_models_for_task(
@@ -159,7 +167,7 @@ Modify or add new questions as requested. Maintain the same JSON format.
             primary_model=model_chain[0],
             fallback_models=model_chain[1:],
             messages=[
-                {"role": "system", "content": "Return ONLY valid JSON array."},
+                {"role": "system", "content": "Return ONLY valid JSON array with no extra text."},
                 {"role": "user", "content": prompt},
             ],
             temperature=0.5,
@@ -170,7 +178,25 @@ Modify or add new questions as requested. Maintain the same JSON format.
         if "```" in content:
             content = re.sub(r"```(json)?", "", content).split("```")[0].strip()
         
-        return json.loads(content)
+        questions = json.loads(content)
+        if not isinstance(questions, list):
+             if isinstance(questions, dict) and "questions" in questions:
+                 questions = questions["questions"]
+        
+        # Consistent validation as generation
+        valid_questions = []
+        for q in questions:
+            if "question" in q and "correct_answer" in q:
+                valid_questions.append({
+                    "type": str(q.get("type", "mcq")).lower(),
+                    "question": str(q["question"]),
+                    "options": [str(o) for o in q.get("options", [])] if q.get("options") else [],
+                    "correct_answer": str(q["correct_answer"]),
+                    "points": int(q.get("points", 1)),
+                    "icap_level": str(q.get("icap_level", "active")).lower(),
+                    "explanation": str(q.get("explanation", "")),
+                })
+        return valid_questions
 
     except Exception as e:
         debug_logger.log("error", f"Quiz refinement failed: {str(e)}")
