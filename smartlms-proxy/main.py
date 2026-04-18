@@ -19,7 +19,15 @@ async def get_transcript(
 
     try:
         print(f"[PROXY] Fetching transcript for video: {v}")
-        transcript_list = YouTubeTranscriptApi.get_transcript(v, languages=['en', 'en-US'])
+        
+        # Method 1: Direct Fetch (Standard)
+        try:
+            transcript_list = YouTubeTranscriptApi.get_transcript(v, languages=['en', 'en-US', 'en-GB'])
+        except AttributeError:
+            # Method 2: Modern API (Fallback if static method is missing)
+            print("[PROXY] Falling back to list_transcripts API...")
+            transcript_list = YouTubeTranscriptApi.list_transcripts(v).find_transcript(['en', 'en-US', 'en-GB']).fetch()
+        
         text = " ".join([t['text'] for t in transcript_list])
         return {
             "success": True, 
@@ -27,8 +35,8 @@ async def get_transcript(
             "transcript": text
         }
     except Exception as e:
-        print(f"[PROXY] Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"[PROXY] Final Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
 
 @app.get("/health")
 async def health():
