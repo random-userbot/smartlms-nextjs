@@ -76,6 +76,8 @@ class Settings(BaseSettings):
     YOUTUBE_PO_TOKEN: Optional[str] = None
     YOUTUBE_VISITOR_DATA: Optional[str] = None
     YOUTUBE_API_KEY: Optional[str] = None
+    YOUTUBE_TRANSCRIPT_PROXY_URL: Optional[str] = None
+    YOUTUBE_TRANSCRIPT_PROXY_KEY: Optional[str] = None
 
     # Debug
     DEBUG_MODE: bool = False

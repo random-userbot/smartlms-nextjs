@@ -372,13 +372,16 @@ class YouTubeService:
         
         # Scenario A: YouTube Video
         if video_id:
-            # Tier 0: Official YouTube Data API (metadata verification)
-            if settings.YOUTUBE_API_KEY and GOOGLE_API_CLIENT_AVAILABLE:
+            # Tier 0.5: Dedicated Transcript Proxy (Render/External)
+            if settings.YOUTUBE_TRANSCRIPT_PROXY_URL:
                 try:
-                    print(f"[YOUTUBE] [Tier 0] Official API metadata check for {video_id}...", flush=True)
-                    await self._fetch_official_api_info(video_id)
+                    print(f"[YOUTUBE] [Tier 0.5] Trying dedicated proxy for {video_id}...", flush=True)
+                    transcript_text = await self._fetch_proxy_transcript(video_id)
+                    if transcript_text:
+                        print(f"[YOUTUBE] [Tier 0.5] Success via proxy!", flush=True)
+                        return transcript_text
                 except Exception as e:
-                    print(f"[YOUTUBE] [Tier 0] Metadata check skipped: {e}", flush=True)
+                    print(f"[YOUTUBE] [Tier 0.5] Proxy failed: {e}", flush=True)
 
             # Tier 1: YouTube Transcript API (scraper - often blocked on cloud IPs)
             try:
@@ -451,6 +454,35 @@ class YouTubeService:
                 print(f"Official API error: {e}")
                 return None
         return await asyncio.get_event_loop().run_in_executor(None, _api)
+
+    async def _fetch_proxy_transcript(self, video_id: str) -> Optional[str]:
+        """Fetch transcript via the standalone proxy microservice on Render."""
+        if not settings.YOUTUBE_TRANSCRIPT_PROXY_URL:
+            return None
+            
+        def _fetch():
+            try:
+                # Clean URL trailing slash
+                base_url = settings.YOUTUBE_TRANSCRIPT_PROXY_URL.rstrip('/')
+                url = f"{base_url}/transcript"
+                params = {"v": video_id}
+                if settings.YOUTUBE_TRANSCRIPT_PROXY_KEY:
+                    params["key"] = settings.YOUTUBE_TRANSCRIPT_PROXY_KEY
+                
+                print(f"[YOUTUBE] Calling Proxy: {url}", flush=True)
+                # Use a generous 45s timeout for Render cold starts
+                response = requests.get(url, params=params, timeout=45.0)
+                if response.status_code == 200:
+                    data = response.json()
+                    return data.get("transcript")
+                else:
+                    print(f"[YOUTUBE] Proxy returned error {response.status_code}: {response.text}", flush=True)
+                    return None
+            except Exception as e:
+                print(f"[YOUTUBE] Proxy request failed: {e}", flush=True)
+                return None
+                
+        return await asyncio.get_event_loop().run_in_executor(None, _fetch)
 
     async def _fetch_api_transcript(self, video_id: str) -> Optional[str]:
         """Internal helper for Tier 1 transcript fetching with safety timeout."""

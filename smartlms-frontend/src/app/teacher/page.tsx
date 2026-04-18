@@ -281,16 +281,20 @@ export default function TeacherDashboard() {
                                PROJ: {(ls.forecast || ls.engagement || 0).toFixed(0)}%
                              </div>
                           </div>
-                          <div className="text-[7px] font-black uppercase tracking-widest text-info opacity-70 mt-0.5 border-t border-white/5 pt-0.5">
-                            AVG: {(components.engagement || 0).toFixed(0)}%
-                          </div>
-                       </div>
-                  </div>
+                           <div className="text-[7px] font-black uppercase tracking-widest text-info opacity-70 mt-0.5 border-t border-white/5 pt-0.5">
+                             AVG: {(ls.engagement || 0).toFixed(0)}%
+                           </div>
+                        </div>
+                   </div>
 
-                  {/* Mini-Wave for each student */}
-                  <div className="h-16 w-full mb-4 opacity-50 group-hover:opacity-100 transition-opacity">
-                    <EngagementWaveform data={(Array.isArray(ls.waveform) ? ls.waveform : []).map((e: any) => ({ engagement: e?.engagement || 0 }))} isLive={false} />
-                  </div>
+                   {/* Mini-Wave for each student */}
+                   <div className="h-20 w-full mb-4 opacity-70 group-hover:opacity-100 transition-opacity">
+                     <EngagementWaveform 
+                        data={(Array.isArray(ls.waveform) ? ls.waveform : []).map((e: any) => ({ engagement: e?.engagement || 0 }))} 
+                        isLive={false} 
+                        mini={true} 
+                     />
+                   </div>
 
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
                     <div className="flex items-center gap-2">
