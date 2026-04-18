@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --primary: #ff3e3e; /* Crimson */
+            --primary-glow: rgba(255, 62, 62, 0.4);
+            --bg: #0a0a0a;
+            --surface: #121212;
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+            --text-muted: #888888;
+        }
+
+        body {
+            width: 350px;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0;
+            padding: 24px;
+            overflow-x: hidden;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .logo {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        h1 {
+            font-size: 16px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .status-badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px border var(--border);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+            margin-left: 4px;
+        }
+
+        select {
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: white;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            transition: border 0.3s;
+        }
+
+        select:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-sync {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .btn-sync:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--primary-glow);
+        }
+
+        .btn-sync:active {
+            transform: translateY(0);
+        }
+
+        .btn-sync:disabled {
+            background: #333;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #video-info {
+            display: none;
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .loader {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error {
+            color: #ff4d4d;
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 8px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">⚡</div>
+        <div>
+            <h1>SmartLMS</h1>
+            <div class="status-badge" id="auth-status">Checking Session...</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <label>Course Sequence</label>
+        <select id="course-select">
+            <option value="">Select Course</option>
+        </select>
+        
+        <div style="height: 12px;"></div>
+        
+        <label>Target Lecture Node</label>
+        <select id="lecture-select" disabled>
+            <option value="">Select Lecture</option>
+        </select>
+    </div>
+
+    <div id="video-info">
+        Detected: <span id="v-title" style="color: white; font-weight: bold;">...</span>
+    </div>
+
+    <button id="sync-btn" class="btn-sync" disabled>
+        <div class="loader" id="btn-loader"></div>
+        <span id="btn-text">Sync Transcript</span>
+    </button>
+    
+    <div id="error-msg" class="error"></div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

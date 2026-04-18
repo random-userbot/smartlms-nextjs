@@ -149,6 +149,32 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
+# 2b. Detailed Validation Error Logger (For 422 Debugging)
+from fastapi.exceptions import RequestValidationError
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Capture and log 422 errors to see exactly which field failed."""
+    errors = exc.errors()
+    print("\n" + "!" * 40)
+    print(f"  [VALIDATION ERROR] {request.method} {request.url.path}")
+    for err in errors:
+        print(f"  - Field: {' -> '.join(str(p) for p in err.get('loc', []))}")
+        print(f"    Message: {err.get('msg')}")
+        print(f"    Input Type: {err.get('type')}")
+    print("!" * 40 + "\n")
+    
+    debug_logger.log("error", f"Validation failure on {request.url.path}", data={"errors": errors})
+    
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "error",
+            "message": "Validation Failed",
+            "detail": errors
+        }
+    )
+
+
 # 3. Root heartbeat for ALB
 @app.get("/")
 async def root_heartbeat():

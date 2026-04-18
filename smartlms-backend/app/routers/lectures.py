@@ -412,6 +412,43 @@ async def manual_generate_transcript(
     return {"message": "Transcription task initiated in the background. Terminal logs will track progress."}
 
 
+class TranscriptSyncRequest(BaseModel):
+    transcript: str
+
+@router.post("/{lecture_id}/sync-transcript")
+async def sync_transcript_from_extension(
+    lecture_id: str,
+    request: TranscriptSyncRequest,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+):
+    """
+    Direct sync for the Chrome Extension.
+    Updates the transcript and triggers auto-summary.
+    """
+    result = await db.execute(select(Lecture).where(Lecture.id == lecture_id))
+    lecture = result.scalar_one_or_none()
+    if not lecture:
+        raise HTTPException(status_code=404, detail="Lecture not found")
+
+    # Update transcript
+    lecture.transcript = request.transcript
+    await db.commit()
+    await db.refresh(lecture)
+    
+    debug_logger.log("activity", f"Transcript synced via Extension for: {lecture.title}", user_id=current_user.id)
+    
+    # Trigger background summary generation
+    background_tasks.add_task(_generate_lecture_transcript_background, lecture.id, True, False)
+    
+    return {
+        "status": "success",
+        "message": "Transcript synced and summary generation queued.",
+        "length": len(request.transcript)
+    }
+
+
 @router.delete("/{lecture_id}")
 async def delete_lecture(
     lecture_id: str,
