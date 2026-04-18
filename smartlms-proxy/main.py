@@ -2,6 +2,9 @@ from fastapi import FastAPI, HTTPException, Query
 from youtube_transcript_api import YouTubeTranscriptApi
 import os
 import uvicorn
+import re
+import tempfile
+import glob
 
 app = FastAPI(title="SmartLMS Transcript Proxy")
 
@@ -31,7 +34,6 @@ async def get_transcript(
             with open(final_cookie_path, 'r') as f:
                 content = f.read(100)
                 # Masked preview for security (replaces letters/numbers with *)
-                import re
                 masked = re.sub(r'[a-zA-Z0-9]', '*', content[:50])
                 print(f"[PROXY] COOKIE INSPECTOR: Size={size} bytes, Preview='{masked}...'")
                 
@@ -76,7 +78,6 @@ async def get_transcript(
         try:
              print(f"[PROXY] Tier 3: Trying yt-dlp scraper...")
              from yt_dlp import YoutubeDL
-             import tempfile
              
              with tempfile.TemporaryDirectory() as tmpdir:
                  ydl_opts = {
@@ -92,7 +93,6 @@ async def get_transcript(
                      ydl.download([f"https://www.youtube.com/watch?v={v}"])
                      
                      # Look for the .vtt or .srt file
-                     import glob
                      files = glob.glob(f"{tmpdir}/{v}.en*")
                      if files:
                          with open(files[0], 'r', encoding='utf-8') as sf:
