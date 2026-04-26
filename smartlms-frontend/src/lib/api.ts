@@ -106,6 +106,10 @@ export const authAPI = {
   getProfile: () => api.get('/api/auth/me'),
 };
 
+export const aikaAPI = {
+  chat: (message: string) => api.post('/api/aika/chat', { message }),
+};
+
 export const coursesAPI = {
   list: (params?: { view?: string; search?: string; category?: string; teacher_id?: string }) => 
     api.get('/api/courses', { params }),

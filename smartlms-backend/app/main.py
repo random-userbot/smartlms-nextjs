@@ -33,6 +33,7 @@ from app.routers import assignments as assignments_router
 from app.routers import activity as activity_router
 from app.routers import tutor as tutor_router
 from app.routers import messaging as messaging_router
+from app.routers import aika as aika_router
 
 
 
@@ -234,6 +235,7 @@ app.include_router(assignments_router.router)
 app.include_router(activity_router.router)
 app.include_router(tutor_router.router)
 app.include_router(messaging_router.router)
+app.include_router(aika_router.router)
 
 
 # --- FINAL MIDDLEWARE WRAPPER (OUTERMOST) ---

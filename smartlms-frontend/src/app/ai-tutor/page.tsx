@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { tutorAPI } from '@/lib/api';
+import { tutorAPI, aikaAPI } from '@/lib/api';
 import { 
   Bot, 
   Send, 
@@ -29,7 +29,7 @@ export default function AikaPage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [mode, setMode] = useState<string>('general');
+  const [mode, setMode] = useState<string>('rag_knowledge_base');
   const [model, setModel] = useState<string>('groq-llama-3');
   const [attachments, setAttachments] = useState<any[]>([]);
   const [isListening, setIsListening] = useState(false);
@@ -104,12 +104,18 @@ export default function AikaPage() {
     setIsTyping(true);
 
     try {
-      const res = await tutorAPI.chat({
-        messages: history,
-        mode,
-        session_id: sessionId || undefined,
-        attachments: attachments.length > 0 ? attachments : undefined
-      });
+      let res;
+      if (mode === 'rag_knowledge_base') {
+        const aikaResponse = await aikaAPI.chat(input);
+        res = aikaResponse.data.response;
+      } else {
+        res = await tutorAPI.chat({
+          messages: history,
+          mode,
+          session_id: sessionId || undefined,
+          attachments: attachments.length > 0 ? attachments : undefined
+        });
+      }
 
       // Simple non-streaming handling for this refinement
       const aiMsg = { role: 'assistant', content: res };
@@ -295,6 +301,9 @@ export default function AikaPage() {
               </div>
 
                <div className="flex items-center gap-3">
+                  <span className="bg-primary/20 border border-primary/40 rounded-xl px-4 py-2 text-[10px] font-black text-primary">
+                     Aika Intelligent Tutor
+                  </span>
                   <select 
                     value={model} 
                     onChange={(e) => setModel(e.target.value)}
