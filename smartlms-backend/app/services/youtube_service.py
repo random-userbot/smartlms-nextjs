@@ -133,130 +133,114 @@ class YouTubeService:
         if not cookie_str:
             return None
 
-        # 1. Clean input: remove BOM, strip whitespace and quotes
-        cookie_str = cookie_str.strip().lstrip('\ufeff').strip('"').strip("'").strip()
+        # Clean input: strip quotes and whitespace that might be added by cloud envs
+        cookie_str = cookie_str.strip().strip('"').strip("'").strip()
 
-        # 2. Detect if it's already a full file path
+        # Detect if it's already a full file path
         if os.path.isfile(cookie_str):
             print(f"[YOUTUBE] Loading cookies from file path: {cookie_str}", flush=True)
             return cookie_str
 
         try:
             content = ""
-            # 3. Handle base64 encoded strings
+            # Support base64 prefix
             if cookie_str.startswith('base64:'):
                 try:
-                    b64_data = cookie_str[7:].strip().replace(" ", "").replace("\n", "").replace("\r", "")
+                    # Strip prefix and any internal whitespace
+                    b64_data = cookie_str[7:].replace(" ", "").replace("\n", "").replace("\r", "")
                     raw_bytes = base64.b64decode(b64_data)
-                    content = raw_bytes.decode('utf-8', errors='replace')
+                    try:
+                        content = raw_bytes.decode('utf-8')
+                    except UnicodeDecodeError:
+                        content = raw_bytes.decode('latin-1')
                     print("[YOUTUBE] Successfully decoded Base64 cookie string.", flush=True)
                 except Exception as b64e:
                     print(f"[YOUTUBE] [ERROR] Base64 decoding failed: {b64e}", flush=True)
                     content = cookie_str
             else:
-                # Direct check for probable Base64 without prefix
+                # Direct check for Netscape header or standard cookie string
                 try:
-                    clean_str = cookie_str.replace('\n', '').replace('\r', '').replace(' ', '').replace('\t', '')
-                    # Heuristic: only attempt decode if it matches b64 char set and doesn't look like JSON/Netscape
-                    if (re.match(r'^[A-Za-z0-9+/=]+$', clean_str) and 
-                        not (cookie_str.strip().startswith('[') or cookie_str.startswith('#'))):
-                        content = base64.b64decode(clean_str).decode('utf-8', errors='replace')
+                    # Clean potential base64 if no prefix
+                    clean_str = cookie_str.replace('\n', '').replace('\r', '').replace(' ', '')
+                    if re.match(r'^[A-Za-z0-9+/=]+$', clean_str):
+                        content = base64.b64decode(clean_str).decode('utf-8')
                         print("[YOUTUBE] Decoded probable Base64 string (no prefix).", flush=True)
                     else:
                         content = cookie_str
                 except:
                     content = cookie_str
 
-            # 4. Handle JSON Format (Chrome Export)
+            # Validation: If it doesn't look like a cookie file, try to wrap it
             if content.strip().startswith('['):
+                import json
                 try:
                     cookies = json.loads(content)
                     netscape_lines = ["# Netscape HTTP Cookie File", "# Auto-generated from JSON", ""]
                     for cookie in cookies:
-                        # Extract with fallbacks
-                        domain = cookie.get('domain')
-                        if not domain:
-                            domain = cookie.get('host', '.youtube.com')
-                        
+                        domain = cookie.get('domain', '.youtube.com')
                         c_path = cookie.get('path', '/')
                         secure = 'TRUE' if cookie.get('secure', False) else 'FALSE'
-                        
-                        # Guard against null/None expirationDate
-                        expiration = cookie.get('expirationDate')
-                        if expiration is not None:
-                            try:
-                                expires = str(int(float(expiration)))
-                            except (ValueError, TypeError):
-                                expires = '0'
-                        else:
-                            expires = '0'
-                            
+                        expires = str(int(cookie.get('expirationDate', 0))) if cookie.get('expirationDate') else '0'
                         name = cookie.get('name', '')
                         value = cookie.get('value', '')
-                        
                         if name and value:
                             include_sub = 'TRUE' if domain.startswith('.') else 'FALSE'
                             netscape_lines.append(f"{domain}\t{include_sub}\t{c_path}\t{secure}\t{expires}\t{name}\t{value}")
-                    
                     content = "\n".join(netscape_lines)
-                    print(f"[YOUTUBE] Parsed JSON cookies ({len(netscape_lines)-3} entries).", flush=True)
+                    print("[YOUTUBE] Parsed JSON cookies.", flush=True)
                 except Exception as je:
                     print(f"[YOUTUBE] Failed to parse JSON cookies: {je}", flush=True)
 
-            # 5. Handle raw key=value strings (wrapped for Netscape)
             if content and "# Netscape" not in content and "# HTTP Cookie File" not in content:
+                print("[YOUTUBE] Content detected as raw key=value string. Wrapping in Netscape header.", flush=True)
                 if ";" in content and "=" in content:
-                    print("[YOUTUBE] Content detected as raw key=value string. Wrapping in Netscape header.", flush=True)
-                    netscape_lines = ["# Netscape HTTP Cookie File", "# Auto-generated from raw string", ""]
+                    netscape_lines = ["# Netscape HTTP Cookie File", "# This was auto-generated by SmartLMS", ""]
                     for part in content.split(";"):
                         if "=" in part:
                             try:
-                                k, v = part.strip().split("=", 1)
-                                if k and v:
+                                k_v = part.strip().split("=", 1)
+                                if len(k_v) == 2:
+                                    k, v = k_v
                                     netscape_lines.append(f".youtube.com\tTRUE\t/\tTRUE\t0\t{k}\t{v}")
-                            except: continue
+                            except:
+                                continue
                     content = "\n".join(netscape_lines)
 
-            # 6. Final Validation
             if not content or ("# Netscape" not in content and "youtube.com" not in content):
-                print(f"[YOUTUBE] [ERROR] Invalid cookie format: No Netscape header or youtube domain found.", flush=True)
+                print(f"[YOUTUBE] [ERROR] Cookie string does not contain valid Netscape headers or youtube domain. (Length: {len(content) if content else 0})", flush=True)
                 return None
 
-            # 7. Final sanitization/normalization for yt-dlp
+            # Sanitize cookie file to prevent http.cookiejar crashes with bad format
             valid_lines = []
             for line in content.splitlines():
                 if not line.strip() or line.startswith('#'):
                     valid_lines.append(line)
                     continue
-                
-                # Tab separation is critical for Netscape format
                 parts = line.split('\t')
-                if len(parts) < 7 and ' ' in line:
-                    # Fallback for space-separation if tabs were lost in transit
-                    parts = re.split(r'\s+', line.strip(), maxsplit=6)
-                
                 if len(parts) >= 7:
                     try:
-                        # Ensure expiry is a number
-                        if parts[4]: float(parts[4])
-                        valid_lines.append('\t'.join(parts[:7]))
-                    except (ValueError, IndexError):
+                        if parts[4]:
+                            float(parts[4])
+                        valid_lines.append(line)
+                    except ValueError:
                         parts[4] = '0'
-                        valid_lines.append("\t".join(parts[:7]))
-            
+                        valid_lines.append("\t".join(parts))
+                else:
+                    # Keep if we just want yt-dlp to warn and skip, but it's safe to drop
+                    pass
             content = "\n".join(valid_lines)
 
-            # 8. Write to temp file
+            # Persistent temp file in the scratch or temp directory
             path = os.path.join(tempfile.gettempdir(), f"yt_active_session.txt")
             with open(path, "w", encoding='utf-8') as f:
                 f.write(content)
             
-            print(f"[YOUTUBE] Successfully updated session cookies: {path} ({len(content)} bytes)", flush=True)
+            print(f"[YOUTUBE] Successfully wrote cookie file to: {path} ({len(content)} bytes)", flush=True)
             return path
         except Exception as e:
-            print(f"[YOUTUBE] [ERROR] Critical error processing cookie content: {e}", flush=True)
+            print(f"[YOUTUBE] [ERROR] Critical error creating temp cookie file: {e}", flush=True)
             return None
-
+            return None
 
     def _create_authenticated_session(self) -> requests.Session:
         """Create a requests session with manually loaded cookies."""
@@ -372,16 +356,13 @@ class YouTubeService:
         
         # Scenario A: YouTube Video
         if video_id:
-            # Tier 0.5: Dedicated Transcript Proxy (Render/External)
-            if settings.YOUTUBE_TRANSCRIPT_PROXY_URL:
+            # Tier 0: Official YouTube Data API (metadata verification)
+            if settings.YOUTUBE_API_KEY and GOOGLE_API_CLIENT_AVAILABLE:
                 try:
-                    print(f"[YOUTUBE] [Tier 0.5] Trying dedicated proxy for {video_id}...", flush=True)
-                    transcript_text = await self._fetch_proxy_transcript(video_id)
-                    if transcript_text:
-                        print(f"[YOUTUBE] [Tier 0.5] Success via proxy!", flush=True)
-                        return transcript_text
+                    print(f"[YOUTUBE] [Tier 0] Official API metadata check for {video_id}...", flush=True)
+                    await self._fetch_official_api_info(video_id)
                 except Exception as e:
-                    print(f"[YOUTUBE] [Tier 0.5] Proxy failed: {e}", flush=True)
+                    print(f"[YOUTUBE] [Tier 0] Metadata check skipped: {e}", flush=True)
 
             # Tier 1: YouTube Transcript API (scraper - often blocked on cloud IPs)
             try:
@@ -455,35 +436,6 @@ class YouTubeService:
                 return None
         return await asyncio.get_event_loop().run_in_executor(None, _api)
 
-    async def _fetch_proxy_transcript(self, video_id: str) -> Optional[str]:
-        """Fetch transcript via the standalone proxy microservice on Render."""
-        if not settings.YOUTUBE_TRANSCRIPT_PROXY_URL:
-            return None
-            
-        def _fetch():
-            try:
-                # Clean URL trailing slash
-                base_url = settings.YOUTUBE_TRANSCRIPT_PROXY_URL.rstrip('/')
-                url = f"{base_url}/transcript"
-                params = {"v": video_id}
-                if settings.YOUTUBE_TRANSCRIPT_PROXY_KEY:
-                    params["key"] = settings.YOUTUBE_TRANSCRIPT_PROXY_KEY
-                
-                print(f"[YOUTUBE] Calling Proxy: {url}", flush=True)
-                # Use a generous 45s timeout for Render cold starts
-                response = requests.get(url, params=params, timeout=45.0)
-                if response.status_code == 200:
-                    data = response.json()
-                    return data.get("transcript")
-                else:
-                    print(f"[YOUTUBE] Proxy returned error {response.status_code}: {response.text}", flush=True)
-                    return None
-            except Exception as e:
-                print(f"[YOUTUBE] Proxy request failed: {e}", flush=True)
-                return None
-                
-        return await asyncio.get_event_loop().run_in_executor(None, _fetch)
-
     async def _fetch_api_transcript(self, video_id: str) -> Optional[str]:
         """Internal helper for Tier 1 transcript fetching with safety timeout."""
         def _ytt():
@@ -497,23 +449,12 @@ class YouTubeService:
                     from youtube_transcript_api import YouTubeTranscriptApi
                     
                     session = None
-                    if (self._cookie_path and os.path.exists(self._cookie_path)) or settings.YOUTUBE_PROXY:
+                    if self._cookie_path and os.path.exists(self._cookie_path):
                         session = requests.Session()
-                        
-                        # 1. Inject Cookies
-                        if self._cookie_path and os.path.exists(self._cookie_path):
-                            cookie_jar = http.cookiejar.MozillaCookieJar(self._cookie_path)
-                            cookie_jar.load(ignore_discard=True, ignore_expires=True)
-                            session.cookies = cookie_jar
-                            print(f"[YOUTUBE] Using cookies for transcript api: {self._cookie_path}", flush=True)
-                        
-                        # 2. Inject Proxy
-                        if settings.YOUTUBE_PROXY:
-                            session.proxies = {
-                                "http": settings.YOUTUBE_PROXY,
-                                "https": settings.YOUTUBE_PROXY
-                            }
-                            print(f"[YOUTUBE] Using proxy for transcript api: {settings.YOUTUBE_PROXY[:20]}...", flush=True)
+                        cookie_jar = http.cookiejar.MozillaCookieJar(self._cookie_path)
+                        cookie_jar.load(ignore_discard=True, ignore_expires=True)
+                        session.cookies = cookie_jar
+                        print(f"[YOUTUBE] Using cookies for transcript api: {self._cookie_path}", flush=True)
                         
                     api_instance = YouTubeTranscriptApi(http_client=session)
                     transcript_list = api_instance.list(video_id)

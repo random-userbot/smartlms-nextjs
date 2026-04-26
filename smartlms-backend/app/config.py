@@ -126,10 +126,14 @@ class Settings(BaseSettings):
                 "http://127.0.0.1:3000",
             ])
 
-        # Allow Chrome Extensions in all environments
-        origins.append("chrome-extension://*")
+        # Finalized Production Whitelist
+        origins.extend([
+            "https://smartlms.online",
+            "https://smartlms-nextjs.vercel.app",
+            "chrome-extension://pehjijfanpifbgpjliiaplegdeikmfkg"
+        ])
         
-        # Preserve order while removing duplicates.
+        # Remove duplicates while preserving order
         return list(dict.fromkeys(origins))
 
     def groq_chat_fallback_models(self) -> list[str]:

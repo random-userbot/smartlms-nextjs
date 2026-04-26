@@ -383,10 +383,7 @@ class ExportModelRegistry:
         if not model_id.startswith("export::"):
             raise ValueError("Not an export model id")
 
-        # Check Nightly Sleep Window (2 AM - 7 AM IST / UTC+5:30)
-        if self.is_in_sleep_window():
-            print("[MEMORY] Nightly Sleep window active (2-7 AM IST). Skipping model load.", flush=True)
-            return None
+        # Check Nightly Sleep Window (2 AM - 7 AM IST / UTC+5:30
 
         loader = self._load_model_loader()
         keras = self._load_tensorflow()

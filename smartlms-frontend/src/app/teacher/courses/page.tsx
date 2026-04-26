@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Plus, Users, Play, X, Upload, ArrowUpRight, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { coursesAPI, api } from '@/lib/api';
+import { coursesAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/Sidebar';
 import { uploadFile } from '@/lib/cloudinary';
@@ -48,9 +48,16 @@ export default function TeacherCoursesPage() {
     setSavingCookie(true);
     setCookieStatus('idle');
     try {
-      const response = await api.post('/api/admin/youtube/cookies', { 
-        cookie_data: youtubeCookie 
+      const response = await fetch('http://localhost:8000/api/admin/youtube/cookies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ cookie_data: youtubeCookie })
       });
+      
+      if (!response.ok) throw new Error('Failed to save cookie');
       
       setCookieStatus('success');
       setTimeout(() => {
@@ -58,8 +65,8 @@ export default function TeacherCoursesPage() {
         setShowCookieModal(false);
         setYoutubeCookie('');
       }, 1500);
-    } catch (error: any) {
-      console.error(error?.response?.data || error);
+    } catch (error) {
+      console.error(error);
       setCookieStatus('error');
     } finally {
       setSavingCookie(false);

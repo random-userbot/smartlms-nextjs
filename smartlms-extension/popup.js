@@ -1,49 +1,118 @@
 /**
  * SmartLMS Assistant - Popup Logic
- * Handles Auto-Auth and Syncing.
+ * Handles Auto-Auth and Smart Syncing.
  */
 
 // --- CONFIGURATION ---
-// Update these to match your actual URLs
 const BACKEND_URL = 'https://smartlms.online';
-const FRONTEND_MATCH = '*.vercel.app';      // Pattern to find your dashboard
+const FRONTEND_MATCH = '*.vercel.app';      
 
 // --- STATE ---
 let authToken = null;
-let currentTranscript = null;
+let lecturesMap = {}; 
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', async () => {
     updateStatus("Detecting Session...");
     await initAuth();
-    await checkYouTubePage();
+    await checkPageContext(); 
 
     // UI Event Listeners
     document.getElementById('course-select').addEventListener('change', loadLectures);
+    document.getElementById('lecture-select').addEventListener('change', onLectureSelected);
     document.getElementById('sync-btn').addEventListener('click', handleSync);
 });
 
 /**
- * AUTO-AUTH: Find an open SmartLMS tab and grab the token
+ * PAGE CONTEXT: Are we on YT or SmartLMS?
+ */
+async function checkPageContext() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const infoLabel = document.getElementById('info-label');
+    const vTitle = document.getElementById('v-title');
+
+    if (tab && tab.url.includes("youtube.com/watch")) {
+        infoLabel.innerText = "YouTube Mode";
+        vTitle.innerText = tab.title.replace(' - YouTube', '');
+        document.getElementById('video-info').style.display = 'block';
+        document.getElementById('sync-btn').disabled = false;
+    } else {
+        infoLabel.innerText = "Dashboard Mode";
+        vTitle.innerText = "Select a lecture to sync";
+        document.getElementById('video-info').style.display = 'block';
+    }
+}
+
+/**
+ * AUTO-AUTH: Deep Scan for JWT
  */
 async function initAuth() {
     try {
-        const tabs = await chrome.tabs.query({ url: [`https://${FRONTEND_MATCH}/*`, `http://localhost:3000/*`] });
-
-        if (tabs.length === 0) {
+        const tabs = await chrome.tabs.query({});
+        const dashboardTabs = tabs.filter(t => 
+            t && t.url && (t.url.includes("smartlms") || t.url.includes("vercel.app") || t.url.includes("smartlms.online"))
+        );
+        
+        if (dashboardTabs.length === 0) {
             updateStatus("Dashboard not open", "#ff4d4d");
-            showError("Please open your SmartLMS Dashboard in another tab to authenticate.");
+            showError("Please keep your SmartLMS Dashboard open.");
             return;
         }
 
-        // Run script in the dashboard tab to get the token
-        const [{ result }] = await chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: () => localStorage.getItem('token')
-        });
+        let foundToken = null;
 
-        if (result) {
-            authToken = result;
+        // Scan each candidate tab until we find a login
+        for (const tab of dashboardTabs) {
+            const [{ result }] = await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: () => {
+                    const isJWT = (str) => typeof str === 'string' && str.startsWith('ey') && str.length > 50;
+                    
+                    const scan = (obj) => {
+                        if (!obj) return null;
+                        for (let key in obj) {
+                            try {
+                                const val = obj[key];
+                                if (isJWT(val)) return val;
+                                // If it's a string, try parsing as JSON to look inside
+                                if (typeof val === 'string' && val.startsWith('{')) {
+                                    const deep = JSON.parse(val);
+                                    const found = scan(deep);
+                                    if (found) return found;
+                                }
+                                if (typeof val === 'object') {
+                                    const found = scan(val);
+                                    if (found) return found;
+                                }
+                            } catch (e) {}
+                        }
+                        return null;
+                    };
+
+                    // 1. Try Cookies
+                    const cookieMatch = document.cookie.match(/token=([^;]+)/) || document.cookie.match(/access_token=([^;]+)/);
+                    if (cookieMatch && isJWT(cookieMatch[1])) return cookieMatch[1];
+
+                    // 2. Scan localStorage
+                    const lsFound = scan(localStorage);
+                    if (lsFound) return lsFound;
+
+                    // 3. Scan sessionStorage
+                    const ssFound = scan(sessionStorage);
+                    if (ssFound) return ssFound;
+
+                    return null;
+                }
+            });
+
+            if (result) {
+                foundToken = result;
+                break;
+            }
+        }
+
+        if (foundToken) {
+            authToken = foundToken;
             updateStatus("Authenticated", "#44ff44");
             loadCourses();
         } else {
@@ -57,21 +126,7 @@ async function initAuth() {
 }
 
 /**
- * YOUTUBE DETECTION: Check if current tab is a video
- */
-async function checkYouTubePage() {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab.url.includes("youtube.com/watch")) {
-        document.getElementById('video-info').style.display = 'block';
-        document.getElementById('v-title').innerText = tab.title.replace(' - YouTube', '');
-        document.getElementById('sync-btn').disabled = false;
-    } else {
-        showError("Navigate to a YouTube video to sync.");
-    }
-}
-
-/**
- * FETCH: Load Courses from Backend
+ * FETCH: Load Courses
  */
 async function loadCourses() {
     try {
@@ -80,8 +135,7 @@ async function loadCourses() {
         });
         const data = await res.json();
         const select = document.getElementById('course-select');
-
-        // Populate courses (Filter for teacher's own courses or just show all)
+        select.innerHTML = '<option value="">Select Course</option>';
         data.forEach(c => {
             const opt = document.createElement('option');
             opt.value = c.id;
@@ -89,76 +143,107 @@ async function loadCourses() {
             select.appendChild(opt);
         });
     } catch (err) {
-        showError("Failed to load courses from backend.");
+        showError("Failed to load courses.");
     }
 }
 
 /**
- * FETCH: Load Lectures based on Course
+ * FETCH: Load Lectures
  */
 async function loadLectures() {
     const courseId = document.getElementById('course-select').value;
-    const lectureSelect = document.getElementById('lecture-select');
+    const select = document.getElementById('lecture-select');
     if (!courseId) return;
 
-    lectureSelect.disabled = true;
-    lectureSelect.innerHTML = '<option>Loading Lectures...</option>';
+    select.disabled = true;
+    select.innerHTML = '<option>Loading...</option>';
+    lecturesMap = {}; 
 
     try {
         const res = await fetch(`${BACKEND_URL}/api/lectures/course/${courseId}`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         const data = await res.json();
-
-        lectureSelect.innerHTML = '<option value="">Select Lecture</option>';
+        
+        select.innerHTML = '<option value="">Select Lecture</option>';
         data.forEach(l => {
+            lecturesMap[l.id] = l; 
             const opt = document.createElement('option');
             opt.value = l.id;
-            opt.innerText = l.title;
-            lectureSelect.appendChild(opt);
+            const prefix = l.youtube_url ? "✨ " : "";
+            opt.innerText = prefix + l.title;
+            select.appendChild(opt);
         });
-        lectureSelect.disabled = false;
+        select.disabled = false;
     } catch (err) {
         showError("Failed to load lectures.");
     }
 }
 
 /**
- * SYNC: The main event
+ * UI: Update when lecture is picked
  */
-async function handleSync() {
-    const lectureId = document.getElementById('lecture-select').value;
-    if (!lectureId) {
-        showError("Please select a target lecture.");
+function onLectureSelected() {
+    const id = document.getElementById('lecture-select').value;
+    const lecture = lecturesMap[id];
+    const status = document.getElementById('sync-status');
+    const vTitle = document.getElementById('v-title');
+    const btn = document.getElementById('sync-btn');
+
+    if (!lecture) {
+        btn.disabled = true;
         return;
     }
 
+    if (lecture.youtube_url) {
+        vTitle.innerText = `Ready to Sync: ${lecture.title}`;
+        status.innerText = "YouTube Link Detected (Background mode enabled)";
+        status.style.color = "#44ff44";
+        btn.disabled = false;
+    } else {
+        vTitle.innerText = lecture.title;
+        status.innerText = "No video source defined for this lecture.";
+        status.style.color = "#aaaaaa";
+        btn.disabled = true;
+    }
+}
+
+async function handleSync() {
+    const id = document.getElementById('lecture-select').value;
+    const lecture = lecturesMap[id];
+    if (!lecture) return;
+
     const btn = document.getElementById('sync-btn');
     const btnText = document.getElementById('btn-text');
-    const loader = document.getElementById('btn-loader');
-
     setLoading(true);
     btnText.innerText = "Extracting...";
 
     try {
-        // 1. Tell Content Script to grab transcript
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        const response = await chrome.tabs.sendMessage(tab.id, { action: "EXTRACT_TRANSCRIPT" });
+        let transcriptText = "";
 
-        if (!response || !response.success) {
-            throw new Error(response?.error || "Extraction failed.");
+        // 1. Foreground Logic
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab && tab.url.includes("youtube.com/watch")) {
+            const resp = await chrome.tabs.sendMessage(tab.id, { action: "EXTRACT_TRANSCRIPT" });
+            if (resp && resp.success) transcriptText = resp.transcript;
         }
 
-        btnText.innerText = "Syncing to Cloud...";
+        // 2. Background Logic
+        if (!transcriptText && lecture.youtube_url) {
+            btnText.innerText = "Background Fetching...";
+            transcriptText = await extractTranscriptInBackground(lecture.youtube_url);
+        }
 
-        // 2. POST to our new backend endpoint
-        const syncRes = await fetch(`${BACKEND_URL}/api/lectures/${lectureId}/sync-transcript`, {
+        if (!transcriptText) throw new Error("Could not extract transcript.");
+
+        btnText.innerText = "Pushing to Cloud...";
+        const syncRes = await fetch(`${BACKEND_URL}/api/lectures/${id}/sync-transcript`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${authToken}`
             },
-            body: JSON.stringify({ transcript: response.transcript })
+            body: JSON.stringify({ transcript: transcriptText })
         });
 
         if (syncRes.ok) {
@@ -166,9 +251,8 @@ async function handleSync() {
             btn.style.background = "#44ff44";
             setTimeout(() => window.close(), 1500);
         } else {
-            throw new Error("Backend rejection. Check logs.");
+            throw new Error("Backend rejection.");
         }
-
     } catch (err) {
         showError(err.message);
         setLoading(false);
@@ -176,23 +260,55 @@ async function handleSync() {
     }
 }
 
-// --- UTILS ---
+async function extractTranscriptInBackground(youtubeUrl) {
+    try {
+        const response = await fetch(youtubeUrl);
+        if (!response.ok) throw new Error(`YouTube check failed: ${response.status}`);
+        
+        const html = await response.text();
+        const tracksMatch = html.match(/"captionTracks":\s*(\[.*?\])/);
+        if (!tracksMatch) throw new Error("This video has no accessible captions.");
+        
+        const tracks = JSON.parse(tracksMatch[1]);
+        if (!tracks || tracks.length === 0) throw new Error("Captions are disabled for this video.");
+        
+        const track = tracks[0];
+        const transRes = await fetch(track.baseUrl + '&fmt=json3');
+        
+        if (!transRes.ok) throw new Error(`Caption fetch failed: ${transRes.status}`);
+        
+        const text = await transRes.text();
+        if (!text || text.trim() === "") throw new Error("YouTube sent an empty transcript.");
+        
+        const data = JSON.parse(text);
+        if (!data.events) throw new Error("Malformed transcript data received.");
+        
+        return data.events
+            .filter(e => e.segs)
+            .map(e => e.segs.map(s => s.utf8).join(' '))
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    } catch (e) {
+        console.error("BG Extract Error Details:", e);
+        // Bubble up the specific error message
+        throw e;
+    }
+}
 
 function updateStatus(text, color = "white") {
     const el = document.getElementById('auth-status');
-    el.innerText = text;
-    el.style.color = color;
+    if (el) { el.innerText = text; el.style.color = color; }
 }
 
 function showError(msg) {
     const el = document.getElementById('error-msg');
-    el.innerText = msg;
-    el.style.display = 'block';
+    if (el) { el.innerText = msg; el.style.display = 'block'; }
 }
 
 function setLoading(isLoading) {
     const loader = document.getElementById('btn-loader');
     const btn = document.getElementById('sync-btn');
-    loader.style.display = isLoading ? 'block' : 'none';
-    btn.disabled = isLoading;
+    if (loader) loader.style.display = isLoading ? 'block' : 'none';
+    if (btn) btn.disabled = isLoading;
 }
