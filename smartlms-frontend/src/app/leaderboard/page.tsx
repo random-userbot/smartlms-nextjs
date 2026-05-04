@@ -43,6 +43,7 @@ export default function LeaderboardPage() {
   );
 
   const totalPoints = leaderboard.reduce((acc, p) => acc + (p.points || 0), 0);
+   const averagePoints = leaderboard.length ? Math.round(totalPoints / leaderboard.length) : 0;
 
   return (
     <div className="flex h-screen bg-background overflow-hidden font-sans text-foreground">
@@ -172,7 +173,7 @@ export default function LeaderboardPage() {
            {[
              { label: 'Cumulative Community XP', val: totalPoints.toLocaleString(), icon: Zap },
              { label: 'Active Scholars', val: leaderboard.length, icon: Target },
-             { label: 'Network Stability', val: '99.9%', icon: TrendingUp },
+                   { label: 'Average XP per Scholar', val: averagePoints.toLocaleString(), icon: TrendingUp },
            ].map((stat, i) => (
              <div key={i} className="glass-card p-8 flex flex-col gap-4 border-border bg-surface hover:border-primary/20 transition-all group">
                 <div className="flex items-center justify-between">

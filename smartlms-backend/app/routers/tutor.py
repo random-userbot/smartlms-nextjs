@@ -36,6 +36,7 @@ class TutorChatRequest(BaseModel):
     target_language: Optional[str] = None # e.g. "Spanish"
     lecture_id: Optional[str] = None # Context-aware tutoring
     session_id: Optional[str] = None # To append to existing DB session
+    preferred_model: Optional[str] = None # Explicit model override from UI
     attachments: Optional[List[Dict[str, str]]] = None # [{type: "image", data: "base64..."}]
 
 SYSTEM_PROMPTS = {
@@ -45,6 +46,16 @@ SYSTEM_PROMPTS = {
     "speaking": "You are a specialized vocal coach. Help the student improve their pronunciation and verbal confidence. Provide feedback on how to phase sentences more naturally.",
     "listening": "You are a comprehension expert. Summarize key points from the lecture and ask the student specific questions to test their auditory retention.",
     "conversing": "You are a peer learning buddy. Engage in deep, open-ended discussions about the lecture's implications. Challenge the student's perspectives constructively."
+}
+
+MODEL_ALIASES = {
+    "groq-llama-3": "llama-3.3-70b-versatile",
+    "groq-mixtral": "mixtral-8x7b-32768",
+    "groq-gemma2": "gemma2-9b-it",
+    "groq-llama-3.1-8b": "llama-3.1-8b-instant",
+    # Legacy UI aliases mapped to available Groq models.
+    "gemini-1.5-pro": "mixtral-8x7b-32768",
+    "gpt-4o": "llama-3.3-70b-versatile",
 }
 
 @router.get("/sessions")
@@ -160,6 +171,18 @@ async def chat_with_tutor(
 
     try:
         client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+
+        session = None
+        if request.session_id:
+            session_res = await db.execute(
+                select(AITutorSession).where(
+                    AITutorSession.id == request.session_id,
+                    AITutorSession.student_id == current_user.id,
+                )
+            )
+            session = session_res.scalar_one_or_none()
+            if not session:
+                raise HTTPException(status_code=404, detail="Session not found")
         
         # Determine system prompt
         sys_prompt_template = SYSTEM_PROMPTS.get(request.mode, SYSTEM_PROMPTS["general"])
@@ -197,6 +220,9 @@ async def chat_with_tutor(
             model_name = "mixtral-8x7b-32768" 
         elif request.mode == "grammar_check":
             model_name = "gemma2-9b-it" 
+
+        if request.preferred_model:
+            model_name = MODEL_ALIASES.get(request.preferred_model, request.preferred_model)
 
         model_chain = settings.groq_chat_models_for_task(
             task=f"tutor_{request.mode}",

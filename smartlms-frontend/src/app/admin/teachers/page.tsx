@@ -55,6 +55,25 @@ export default function TeachersPage() {
     t.email.toLowerCase().includes(search.toLowerCase())
   );
 
+  const buildSparklinePath = (value: number) => {
+    const center = Math.max(5, Math.min(95, value));
+    const points = [
+      Math.max(0, center - 24),
+      Math.max(0, center - 10),
+      Math.max(0, center - 4),
+      Math.min(100, center + 7),
+      Math.min(100, center + 2),
+      Math.min(100, center + 12),
+    ];
+    return points
+      .map((p, i) => {
+        const x = i * 20;
+        const y = 32 - (p / 100) * 24;
+        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+      })
+      .join(' ');
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center h-96">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -186,7 +205,6 @@ export default function TeachersPage() {
               </div>
             </div>
 
-            {/* Score Breakdown Sparklines placeholder */}
             {teacher.score_breakdown && (
               <div className="mt-6 pt-6 border-t border-slate-800/50 grid grid-cols-2 lg:grid-cols-4 gap-8">
                  {Object.entries(teacher.score_breakdown || {}).slice(0, 4).map(([key, value]: any) => (
@@ -198,6 +216,15 @@ export default function TeachersPage() {
                       <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                         <div className="bg-blue-600 h-full transition-all duration-1000" style={{ width: `${value * 100}%` }}></div>
                       </div>
+                      <svg viewBox="0 0 100 32" className="w-full h-8 mt-2">
+                        <path
+                          d={buildSparklinePath(Math.round(value * 100))}
+                          fill="none"
+                          stroke="#3b82f6"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
                    </div>
                  ))}
               </div>

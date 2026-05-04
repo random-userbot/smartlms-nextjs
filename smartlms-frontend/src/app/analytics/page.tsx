@@ -109,6 +109,7 @@ export default function AnalyticsPage() {
 
   const engagementScore = data?.average_focus || 0;
   const recentHistory = history?.history || data?.focus_pulse || [];
+  const behaviorSignals = data?.behavior_signals;
 
   return (
     <div className="flex h-screen bg-background overflow-hidden font-sans text-foreground">
@@ -258,14 +259,18 @@ export default function AnalyticsPage() {
                       <div className="w-2 h-2 rounded-full bg-warning mt-2 shadow-[0_0_8px_var(--warning)]"></div>
                       <div className="flex-1">
                         <div className="text-xs font-black text-white uppercase tracking-widest mb-1">Gaze Lapse Pattern</div>
-                        <p className="text-[11px] font-bold text-text-muted leading-relaxed">Frequent rapid eye movements detected during Video 2. Aika suggests increasing playback speed for optimal resonance.</p>
+                        <p className="text-[11px] font-bold text-text-muted leading-relaxed">
+                          {behaviorSignals?.gaze_lapse_pattern?.detail || 'Behavioral signals are synchronizing from recent sessions.'}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-4 p-5 bg-primary/5 rounded-3xl border border-primary/10">
                       <div className="w-2 h-2 rounded-full bg-primary mt-2 shadow-[0_0_8px_var(--primary)]"></div>
                       <div className="flex-1">
                         <div className="text-xs font-black text-white uppercase tracking-widest mb-1">Engage Forecast</div>
-                        <p className="text-[11px] font-bold text-text-muted leading-relaxed">Prediction: Next-Window engagement forecast at 82% (Positive Trend).</p>
+                        <p className="text-[11px] font-bold text-text-muted leading-relaxed">
+                          Prediction: Next-window engagement at {behaviorSignals?.engagement_forecast?.score ?? 0}% ({behaviorSignals?.engagement_forecast?.trend || 'Pending'}).
+                        </p>
                       </div>
                     </div>
                   </div>

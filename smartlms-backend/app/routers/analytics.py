@@ -831,6 +831,49 @@ async def get_student_dashboard(
         today_seconds = today_time_res.scalar() or 0
         goal_progress = min(100, round((today_seconds / 3600.0) * 100, 0))
 
+        recent_logs_res = await db.execute(
+            select(
+                EngagementLog.forecast_score,
+                EngagementLog.no_face_detected_count,
+                EngagementLog.attention_lapse_duration,
+                EngagementLog.watch_duration,
+            )
+            .where(EngagementLog.student_id == current_user.id)
+            .order_by(desc(EngagementLog.started_at))
+            .limit(20)
+        )
+        recent_logs = recent_logs_res.all()
+
+        forecast_values = [float(r.forecast_score) for r in recent_logs if r.forecast_score is not None]
+        avg_forecast = round(_safe_mean(forecast_values) if forecast_values else avg_focus, 1)
+
+        total_lapse_seconds = sum(float(r.attention_lapse_duration or 0.0) for r in recent_logs)
+        total_watch_seconds = sum(float(r.watch_duration or 0.0) for r in recent_logs)
+        visibility_score = 100.0
+        if total_watch_seconds > 0:
+            visibility_score = max(
+                0.0,
+                min(100.0, ((total_watch_seconds - total_lapse_seconds) / total_watch_seconds) * 100.0),
+            )
+        visibility_score = round(visibility_score, 1)
+
+        if visibility_score >= 90:
+            gaze_pattern = "Stable"
+            gaze_detail = f"High on-screen consistency with {visibility_score}% visibility across recent sessions."
+        elif visibility_score >= 75:
+            gaze_pattern = "Moderate Lapse"
+            gaze_detail = f"Attention dips detected; visibility is {visibility_score}% over recent sessions."
+        else:
+            gaze_pattern = "High Lapse Risk"
+            gaze_detail = f"Frequent visibility lapses detected ({visibility_score}%). Consider shorter study blocks."
+
+        if growth > 2:
+            trend = "Positive Trend"
+        elif growth < -2:
+            trend = "Declining Trend"
+        else:
+            trend = "Stable Trend"
+
         return {
             "full_name": current_user.full_name,
             "focus_pulse": pulse,
@@ -839,7 +882,19 @@ async def get_student_dashboard(
             "growth_percent": growth,
             "active_nodes": active_nodes[:3],
             "daily_goal_progress": goal_progress,
-            "aika_insight": insights[0] if insights else "Your learning sync is stable."
+            "aika_insight": insights[0] if insights else "Your learning sync is stable.",
+            "behavior_signals": {
+                "gaze_lapse_pattern": {
+                    "label": gaze_pattern,
+                    "detail": gaze_detail,
+                    "visibility_score": visibility_score,
+                    "total_lapse_seconds": round(total_lapse_seconds, 1),
+                },
+                "engagement_forecast": {
+                    "score": avg_forecast,
+                    "trend": trend,
+                },
+            },
         }
     except Exception as e:
         debug_logger.log("error", f"Student Dashboard Crash for {current_user.id}: {str(e)}")
@@ -851,7 +906,19 @@ async def get_student_dashboard(
             "growth_percent": 0,
             "active_nodes": [],
             "daily_goal_progress": 0,
-            "aika_insight": "Dashboard is synchronizing your metrics..."
+            "aika_insight": "Dashboard is synchronizing your metrics...",
+            "behavior_signals": {
+                "gaze_lapse_pattern": {
+                    "label": "Synchronizing",
+                    "detail": "Behavioral signal extraction is warming up.",
+                    "visibility_score": 0,
+                    "total_lapse_seconds": 0,
+                },
+                "engagement_forecast": {
+                    "score": 0,
+                    "trend": "Pending",
+                },
+            },
         }
 
 @router.get("/student-engagement-history")

@@ -133,10 +133,18 @@ class AikaService:
         
         self.vectorstore.add_documents(splits)
         return True
-            
+
+    def ask(self, question: str) -> str:
+        """Answer a user query through the configured RAG agent."""
+        if not question or not question.strip():
+            return "Please provide a question."
+
+        if not getattr(self, "agent_executor", None):
+            return "Aika is not available right now. Please try again shortly."
+
         try:
             response = self.agent_executor.invoke({"input": question})
-            return response["output"]
+            return response.get("output", "I could not generate a response.")
         except Exception as e:
             print(f"[AikaService] RAG Error: {e}")
             return "An internal error occurred while consulting the Aika Knowledge Base."

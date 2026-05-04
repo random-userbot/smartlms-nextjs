@@ -112,6 +112,7 @@ export default function AikaPage() {
         res = await tutorAPI.chat({
           messages: history,
           mode,
+          preferred_model: model,
           session_id: sessionId || undefined,
           attachments: attachments.length > 0 ? attachments : undefined
         });
@@ -307,11 +308,13 @@ export default function AikaPage() {
                   <select 
                     value={model} 
                     onChange={(e) => setModel(e.target.value)}
-                    className="bg-surface/50 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-black text-white/60 focus:outline-none appearance-none cursor-pointer hover:border-primary/50 transition-colors"
+                    disabled={mode === 'rag_knowledge_base'}
+                    className="bg-surface/50 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-black text-white/60 focus:outline-none appearance-none cursor-pointer hover:border-primary/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                     <option value="groq-llama-3">Llama-3-70b Professional</option>
-                     <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                     <option value="gpt-4o">GPT-4o Reasoning</option>
+                    <option value="groq-llama-3">Groq Llama 3.3 70B</option>
+                    <option value="groq-mixtral">Groq Mixtral 8x7B</option>
+                    <option value="groq-gemma2">Groq Gemma2 9B</option>
+                    <option value="groq-llama-3.1-8b">Groq Llama 3.1 8B</option>
                   </select>
                   <button 
                     onClick={clearChat}
@@ -407,7 +410,7 @@ export default function AikaPage() {
                        <Plus size={28} />
                     </button>
 
-                    <div className="flex gap-1.5 border-r border-white/5 pr-4 mr-2 hidden lg:flex">
+                    <div className="max-lg:hidden lg:flex gap-1.5 border-r border-white/5 pr-4 mr-2">
                       {['general', 'speaking', 'listening', 'conversing'].map(m => (
                         <button 
                           key={m} 
